@@ -29,6 +29,8 @@ Some (most) projects are hardcore-dependent on a DB but some are not and there c
 2. Softcore requirement - If the program can't connect at first, it should keep retrying till it gets a connection
 3. No requiement - disable the ability to connect to a DB.
 
+We can also think of supporting reader and writer instances of the same database (like how RDS gives me diff endpoints for ro or rw facility)
+
 And in addition, some projects might want to connect to multiple databases at once!
 
 ## Some good types and utility functions
@@ -70,7 +72,7 @@ We will use bark. because it can:
 
 1. Allow you to log easily to STDOUT
 2. Allow you to send your log messages to a remote server
-3. (IN FUTURE) allow you to create a client which also hosts the DB and writes the logs to the database without having to start a separate server and then connect to it!
+3. Allow you to create a client which also hosts the DB and writes the logs to the database without having to start a separate server and then connect to it!
 
 ## Maintenance mode for the service (mostly for web server projects)
 Sometimes you need to bring your services down - gracefully and in a controlled and planned manner. 
