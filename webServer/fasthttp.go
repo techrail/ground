@@ -3,8 +3,8 @@ package webServer
 import (
 	"fmt"
 	"github.com/fasthttp/router"
-	"github.com/techrail/goround/typs/appError"
-	"github.com/techrail/goround/typs/errLevel"
+	"github.com/techrail/ground/typs/appError"
+	"github.com/techrail/ground/typs/errLevel"
 	"github.com/valyala/fasthttp"
 	"net"
 	"strconv"
@@ -16,6 +16,7 @@ type FastHttpServer struct {
 	BindPort     int
 	EnableIpv6   bool
 	BlockOnStart bool // Should we block on start or not
+	middlewares  map[string]Middleware
 }
 
 func NewLocalServer() *FastHttpServer {
@@ -27,6 +28,16 @@ func NewLocalServer() *FastHttpServer {
 		EnableIpv6:   false,
 		BlockOnStart: false,
 	}
+}
+
+func (s *FastHttpServer) AddMiddleware(name string, m Middleware) error {
+	if _, ok := s.middlewares[name]; ok {
+		return fmt.Errorf("E#1MQTB0 - Another middleware named {%v} already exists", name)
+	}
+
+	s.middlewares[name] = m
+
+	return nil
 }
 
 func (s *FastHttpServer) Start() appError.Typ {

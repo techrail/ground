@@ -2,9 +2,9 @@ package appError
 
 import (
 	"fmt"
-	"github.com/techrail/goround/constants"
-	"github.com/techrail/goround/constants/errCode"
-	"github.com/techrail/goround/typs/errLevel"
+	"github.com/techrail/ground/constants"
+	"github.com/techrail/ground/constants/errCode"
+	"github.com/techrail/ground/typs/errLevel"
 )
 
 type Typ struct {

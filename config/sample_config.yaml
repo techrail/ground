@@ -1,0 +1,37 @@
+# This file
+
+# NOTE: If you are going to use multiline strings anywhere, please read this first:
+#   https://stackoverflow.com/a/21699210/9668346
+
+# Startup Options
+startup:
+  # The port on which the app will listen
+  port: 8080
+  env: uat
+
+# Databases
+database:
+  # The main database where all the data is stored
+  main:
+    url: 'postgres://vkaushal288:vkaushal288@127.0.0.1:5432/license_service?sslmode=disable'
+    maxOpenConnections: 30
+    maxIdleConnections: 0
+    connMaxLifeTimeInSeconds: 60
+    migrationFullPath: '/home/vaibhav/code/myproject/db/migrations'
+
+# Redis config
+redis:
+  main:
+    # If this is set to false, all setter functions will return success and
+    # all getter functions will return nil/no data
+    enabled: true
+    url: 'redis://127.0.0.1:6379'
+    maxActiveConnections: 10
+    maxIdleConnections: 10
+    idleTimeoutInSeconds: 60
+    crashAppOnConnectionFailure: true
+    connectRetryIntervalInSeconds: 10
+
+cron: # All times are expected to be un UTC
+  emailNotifs:
+    schedule: '30 12 * * *'
