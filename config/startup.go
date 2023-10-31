@@ -30,7 +30,7 @@ func initializeStartupConfig() {
 	config.Startup.Env = envOrViperOrDefaultString("startup.env", config.Startup.Env)
 
 	if !config.Startup.EnvIsProd() && !config.Startup.EnvIsUat() && !config.Startup.EnvIsLocalDev() {
-		fmt.Printf("P#1DJ62U - NOT AN ACCEPTABLE ENVIRONMENT TO EXECUTE IN: %v\n", config.Startup.Env)
+		fmt.Printf("P#1MR2GO - NOT AN ACCEPTABLE ENVIRONMENT TO EXECUTE IN: %v\n", config.Startup.Env)
 		os.Exit(1)
 	}
 }

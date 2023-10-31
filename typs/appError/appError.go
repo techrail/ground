@@ -4,11 +4,10 @@ import (
 	"fmt"
 	"github.com/techrail/ground/constants"
 	"github.com/techrail/ground/constants/errCode"
-	"github.com/techrail/ground/typs/errLevel"
 )
 
 type Typ struct {
-	Level            errLevel.Typ
+	Level            Level
 	Code             string // LMID
 	Message          string // The actual error message
 	HttpResponseCode int    // In case we are trying to use this type for returning a network error
@@ -21,7 +20,7 @@ var BlankError Typ
 
 func init() {
 	BlankError = Typ{
-		Level:   errLevel.Unknown,
+		Level:   Unknown,
 		Code:    errCode.BlankErrorCode,
 		Message: constants.EmptyString,
 	}
@@ -45,7 +44,7 @@ func (e Typ) String() string {
 }
 
 func (e Typ) IsBlank() bool {
-	if e.Level == errLevel.Unknown &&
+	if e.Level == Unknown &&
 		e.Code == errCode.BlankErrorCode &&
 		e.Message == constants.EmptyString &&
 		e.DevMsg == constants.EmptyString {
@@ -69,7 +68,7 @@ func (e Typ) IsNotBlankNetworkError() bool {
 	return !e.IsBlankNetworkError()
 }
 
-func (e Typ) WrapsErrorLevel(errLvl errLevel.Typ, checkCurrErr bool) bool {
+func (e Typ) WrapsErrorLevel(errLvl Level, checkCurrErr bool) bool {
 	if checkCurrErr && e.Level == errLvl {
 		return true
 	}
@@ -88,7 +87,7 @@ func (e Typ) WrapsErrorLevel(errLvl errLevel.Typ, checkCurrErr bool) bool {
 	return false
 }
 
-func NewError(errLevel errLevel.Typ, code string, msg string, wrappedError ...Typ) Typ {
+func NewError(errLevel Level, code string, msg string, wrappedError ...Typ) Typ {
 	var wErr *Typ
 
 	if len(wrappedError) > 0 {
@@ -103,12 +102,12 @@ func NewError(errLevel errLevel.Typ, code string, msg string, wrappedError ...Ty
 	}
 }
 
-func NewNetworkError(httpResponseCode int, errLvl errLevel.Typ, code string, msg string, devmsg string, wrappedError ...Typ) Typ {
+func NewNetworkError(httpResponseCode int, errLvl Level, code string, msg string, devmsg string, wrappedError ...Typ) Typ {
 	var wErr *Typ
 
 	if httpResponseCode < 100 || httpResponseCode > 599 {
 		return Typ{
-			Level:            errLevel.Alert,
+			Level:            Alert,
 			Code:             "1DJ1A2",
 			Message:          "Internal Error",
 			HttpResponseCode: 500,

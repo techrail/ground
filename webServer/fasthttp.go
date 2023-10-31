@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/fasthttp/router"
 	"github.com/techrail/ground/typs/appError"
-	"github.com/techrail/ground/typs/errLevel"
 	"github.com/valyala/fasthttp"
 	"net"
 	"strconv"
@@ -62,7 +61,7 @@ func (s *FastHttpServer) Start() appError.Typ {
 
 	if err != nil {
 		return appError.NewError(
-			errLevel.Error,
+			appError.Error,
 			"1MHI99",
 			"Can't create the listener. Error: "+err.Error())
 	}
@@ -73,7 +72,7 @@ func (s *FastHttpServer) Start() appError.Typ {
 			return appError.BlankError
 		} else {
 			return appError.NewError(
-				errLevel.Error,
+				appError.Error,
 				"1MHOPJ",
 				"Something went wrong when trying to start the server. Error: "+e.Error())
 		}

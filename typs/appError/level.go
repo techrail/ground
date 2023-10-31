@@ -1,21 +1,21 @@
-package errLevel
+package appError
 
 // This type is compatible with the Bark error levels, except an addition of the "unknown" level
 
-type Typ int
+type Level int
 
 const (
-	Panic   Typ = 10
-	Alert   Typ = 9
-	Error   Typ = 8
-	Warning Typ = 4
-	Notice  Typ = 3
-	Info    Typ = 0
-	Debug   Typ = -4
-	Unknown Typ = -10
+	Panic   Level = 10
+	Alert   Level = 9
+	Error   Level = 8
+	Warning Level = 4
+	Notice  Level = 3
+	Info    Level = 0
+	Debug   Level = -4
+	Unknown Level = -10
 )
 
-func (el Typ) String() string {
+func (el Level) String() string {
 	switch el {
 	case Panic:
 		return "Panic"
@@ -38,18 +38,18 @@ func (el Typ) String() string {
 	}
 }
 
-func (el Typ) ShortStr() string {
+func (el Level) ShortStr() string {
 	return el.String()[0:1]
 }
 
-func (el Typ) Int8() int8 {
+func (el Level) Int8() int8 {
 	return int8(el)
 }
-func (el Typ) Int() int {
+func (el Level) Int() int {
 	return int(el)
 }
 
-func FromShortString(shortString string) Typ {
+func FromShortString(shortString string) Level {
 	switch shortString {
 	case "P":
 		return Panic
