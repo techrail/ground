@@ -1,7 +1,6 @@
 package logger
 
 import (
-	"github.com/techrail/bark/client"
 	"sync"
 )
 
@@ -19,10 +18,18 @@ type StateStruct struct {
 var state *StateStruct
 
 func init() {
-	state = &StateStruct{
-		SelectedLogger: Bark,
-		Initialized:    false,
-		Client:         client.NewSloggerClient(client.INFO),
+	InitializeBarkLogger()
+}
+
+func EnableDebug() {
+	if state.Initialized && state.SelectedLogger == Bark {
+		BarkClient.EnableDebugLogs()
+	}
+}
+
+func DisableDebug() {
+	if state.Initialized && state.SelectedLogger == Bark {
+		BarkClient.DisableDebugLogs()
 	}
 }
 
@@ -40,6 +47,38 @@ func State() *StateStruct {
 	Debug(string)
 */
 
-func Println(logmsg string) {
-	state.Client.Println(logmsg)
+func Panic(msg string) {
+	state.Client.Println(msg)
+}
+
+func Alert(msg string) {
+	state.Client.Alert(msg, false)
+}
+
+func AlertWait(msg string) {
+	state.Client.Alert(msg, true)
+}
+
+func Error(msg string) {
+	state.Client.Error(msg)
+}
+
+func Warn(msg string) {
+	state.Client.Warn(msg)
+}
+
+func Notice(msg string) {
+	state.Client.Notice(msg)
+}
+
+func Info(msg string) {
+	state.Client.Info(msg)
+}
+
+func Debug(msg string) {
+	state.Client.Debug(msg)
+}
+
+func Println(msg string) {
+	state.Client.Println(msg)
 }

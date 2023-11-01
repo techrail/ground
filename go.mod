@@ -9,7 +9,6 @@ require (
 	github.com/spf13/viper v1.17.0
 	github.com/techrail/bark v1.1.0
 	github.com/valyala/fasthttp v1.50.0
-	go.uber.org/zap v1.24.0
 )
 
 require (

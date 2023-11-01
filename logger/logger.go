@@ -6,8 +6,9 @@ var BarkClient *client.Config
 
 func InitializeBarkLogger() {
 	BarkClient = client.NewSloggerClient(client.INFO)
-
-	state.SelectedLogger = Bark
-	state.Initialized = true
-	state.Client = BarkClient
+	state = &StateStruct{
+		SelectedLogger: Bark,
+		Initialized:    true,
+		Client:         BarkClient,
+	}
 }
