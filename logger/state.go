@@ -1,6 +1,8 @@
 package logger
 
 import (
+	"github.com/techrail/ground/constants/customCtxKey"
+	"github.com/valyala/fasthttp"
 	"sync"
 )
 
@@ -81,4 +83,41 @@ func Debug(msg string) {
 
 func Println(msg string) {
 	state.Client.Println(msg)
+}
+
+func LogWithContext(ctx *fasthttp.RequestCtx, msg string) {
+	var opLog []string
+	respondWithOplog := ctx.UserValue(customCtxKey.OpLogRequested)
+	if respondWithOplog != nil {
+		// Option was set in the context. Try to check its value
+		valBool, ok := respondWithOplog.(bool)
+		if ok && valBool {
+			res := ctx.UserValue(customCtxKey.CtxOperationLogContent)
+			if res == nil {
+				errMsg := "E#1MVP0T - Value was nil. This was unexpected."
+				Println(errMsg)
+				opLog = []string{
+					errMsg,
+				}
+			} else {
+				// Try to assert
+				if oprLog, typeAsserted := res.([]string); !typeAsserted {
+					errMsg := "E#1MVP4B - Incorrect data format"
+					Println(errMsg)
+					opLog = []string{
+						errMsg,
+					}
+				} else {
+					opLog = oprLog
+				}
+			}
+
+			opLog = append(opLog, msg)
+			ctx.SetUserValue(customCtxKey.CtxOperationLogContent, opLog)
+		}
+	}
+
+	// We might have to think another, better method to call here
+
+	Println(msg)
 }

@@ -11,9 +11,7 @@ import (
 // Otherwise, the request is served as usual
 func CheckShutdownRequested(handler fasthttp.RequestHandler) fasthttp.RequestHandler {
 	return func(ctx *fasthttp.RequestCtx) {
-		logger.Println("I#1MTZVK - Hit the CheckShutdownRequested Middleware")
-		//logger.LogInfoWithContext(ctx, "L#1MTZVK - Hit the CheckShutdownRequested Middleware")
-		//if appRuntime.ShutdownRequested() {
+		logger.LogWithContext(ctx, "D#1MTZVK - Hit the CheckShutdownRequested Middleware")
 		if core.State().WebServerShutdownRequested.Load() {
 			ctx.Response.SetBodyString(`{"message":"Web server is shutting down and is not accepting new requests."`)
 			// NOTE: once we have the rendering functions, we should replace the above statement with something like below

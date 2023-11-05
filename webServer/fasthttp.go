@@ -35,6 +35,7 @@ func NewLocalServer() *FastHttpServer {
 			middlewares.SetRequestId,
 			middlewares.SetRandomVar,
 			middlewares.CheckShutdownRequested,
+			middlewares.CheckOpLogRequest,
 		},
 	}
 	return &FastHttpServer{
@@ -48,6 +49,8 @@ func NewLocalServer() *FastHttpServer {
 	}
 }
 
+// AddMiddlewareToSet will add a middleware to a single middleware set of a given name
+// If a middleware set of that name does not exist, then one will be created.
 func (s *FastHttpServer) AddMiddlewareToSet(m Middleware, name string) {
 	if _, ok := s.middlewares[name]; !ok {
 		s.middlewares[name] = MiddlewareSet{}
@@ -56,6 +59,8 @@ func (s *FastHttpServer) AddMiddlewareToSet(m Middleware, name string) {
 	s.middlewares[name] = append(s.middlewares[name], m)
 }
 
+// AddMiddlewareSetToSet adds all the middlewares of one set to another set. Useful when you want to have some base
+// middleware sets and you want to create others with those middlewares as common with the new ones
 func (s *FastHttpServer) AddMiddlewareSetToSet(mwSet MiddlewareSet, name string) {
 	for _, m := range mwSet {
 		s.AddMiddlewareToSet(m, name)
