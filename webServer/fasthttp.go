@@ -28,6 +28,8 @@ type FastHttpServer struct {
 	middlewares  map[string]MiddlewareSet
 }
 
+// NewLocalServer creates a basic new local server and returns it.
+// It can then be modified and started (or started as it is)
 func NewLocalServer() *FastHttpServer {
 	r := router.New()
 	mws := map[string]MiddlewareSet{
@@ -67,27 +69,35 @@ func (s *FastHttpServer) AddMiddlewareSetToSet(mwSet MiddlewareSet, name string)
 	}
 }
 
+// EraseMiddlewares removes all the middlewares from the server so that you can create a whole new set from scratch
 func (s *FastHttpServer) EraseMiddlewares() {
 	s.middlewares = map[string]MiddlewareSet{}
 }
 
+// ListMiddlewareNames is supposed to return the list of middlewares in the server
 func (s *FastHttpServer) ListMiddlewareNames() []string {
 	mwArr := []string{}
-	for _, m := range s.middlewares {
-		mwArr = append(mwArr, utils.GetFunctionName(m, false))
+	for setName, middlewareSet := range s.middlewares {
+		for _, m := range middlewareSet {
+			mwArr = append(mwArr, fmt.Sprintf("%v - %v", setName, utils.GetFunctionName(m, false)))
+		}
 	}
 	return mwArr
 }
 
-func (s *FastHttpServer) GetMiddleware(name string) MiddlewareSet {
+// GetMiddlewareSet returns the middleware set by the given name. If there is no middleware set by that name, a blank
+// one is returned instead
+func (s *FastHttpServer) GetMiddlewareSet(name string) MiddlewareSet {
 	if set, ok := s.middlewares[name]; ok {
 		return set
 	}
 	return MiddlewareSet{}
 }
 
+// WithMiddlewareSet will return a request handler which would contain all the middlewares given by name applied
+// to the handler supplied to this function.
 func (s *FastHttpServer) WithMiddlewareSet(name string, handler fasthttp.RequestHandler) fasthttp.RequestHandler {
-	mwSet := s.GetMiddleware(name)
+	mwSet := s.GetMiddlewareSet(name)
 	if len(mwSet) == 0 {
 		return handler
 	} else {
@@ -95,6 +105,7 @@ func (s *FastHttpServer) WithMiddlewareSet(name string, handler fasthttp.Request
 	}
 }
 
+// Start starts the web server according to given parameters
 func (s *FastHttpServer) Start() appError.Typ {
 	s.Server = fasthttp.Server{
 		Handler: s.Router.Handler,
@@ -150,6 +161,8 @@ func (s *FastHttpServer) Start() appError.Typ {
 	return appError.BlankError
 }
 
+// Stop will stop the server. It does so by setting the current state. The manager will notice the change
+// and stop the server gracefully
 func (s *FastHttpServer) Stop() {
 	s.currentState = StateShutdownRequested
 }

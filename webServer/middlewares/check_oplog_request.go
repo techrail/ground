@@ -16,7 +16,6 @@ import (
 // on the supplied header. This value can be helpful in debugging
 func CheckOpLogRequest(handler fasthttp.RequestHandler) fasthttp.RequestHandler {
 	return func(ctx *fasthttp.RequestCtx) {
-		// Todo: contextual logging here
 		logger.LogWithContext(ctx, "L#1MVZRU - Hit the CheckOpLogRequest Middleware")
 		// Check that the header is present or not.
 		requestingOpLog := ctx.Request.Header.Peek(customHeaders.OpLogRequestValue)

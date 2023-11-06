@@ -3,6 +3,7 @@ package middlewares
 import (
 	"github.com/techrail/ground/core"
 	"github.com/techrail/ground/logger"
+	"github.com/techrail/ground/render"
 	"github.com/valyala/fasthttp"
 )
 
@@ -14,13 +15,12 @@ func CheckShutdownRequested(handler fasthttp.RequestHandler) fasthttp.RequestHan
 		logger.LogWithContext(ctx, "D#1MTZVK - Hit the CheckShutdownRequested Middleware")
 		if core.State().WebServerShutdownRequested.Load() {
 			ctx.Response.SetBodyString(`{"message":"Web server is shutting down and is not accepting new requests."`)
-			// NOTE: once we have the rendering functions, we should replace the above statement with something like below
 
-			//render.JsonWithFailure(
-			//	ctx, fasthttp.StatusTeapot,
-			//	"W#ZOMBIE",
-			//	"Server is in process of shutting down",
-			//	"")
+			render.JsonWithFailure(
+				ctx, fasthttp.StatusTeapot,
+				"W#ZOMBIE",
+				"Server is in process of shutting down",
+				"")
 			return
 		}
 		handler(ctx)
