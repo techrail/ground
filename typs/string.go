@@ -1,4 +1,4 @@
-package types
+package typs
 
 import (
 	"math/rand"
