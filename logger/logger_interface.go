@@ -9,4 +9,5 @@ type Logger interface {
 	Info(string)
 	Debug(string)
 	Println(string)
+	Default(string)
 }

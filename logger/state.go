@@ -1,9 +1,11 @@
 package logger
 
 import (
-	"github.com/techrail/ground/constants/customCtxKey"
-	"github.com/valyala/fasthttp"
 	"sync"
+
+	"github.com/valyala/fasthttp"
+
+	"github.com/techrail/ground/constants/customCtxKey"
 )
 
 const (
@@ -39,16 +41,6 @@ func State() *StateStruct {
 	return state
 }
 
-/*
-	Panic(string)
-	Alert(string, bool)
-	Error(string)
-	Warn(string)
-	Notice(string)
-	Info(string)
-	Debug(string)
-*/
-
 func Panic(msg string) {
 	state.Client.Println(msg)
 }
@@ -83,6 +75,10 @@ func Debug(msg string) {
 
 func Println(msg string) {
 	state.Client.Println(msg)
+}
+
+func Default(msg string) {
+	state.Client.Default(msg)
 }
 
 func LogWithContext(ctx *fasthttp.RequestCtx, msg string) {
