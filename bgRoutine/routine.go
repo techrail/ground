@@ -2,11 +2,13 @@ package bgRoutine
 
 import (
 	"fmt"
+	`strconv`
 	"time"
+
+	"github.com/robfig/cron/v3"
 
 	`github.com/techrail/ground/channels`
 	`github.com/techrail/ground/constants`
-	`github.com/techrail/ground/logger`
 	`github.com/techrail/ground/typs/appError`
 )
 
@@ -19,14 +21,18 @@ const (
 )
 
 const (
-	EventRunResult = "runResult"
+	CronMode   = "cronMode"   // When we are working in the cron mode
+	TickerMode = "tickerMode" // When we are working in the ticker mode
 )
 
 type Typ struct {
 	Name            string                 // Name of the routine
-	done            chan bool              // Send to this channel to stop the routine TODO: unexport it
-	ticker          *time.Ticker           // Time ticker to call the routine Every day at 8:45 AM TODO: unexport it
-	function        func() appError.Typ    // The function to run on each tick TODO: unexport it
+	done            chan bool              // Send to this channel to stop the routine
+	operationMode   string                 // Which more are we working in?
+	cronExpr        string                 // The Cron expression to run the function repeatedly
+	ticker          *time.Ticker           // Time ticker to call the function in case we are in ticker mode
+	schedule        cron.Schedule          // Schedule using which we call the function when we are in cron mode
+	function        func() appError.Typ    // The function to run on each tick
 	state           string                 // What is the state of this routine
 	instanceRunning bool                   // Is the function already running (used to prevent parallel runs only)
 	monitorHook     func(typ appError.Typ) // The function which is called for each run
@@ -48,11 +54,30 @@ func addRoutine(name string, routine *Typ) appError.Typ {
 	return appError.BlankError
 }
 
-func New(name string, tickerDuration time.Duration, runnerFunc func() appError.Typ) (*Typ, appError.Typ) {
+func New(name string, cronExpression string, runnerFunc func() appError.Typ) (*Typ, appError.Typ) {
+	mode := CronMode
+	tickr := time.NewTicker(87600 * time.Hour)
+	// check if we have a valid cron expression or not
+	s, err := cron.ParseStandard(cronExpression)
+	if err != nil {
+		// The expression is not in the standard format. Let's check if we can convert this into an integer
+		tickerMills, convErr := strconv.Atoi(cronExpression)
+		if convErr != nil {
+			// Can't convert it to integer either. It's definitely an error
+			return nil, appError.NewError(appError.Error, "1NIV49", fmt.Sprintf("Could not parse cron expression %v for routine %v. Parser error: %v and Atoi error: %v", cronExpression, name, err, convErr))
+		}
+		// Looks like the expression is that of milliseconds
+		mode = TickerMode
+		tickr = time.NewTicker(time.Duration(tickerMills) * time.Millisecond)
+	}
+
 	r := Typ{
 		Name:            name,
 		done:            make(chan bool),
-		ticker:          time.NewTicker(tickerDuration),
+		operationMode:   mode,
+		cronExpr:        cronExpression,
+		ticker:          tickr,
+		schedule:        s,
 		function:        runnerFunc,
 		state:           StateInitialized,
 		instanceRunning: false,
@@ -142,10 +167,22 @@ func (r *Typ) Start(launchRightNow bool) appError.Typ {
 				return
 			case t := <-r.ticker.C:
 				if r.state != StateRunning {
-					logger.Println(fmt.Sprintf("I#1NCFGY - Tick for Routine %s was received at %v but the routine is %v.", r.Name, t, r.state))
+					e := appError.NewError(appError.Info, "1NI933", fmt.Sprintf("Tick for Routine %s was received at %v but the routine is %v.", r.Name, t, r.state))
+					if r.monitorHook != nil {
+						r.monitorHook(e)
+					}
+					channels.ErrorTypChan <- e
 				} else {
-					channels.ErrorTypChan <- fmt.Sprintf("I#1NCFJF - Tick for routine %v at %v", r.Name, t)
+					e := appError.NewError(appError.Info, "1NI9P9", fmt.Sprintf("Tick for routine %v at %v", r.Name, t))
+					if r.monitorHook != nil {
+						r.monitorHook(e)
+					}
+					channels.ErrorTypChan <- e
 					runRoutineOnce()
+				}
+			case <-time.After(time.Second):
+				if time.Now().UTC().After(r.schedule.Next(time.Now().UTC())) {
+					// Time to execute
 				}
 			}
 		}
@@ -156,6 +193,10 @@ func (r *Typ) Start(launchRightNow bool) appError.Typ {
 	}
 
 	return appError.BlankError
+}
+
+func (r *Typ) CurrentMode() string {
+	return r.operationMode
 }
 
 func (r *Typ) Pause() {
