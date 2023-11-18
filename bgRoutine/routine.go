@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/robfig/cron/v3"
+	`github.com/techrail/bark/appRuntime`
 
 	`github.com/techrail/ground/channels`
 	`github.com/techrail/ground/constants`
@@ -56,7 +57,7 @@ func addRoutine(name string, routine *Typ) appError.Typ {
 
 func New(name string, cronExpression string, runnerFunc func() appError.Typ) (*Typ, appError.Typ) {
 	mode := CronMode
-	tickr := time.NewTicker(87600 * time.Hour)
+	tickr := time.NewTicker(87600 * time.Hour) // 10 years default duration for the routine
 	// check if we have a valid cron expression or not
 	s, err := cron.ParseStandard(cronExpression)
 	if err != nil {
@@ -166,23 +167,42 @@ func (r *Typ) Start(launchRightNow bool) appError.Typ {
 				r.ticker.Stop()
 				return
 			case t := <-r.ticker.C:
-				if r.state != StateRunning {
-					e := appError.NewError(appError.Info, "1NI933", fmt.Sprintf("Tick for Routine %s was received at %v but the routine is %v.", r.Name, t, r.state))
-					if r.monitorHook != nil {
-						r.monitorHook(e)
+				if r.operationMode == TickerMode {
+					if r.state != StateRunning {
+						e := appError.NewError(appError.Info, "1NI933", fmt.Sprintf("Tick for Routine %s was received at %v but the routine is %v.", r.Name, t, r.state))
+						if r.monitorHook != nil {
+							r.monitorHook(e)
+						}
+						channels.ErrorTypChan <- e
+					} else {
+						e := appError.NewError(appError.Info, "1NI9P9", fmt.Sprintf("Tick for routine %v at %v", r.Name, t))
+						if r.monitorHook != nil {
+							r.monitorHook(e)
+						}
+						channels.ErrorTypChan <- e
+						runRoutineOnce()
 					}
-					channels.ErrorTypChan <- e
 				} else {
-					e := appError.NewError(appError.Info, "1NI9P9", fmt.Sprintf("Tick for routine %v at %v", r.Name, t))
+					e := appError.NewError(appError.Info, "1NPBCQ", fmt.Sprintf("Tick for routine %v recieved when it should not have happened at %v", r.Name, t))
 					if r.monitorHook != nil {
 						r.monitorHook(e)
 					}
 					channels.ErrorTypChan <- e
-					runRoutineOnce()
 				}
-			case <-time.After(time.Second):
-				if time.Now().UTC().After(r.schedule.Next(time.Now().UTC())) {
+			case t := <-time.After(time.Second):
+				if appRuntime.ShutdownRequested.Load() {
+					r.done <- true
+					e := appError.NewError(appError.Info, "1NPB3F", fmt.Sprintf("Shutdown was requested. Stopping routine %v at %v", r.Name, t))
+					if r.monitorHook != nil {
+						r.monitorHook(e)
+					}
+					channels.ErrorTypChan <- e
+					return
+				}
+
+				if r.operationMode == CronMode && time.Now().UTC().After(r.schedule.Next(time.Now().UTC())) {
 					// Time to execute
+					runRoutineOnce()
 				}
 			}
 		}
