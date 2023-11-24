@@ -4,6 +4,7 @@ go 1.21
 
 require (
 	github.com/fasthttp/router v1.4.21
+	github.com/gertd/go-pluralize v0.2.1
 	github.com/google/uuid v1.3.0
 	github.com/jackc/pgx/v5 v5.4.3
 	github.com/jmoiron/sqlx v1.3.5
