@@ -21,6 +21,7 @@ import (
 type DbSchema struct {
 	Name   string             // Name of the schema
 	Tables map[string]DbTable // Map of name of table to their DbTable struct values
+	ForeignKeys
 }
 
 // DbTable represents a table in the database
@@ -122,6 +123,26 @@ type rawCol struct {
 	CharLength     sql.NullInt32  `db:"char_len"`
 	NumericLength  sql.NullString `db:"numeric_length"`
 	ColumnNullable sql.NullBool   `db:"nullable"`
+}
+
+type rawIndexInfo struct {
+	SchemaName  string `db:"schema_name"`
+	TableName   string `db:"table_name"`
+	IndexName   string `db:"index_name"`
+	IsUnique    bool   `db:"is_unique"`
+	IsPrimary   bool   `db:"pkey"`
+	ColumnNames string `db:"column_names"`
+}
+
+type fkInfoFromDb struct {
+	FromSchema      string `db:"from_schema"`
+	FromTable       string `db:"from_table"`
+	FromColumn      string `db:"from_column"`
+	ToSchema        string `db:"to_schema"`
+	ToTable         string `db:"to_table"`
+	ToColumn        string `db:"to_column"`
+	OrdinalPosition int    `db:"ordinal_position"`
+	ConstraintName  string `db:"constraint_name"`
 }
 
 // For storing the result we get from the DB about column data
@@ -237,7 +258,178 @@ func (g *Generator) Connect() appError.Typ {
 		}
 	}
 
+	// Now we need to create a new struct for each schema.
+	var pkColumnNames []string
+	for _, schema := range g.Schemas {
+		// MARKER : Find the primary keys for each table
+		for tableName, table := range schema.Tables {
+			pkColumnNames = []string{}
+			queryFormat := `
+			SELECT a.attname
+			FROM   pg_index i
+			JOIN   pg_attribute a ON a.attrelid = i.indrelid
+								 AND a.attnum = ANY(i.indkey)
+			WHERE  i.indrelid = '%v'::regclass
+			AND    i.indisprimary;
+		`
+			query := fmt.Sprintf(queryFormat, schema.Name+"."+table.Name)
+
+			err = db.Select(&pkColumnNames, query)
+			if err != nil {
+				fmt.Println("..............", err)
+			}
+			fmt.Println("I#1O4FCO - ", schema.Name, ".", table.Name, "==>", strings.Join(pkColumnNames, ","))
+
+			for _, colname := range pkColumnNames {
+				table.PkColumnList = append(table.PkColumnList, table.ColumnMap[colname])
+			}
+			g.Schemas[schema.Name].Tables[tableName] = table
+		}
+	}
+
+	var indexes []rawIndexInfo
+	for _, schema := range g.Schemas {
+		for tableName, table := range schema.Tables {
+			indexes = []rawIndexInfo{}
+			queryFormat := `
+			SELECT n.nspname                                  AS schema_name,
+				   t.relname                                  AS table_name,
+				   ix.relname                                 AS index_name,
+				   i.indisunique                              AS is_unique,
+				   i.indisprimary                             AS pkey,
+				   ARRAY_TO_STRING(ARRAY_AGG(a.attname), ',') AS column_names
+			FROM pg_class t,
+				 pg_class ix,
+				 pg_index i,
+				 pg_attribute a,
+				 pg_namespace n
+			WHERE t.relnamespace = n.oid
+			  AND t.oid = i.indrelid
+			  AND ix.oid = i.indexrelid
+			  AND a.attrelid = t.oid
+			  AND a.attnum = ANY (i.indkey)
+			  AND t.relkind = 'r'
+			  AND n.nspname != 'pg_catalog'
+			  AND n.nspname = '%v'
+			  AND t.relname = '%v'
+			GROUP BY n.nspname,
+					 t.relname,
+					 ix.relname,
+					 i.indisunique,
+					 i.indisprimary
+			ORDER BY n.nspname,
+					 t.relname,
+					 ix.relname;	
+		`
+			query := fmt.Sprintf(queryFormat, schema.Name, table.Name)
+
+			err = db.Select(&indexes, query)
+			if err != nil {
+				fmt.Println("E#1O4AM4 - Error in getting indexes: ", err)
+			}
+
+			for _, index := range indexes {
+				colList := []DbColumn{}
+				cols := strings.Split(index.ColumnNames, ",")
+				for _, col := range cols {
+					colObj, colFindErr := getColumnFromlistByName(col, table.ColumnList)
+					if colFindErr != nil {
+						panic("P#1O4CSW - Expected the column to be there.")
+					}
+					if colObj.Name != "" {
+						colList = append(colList, colObj)
+					}
+				}
+				// build index struct
+				i := DbIndex{
+					Name:       index.IndexName,
+					IsUnique:   index.IsUnique,
+					IsPrimary:  index.IsPrimary,
+					ColumnList: colList,
+				}
+				table.IndexList = append(table.IndexList, i)
+			}
+			g.Schemas[table.Schema].Tables[tableName] = table
+		}
+	}
+
+	// Foreign keys
+	var fkInfoArr []fkInfoFromDb
+	for tableName, table := range tables {
+		fkInfoArr = []fkInfoFromDb{}
+		queryFormat := `
+			SELECT kcu.table_name       AS from_table,
+				   kcu.table_schema     AS from_schema,
+				   kcu.column_name      AS from_column,
+				   rel_kcu.table_name   AS to_table,
+				   rel_kcu.table_schema AS to_schema,
+				   rel_kcu.column_name  AS to_column,
+				   kcu.ordinal_position AS ordinal_position,
+				   kcu.constraint_name
+			FROM information_schema.table_constraints tco
+					 JOIN information_schema.key_column_usage kcu
+						  ON tco.constraint_schema = kcu.constraint_schema
+							  AND tco.constraint_name = kcu.constraint_name
+					 JOIN information_schema.referential_constraints rco
+						  ON tco.constraint_schema = rco.constraint_schema
+							  AND tco.constraint_name = rco.constraint_name
+					 JOIN information_schema.key_column_usage rel_kcu
+						  ON rco.unique_constraint_schema = rel_kcu.constraint_schema
+							  AND rco.unique_constraint_name = rel_kcu.constraint_name
+							  AND kcu.ordinal_position = rel_kcu.ordinal_position
+			WHERE tco.constraint_type = 'FOREIGN KEY'
+			ORDER BY kcu.table_schema,
+					 kcu.table_name,
+					 kcu.constraint_name,
+					 kcu.ordinal_position;`
+
+		query := fmt.Sprintf(queryFormat, table.Name)
+
+		err = db.Select(&fkInfoArr, query)
+		if err != nil {
+			fmt.Println("ERROR FKS -->-->-->-->-->-->", err)
+		}
+
+		fks := map[string]DbFkInfo{}
+		for _, fkInf := range fkInfoArr {
+			if dbfk, ok := fks[fkInf.ConstraintName]; ok {
+				// It exists
+				dbfk.References[fkInf.FromColumn] = fkInf.ToColumn
+				fks[fkInf.ConstraintName] = dbfk
+			} else {
+				// It does not exist
+				newdbfkinfo := DbFkInfo{
+					FromTable:  table.Name,
+					ToTable:    fkInf.ToTable,
+					FromSchema: fkInf.FromSchema,
+					ToSchema:   fkInf.ToSchema,
+					References: map[string]string{
+						fkInf.FromColumn: fkInf.ToColumn,
+					},
+					ConstraintName: fkInf.ConstraintName,
+				}
+				fks[fkInf.ConstraintName] = newdbfkinfo
+			}
+		}
+
+		for _, fk := range fks {
+			table.FkList = append(table.FkList, fk)
+		}
+
+		tables[tableName] = table
+		fmt.Printf("Done for table %s\n", table.Name)
+	}
+
 	return appError.BlankError
+}
+
+func getColumnFromlistByName(colname string, colList []DbColumn) (DbColumn, error) {
+	for _, col := range colList {
+		if col.Name == colname {
+			return col, nil
+		}
+	}
+	return DbColumn{}, fmt.Errorf("E#1O4CIS - No such column")
 }
 
 // Function to get the Go type for DB and network for a given PostgreSQL data type

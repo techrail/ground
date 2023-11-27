@@ -10,7 +10,8 @@ func main() {
 	cnf := dbCodegen.CodegenConfig{
 		TablePackageName: "",
 		TablePackagePath: "",
-		PgDbUrl:          "postgres://vaibhav:vaibhav@127.0.0.1:5432/twitter_clone?sslmode=disable",
+		//PgDbUrl:          "postgres://vaibhav:vaibhav@127.0.0.1:5432/twitter_clone?sslmode=disable",
+		PgDbUrl: "postgres://vkaushal288:vkaushal288@127.0.0.1:5432/ac_dev?sslmode=disable",
 	}
 	g, e := dbCodegen.NewCodeGenerator(cnf)
 	if e.IsNotBlank() {
