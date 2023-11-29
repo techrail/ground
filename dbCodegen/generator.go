@@ -21,7 +21,6 @@ import (
 type DbSchema struct {
 	Name   string             // Name of the schema
 	Tables map[string]DbTable // Map of name of table to their DbTable struct values
-	ForeignKeys
 }
 
 // DbTable represents a table in the database
@@ -36,7 +35,7 @@ type DbTable struct {
 	ColumnList     []DbColumn          // List of columns as in array
 	PkColumnList   []DbColumn          // List of columns that make the primary key of this table
 	IndexList      []DbIndex           // List of indexes on this table
-	FkList         []DbFkInfo          // List of foreign keys in this table
+	FKeyMap        map[string]DbFkInfo // List of foreign keys in table as map from constraint name to DbFkInfo type
 }
 
 // DbColumn is the column representation of a table in the database for the generator
@@ -92,6 +91,17 @@ type DbFkInfo struct {
 	ConstraintName string            // Name of the foreign key constraint
 }
 
+type fkInfoFromDb struct {
+	FromSchema      string `db:"from_schema"`
+	FromTable       string `db:"from_table"`
+	FromColumn      string `db:"from_column"`
+	ToSchema        string `db:"to_schema"`
+	ToTable         string `db:"to_table"`
+	ToColumn        string `db:"to_column"`
+	OrdinalPosition int    `db:"ordinal_position"`
+	ConstraintName  string `db:"constraint_name"`
+}
+
 // CodegenConfig contains the values and rules using which the code is to be generated
 type CodegenConfig struct {
 	PgDbUrl             string // DB URL string for PostgreSQL database to which we have to connect
@@ -132,17 +142,6 @@ type rawIndexInfo struct {
 	IsUnique    bool   `db:"is_unique"`
 	IsPrimary   bool   `db:"pkey"`
 	ColumnNames string `db:"column_names"`
-}
-
-type fkInfoFromDb struct {
-	FromSchema      string `db:"from_schema"`
-	FromTable       string `db:"from_table"`
-	FromColumn      string `db:"from_column"`
-	ToSchema        string `db:"to_schema"`
-	ToTable         string `db:"to_table"`
-	ToColumn        string `db:"to_column"`
-	OrdinalPosition int    `db:"ordinal_position"`
-	ConstraintName  string `db:"constraint_name"`
 }
 
 // For storing the result we get from the DB about column data
@@ -239,6 +238,7 @@ func (g *Generator) Connect() appError.Typ {
 				ColumnMap: map[string]DbColumn{
 					columnDetail.ColumnName.String: dbCol,
 				},
+				FKeyMap: map[string]DbFkInfo{},
 			}
 			table.ColumnList = append(table.ColumnList, dbCol)
 			tables[columnDetail.Schema.String+"."+columnDetail.TableName.String] = table
@@ -355,9 +355,7 @@ func (g *Generator) Connect() appError.Typ {
 
 	// Foreign keys
 	var fkInfoArr []fkInfoFromDb
-	for tableName, table := range tables {
-		fkInfoArr = []fkInfoFromDb{}
-		queryFormat := `
+	queryFormat := `
 			SELECT kcu.table_name       AS from_table,
 				   kcu.table_schema     AS from_schema,
 				   kcu.column_name      AS from_column,
@@ -383,41 +381,41 @@ func (g *Generator) Connect() appError.Typ {
 					 kcu.constraint_name,
 					 kcu.ordinal_position;`
 
-		query := fmt.Sprintf(queryFormat, table.Name)
+	query := fmt.Sprintf(queryFormat)
 
-		err = db.Select(&fkInfoArr, query)
-		if err != nil {
-			fmt.Println("ERROR FKS -->-->-->-->-->-->", err)
+	err = db.Select(&fkInfoArr, query)
+	if err != nil {
+		fmt.Println("ERROR FKS -->-->-->-->-->-->", err)
+	}
+
+	for _, fkInf := range fkInfoArr {
+		_, schemaFound := g.Schemas[fkInf.FromSchema]
+		if !schemaFound {
+			panic(fmt.Sprintf("P#1OAJ30 - Expected to find schema %v but was not found", fkInf.FromSchema))
 		}
 
-		fks := map[string]DbFkInfo{}
-		for _, fkInf := range fkInfoArr {
-			if dbfk, ok := fks[fkInf.ConstraintName]; ok {
-				// It exists
-				dbfk.References[fkInf.FromColumn] = fkInf.ToColumn
-				fks[fkInf.ConstraintName] = dbfk
-			} else {
-				// It does not exist
-				newdbfkinfo := DbFkInfo{
-					FromTable:  table.Name,
-					ToTable:    fkInf.ToTable,
-					FromSchema: fkInf.FromSchema,
-					ToSchema:   fkInf.ToSchema,
-					References: map[string]string{
-						fkInf.FromColumn: fkInf.ToColumn,
-					},
-					ConstraintName: fkInf.ConstraintName,
-				}
-				fks[fkInf.ConstraintName] = newdbfkinfo
+		_, tableFound := g.Schemas[fkInf.FromSchema].Tables[fkInf.FromTable]
+		if !tableFound {
+			panic(fmt.Sprintf("P#1OAKXZ - Expected to find table %v in schema %v but was not found", fkInf.FromTable, fkInf.FromSchema))
+		}
+
+		_, fkInfoFound := g.Schemas[fkInf.FromSchema].Tables[fkInf.FromTable].FKeyMap[fkInf.ConstraintName]
+		if !fkInfoFound {
+			//g.Schemas[fkInf.FromSchema].Tables[fkInf.FromTable].FKeyMap = map[string]DbFkInfo{}
+
+			g.Schemas[fkInf.FromSchema].Tables[fkInf.FromTable].FKeyMap[fkInf.ConstraintName] = DbFkInfo{
+				FromSchema: fkInf.FromSchema,
+				FromTable:  fkInf.FromTable,
+				ToSchema:   fkInf.ToSchema,
+				ToTable:    fkInf.ToTable,
+				References: map[string]string{
+					fkInf.FromColumn: fkInf.ToColumn,
+				},
+				ConstraintName: fkInf.ConstraintName,
 			}
+		} else {
+			g.Schemas[fkInf.FromSchema].Tables[fkInf.FromTable].FKeyMap[fkInf.ConstraintName].References[fkInf.FromColumn] = fkInf.ToColumn
 		}
-
-		for _, fk := range fks {
-			table.FkList = append(table.FkList, fk)
-		}
-
-		tables[tableName] = table
-		fmt.Printf("Done for table %s\n", table.Name)
 	}
 
 	return appError.BlankError
