@@ -8,8 +8,8 @@ import (
 
 func main() {
 	cnf := dbCodegen.CodegenConfig{
-		TablePackageName: "",
-		TablePackagePath: "",
+		DbModelPackageName: "mainDb",
+		DbModelPackagePath: "/Volumes/TestVM/other_data/obsidian_docker_root/ground/tmp/mainDb",
 		//PgDbUrl:          "postgres://vaibhav:vaibhav@127.0.0.1:5432/twitter_clone?sslmode=disable",
 		PgDbUrl: "postgres://vkaushal288:vkaushal288@127.0.0.1:5432/ac_dev?sslmode=disable",
 	}
@@ -17,7 +17,7 @@ func main() {
 	if e.IsNotBlank() {
 		fmt.Printf("I#1NPKZR - Some error when creating new codegenerator: %v\n", e)
 	}
-	errTy := g.Connect()
+	errTy := g.Generate()
 	if errTy.IsNotBlank() {
 		fmt.Printf("I#1NPLCJ - %v\n", errTy)
 	}

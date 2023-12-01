@@ -3,8 +3,8 @@ package dbCodegen
 import (
 	"database/sql"
 	"fmt"
-	"golang.org/x/text/cases"
-	"golang.org/x/text/language"
+	"go/format"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -20,6 +20,7 @@ import (
 // DbSchema represents the schema in the database
 type DbSchema struct {
 	Name   string             // Name of the schema
+	GoName string             // The name of table as a go variable that we would use
 	Tables map[string]DbTable // Map of name of table to their DbTable struct values
 }
 
@@ -40,6 +41,8 @@ type DbTable struct {
 
 // DbColumn is the column representation of a table in the database for the generator
 type DbColumn struct {
+	Schema            string           // Schema name in which this column's table resides
+	Table             string           // Table name of the table in which this column is
 	Name              string           // Column name
 	GoName            string           // Name we want to use for Golang code that will be generated
 	GoNameSingular    string           // Singular form of the name
@@ -105,8 +108,8 @@ type fkInfoFromDb struct {
 // CodegenConfig contains the values and rules using which the code is to be generated
 type CodegenConfig struct {
 	PgDbUrl             string // DB URL string for PostgreSQL database to which we have to connect
-	TablePackageName    string // Name of the package under which the package for table related code will be placed
-	TablePackagePath    string // Full path of the directory where the generated code for table will be placed
+	DbModelPackageName  string // Name of the package under which the package for db related code will be placed
+	DbModelPackagePath  string // Full path of the directory where the generated code for db will be placed
 	MagicComment        string // Magic comment which allows the generator to update only the generated portion of code
 	ColCommentSeparator string // The string after which we can place the Properties JSON in column comment
 }
@@ -153,10 +156,15 @@ func NewCodeGenerator(config CodegenConfig) (Generator, appError.Typ) {
 		pluralClient: pluralize.NewClient(),
 		Schemas:      map[string]DbSchema{},
 	}
+
+	if strings.TrimSpace(config.MagicComment) == "" {
+		g.Config.MagicComment = "// MAGIC COMMENT (DO NOT EDIT): Please write any custom code only below this line.\n"
+	}
+
 	return g, appError.BlankError
 }
 
-func (g *Generator) Connect() appError.Typ {
+func (g *Generator) Generate() appError.Typ {
 	// Attempt connecting
 	db, err := sqlx.Connect("pgx", g.Config.PgDbUrl)
 	if err != nil {
@@ -191,12 +199,14 @@ func (g *Generator) Connect() appError.Typ {
 
 		if table, tableOk := tables[columnDetail.Schema.String+"."+columnDetail.TableName.String]; tableOk {
 			dbColProp, colComment := getCommentAndPropertyFromComment(columnDetail.ColumnComment.String)
-			goDataType, networkDataType := getGoType(columnDetail.ColumnDataType.String, columnDetail.ColumnNullable.Bool)
+			goDataType, networkDataType := g.getGoType(columnDetail.ColumnDataType.String, columnDetail.ColumnNullable.Bool)
 			dbCol := DbColumn{
+				Schema:            columnDetail.Schema.String,
+				Table:             columnDetail.TableName.String,
 				Name:              columnDetail.ColumnName.String,
-				GoName:            getGoName(columnDetail.ColumnName.String),
-				GoNameSingular:    g.pluralClient.Singular(getGoName(columnDetail.ColumnName.String)),
-				GoNamePlural:      g.pluralClient.Plural(getGoName(columnDetail.ColumnName.String)),
+				GoName:            g.getGoName(columnDetail.ColumnName.String),
+				GoNameSingular:    g.pluralClient.Singular(g.getGoName(columnDetail.ColumnName.String)),
+				GoNamePlural:      g.pluralClient.Plural(g.getGoName(columnDetail.ColumnName.String)),
 				DataType:          columnDetail.ColumnDataType.String,
 				GoDataType:        goDataType,
 				NetworkDataType:   networkDataType,
@@ -212,12 +222,14 @@ func (g *Generator) Connect() appError.Typ {
 			tables[columnDetail.Schema.String+"."+columnDetail.TableName.String] = table
 		} else {
 			dbColProp, colComment := getCommentAndPropertyFromComment(columnDetail.ColumnComment.String)
-			goDataType, networkDataType := getGoType(columnDetail.ColumnDataType.String, columnDetail.ColumnNullable.Bool)
+			goDataType, networkDataType := g.getGoType(columnDetail.ColumnDataType.String, columnDetail.ColumnNullable.Bool)
 			dbCol := DbColumn{
+				Schema:            columnDetail.Schema.String,
+				Table:             columnDetail.TableName.String,
 				Name:              columnDetail.ColumnName.String,
-				GoName:            getGoName(columnDetail.ColumnName.String),
-				GoNameSingular:    g.pluralClient.Singular(getGoName(columnDetail.ColumnName.String)),
-				GoNamePlural:      g.pluralClient.Plural(getGoName(columnDetail.ColumnName.String)),
+				GoName:            g.getGoName(columnDetail.ColumnName.String),
+				GoNameSingular:    g.pluralClient.Singular(g.getGoName(columnDetail.ColumnName.String)),
+				GoNamePlural:      g.pluralClient.Plural(g.getGoName(columnDetail.ColumnName.String)),
 				DataType:          columnDetail.ColumnDataType.String,
 				GoDataType:        goDataType,
 				NetworkDataType:   networkDataType,
@@ -230,9 +242,9 @@ func (g *Generator) Connect() appError.Typ {
 			}
 			table = DbTable{
 				Name:           columnDetail.TableName.String,
-				GoName:         getGoName(columnDetail.TableName.String),
-				GoNameSingular: g.pluralClient.Singular(getGoName(columnDetail.TableName.String)),
-				GoNamePlural:   g.pluralClient.Plural(getGoName(columnDetail.TableName.String)),
+				GoName:         g.getGoName(columnDetail.TableName.String),
+				GoNameSingular: g.pluralClient.Singular(g.getGoName(columnDetail.TableName.String)),
+				GoNamePlural:   g.pluralClient.Plural(g.getGoName(columnDetail.TableName.String)),
 				Schema:         columnDetail.Schema.String,
 				Comment:        columnDetail.TableComment.String,
 				ColumnMap: map[string]DbColumn{
@@ -252,6 +264,7 @@ func (g *Generator) Connect() appError.Typ {
 		} else {
 			s := DbSchema{
 				Name:   table.Schema,
+				GoName: g.getGoName(table.GoName),
 				Tables: map[string]DbTable{table.Name: table},
 			}
 			g.Schemas[table.Schema] = s
@@ -264,14 +277,7 @@ func (g *Generator) Connect() appError.Typ {
 		// MARKER : Find the primary keys for each table
 		for tableName, table := range schema.Tables {
 			pkColumnNames = []string{}
-			queryFormat := `
-			SELECT a.attname
-			FROM   pg_index i
-			JOIN   pg_attribute a ON a.attrelid = i.indrelid
-								 AND a.attnum = ANY(i.indkey)
-			WHERE  i.indrelid = '%v'::regclass
-			AND    i.indisprimary;
-		`
+			queryFormat := primaryKeyInfoQuery
 			query := fmt.Sprintf(queryFormat, schema.Name+"."+table.Name)
 
 			err = db.Select(&pkColumnNames, query)
@@ -291,36 +297,7 @@ func (g *Generator) Connect() appError.Typ {
 	for _, schema := range g.Schemas {
 		for tableName, table := range schema.Tables {
 			indexes = []rawIndexInfo{}
-			queryFormat := `
-			SELECT n.nspname                                  AS schema_name,
-				   t.relname                                  AS table_name,
-				   ix.relname                                 AS index_name,
-				   i.indisunique                              AS is_unique,
-				   i.indisprimary                             AS pkey,
-				   ARRAY_TO_STRING(ARRAY_AGG(a.attname), ',') AS column_names
-			FROM pg_class t,
-				 pg_class ix,
-				 pg_index i,
-				 pg_attribute a,
-				 pg_namespace n
-			WHERE t.relnamespace = n.oid
-			  AND t.oid = i.indrelid
-			  AND ix.oid = i.indexrelid
-			  AND a.attrelid = t.oid
-			  AND a.attnum = ANY (i.indkey)
-			  AND t.relkind = 'r'
-			  AND n.nspname != 'pg_catalog'
-			  AND n.nspname = '%v'
-			  AND t.relname = '%v'
-			GROUP BY n.nspname,
-					 t.relname,
-					 ix.relname,
-					 i.indisunique,
-					 i.indisprimary
-			ORDER BY n.nspname,
-					 t.relname,
-					 ix.relname;	
-		`
+			queryFormat := tableIndexQuery
 			query := fmt.Sprintf(queryFormat, schema.Name, table.Name)
 
 			err = db.Select(&indexes, query)
@@ -355,31 +332,7 @@ func (g *Generator) Connect() appError.Typ {
 
 	// Foreign keys
 	var fkInfoArr []fkInfoFromDb
-	queryFormat := `
-			SELECT kcu.table_name       AS from_table,
-				   kcu.table_schema     AS from_schema,
-				   kcu.column_name      AS from_column,
-				   rel_kcu.table_name   AS to_table,
-				   rel_kcu.table_schema AS to_schema,
-				   rel_kcu.column_name  AS to_column,
-				   kcu.ordinal_position AS ordinal_position,
-				   kcu.constraint_name
-			FROM information_schema.table_constraints tco
-					 JOIN information_schema.key_column_usage kcu
-						  ON tco.constraint_schema = kcu.constraint_schema
-							  AND tco.constraint_name = kcu.constraint_name
-					 JOIN information_schema.referential_constraints rco
-						  ON tco.constraint_schema = rco.constraint_schema
-							  AND tco.constraint_name = rco.constraint_name
-					 JOIN information_schema.key_column_usage rel_kcu
-						  ON rco.unique_constraint_schema = rel_kcu.constraint_schema
-							  AND rco.unique_constraint_name = rel_kcu.constraint_name
-							  AND kcu.ordinal_position = rel_kcu.ordinal_position
-			WHERE tco.constraint_type = 'FOREIGN KEY'
-			ORDER BY kcu.table_schema,
-					 kcu.table_name,
-					 kcu.constraint_name,
-					 kcu.ordinal_position;`
+	queryFormat := tableForeignKeyQuery
 
 	query := fmt.Sprintf(queryFormat)
 
@@ -418,6 +371,108 @@ func (g *Generator) Connect() appError.Typ {
 		}
 	}
 
+	// MARKER: Start processing
+	schemaFileTemplate := `
+//{{PACKAGE_NAME}}
+
+//{{IMPORT_LIST}}
+
+//{{SCHEMA_STRUCT}}
+
+//{{MAGIC_COMMENT}}
+//{{FIRST_TIME_FILE_CONTENT}}
+`
+	var fileAlreadyExists bool
+	var customCodeInFile []string
+
+	var schemaStructStr string
+	var importsString string
+	var importList []string
+
+	for _, schema := range g.Schemas {
+		importList = []string{}
+		importsString = ""
+		schemaStructStr, importList = g.buildSchemaStructString(schema.Name, importList)
+		if len(importList) > 0 {
+			importsString += "\nimport (\n"
+			for _, impo := range importList {
+				importsString += "\t\"" + impo + "\"\n"
+			}
+			importsString += ")\n"
+		} else {
+			importsString = ""
+		}
+		fileContent := schemaFileTemplate
+		fileContent = strings.ReplaceAll(fileContent, "//{{PACKAGE_NAME}}", fmt.Sprintf("package %v", g.Config.DbModelPackageName))
+		fileContent = strings.ReplaceAll(fileContent, "//{{IMPORT_LIST}}", importsString)
+		fileContent = strings.ReplaceAll(fileContent, "//{{SCHEMA_STRUCT}}", schemaStructStr)
+		fileContent = strings.ReplaceAll(fileContent, "//{{MAGIC_COMMENT}}", g.Config.MagicComment)
+
+		outputFileName := "gen_schema_" + strings.ToLower(schema.Name) + ".go"
+		// Check if the file already exists
+		existingFileContentBytes, fileErr := os.ReadFile(
+			fmt.Sprintf("%s/%s", g.Config.DbModelPackagePath, outputFileName))
+		if fileErr != nil {
+			// File does not exist
+			fileAlreadyExists = false
+		}
+
+		if !fileAlreadyExists {
+			// File has to be created.
+			fileContent = strings.ReplaceAll(fileContent, "//{{FIRST_TIME_FILE_CONTENT}}",
+				"// Make sure code below is valid before running code generator else the generator will fail\n\n")
+		} else {
+			// file already exists
+			fileContent = strings.ReplaceAll(fileContent, "//{{FIRST_TIME_FILE_CONTENT}}", "")
+		}
+
+		existingFileContent := string(existingFileContentBytes)
+
+		// Look for the magic comment
+		if strings.Contains(existingFileContent, g.Config.MagicComment) {
+			allcode := strings.Split(existingFileContent, g.Config.MagicComment)
+			for i := 0; i < len(allcode); i++ {
+				if i > 0 {
+					customCodeInFile = append(customCodeInFile, allcode[i])
+				}
+			}
+		}
+
+		err = os.Mkdir(g.Config.DbModelPackagePath, 0777)
+		if err != nil {
+			fmt.Println("E#1OBP5N -", err)
+		}
+
+		outputFile, err := os.Create(fmt.Sprintf("%s/%s", g.Config.DbModelPackagePath, outputFileName))
+		if err != nil {
+			panic(err)
+		}
+
+		fileContentBytes, err := format.Source([]byte(fileContent))
+		if err != nil {
+			panic(err)
+		}
+
+		fileContent = string(fileContentBytes)
+
+		if fileAlreadyExists {
+			for _, val := range customCodeInFile {
+				fileContent += val + "\n"
+			}
+		}
+
+		fileContent = g.removeTrailingNewlines(fileContent) + "\n"
+
+		_, err = outputFile.WriteString(fileContent)
+		if err != nil {
+			return appError.NewError(appError.Error, "1OBPB4", err.Error())
+		}
+
+		err = outputFile.Close()
+		if err != nil {
+			return appError.NewError(appError.Error, "1OBPCE", err.Error())
+		}
+	}
 	return appError.BlankError
 }
 
@@ -431,7 +486,7 @@ func getColumnFromlistByName(colname string, colList []DbColumn) (DbColumn, erro
 }
 
 // Function to get the Go type for DB and network for a given PostgreSQL data type
-func getGoType(datatype string, nullable bool) (string, string) {
+func (g *Generator) getGoType(datatype string, nullable bool) (string, string) {
 	switch datatype {
 	case "bigint":
 		if nullable {
@@ -475,14 +530,18 @@ func getGoType(datatype string, nullable bool) (string, string) {
 	}
 }
 
-// Function to get the Go name for a given PostgreSQL table or column name
-func getGoName(name string) string {
-	nameParts := strings.Split(name, ".")
-	if len(nameParts) > 1 {
-		name = nameParts[1]
+func (g *Generator) addToImports(str string, impList []string) []string {
+	strExists := false
+	for _, s := range impList {
+		if s == str {
+			strExists = true
+		}
 	}
-	caser := cases.Title(language.English)
-	return strings.ReplaceAll(caser.String(strings.ReplaceAll(name, "_", " ")), " ", "")
+
+	if !strExists && str != "" {
+		impList = append(impList, str)
+	}
+	return impList
 }
 
 // This function tries to read the comment and separate the comment and the column properties json and return the
