@@ -24,7 +24,7 @@ func (g *Generator) buildSchemaStructString(schemaName string, importList []stri
 			tableComment = "// " + strings.ReplaceAll(table.Comment, "\n", "")
 		}
 		schemaStruct += fmt.Sprintf("\t%s %s %v\n",
-			table.GoNameSingular, g.getGoName(schema.Name)+"_"+table.GoNameSingular, tableComment)
+			table.GoNameSingular, table.fullyQualifiedStructName(), tableComment)
 	}
 	schemaStruct += "}\n"
 

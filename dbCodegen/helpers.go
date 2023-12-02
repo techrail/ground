@@ -1,10 +1,17 @@
 package dbCodegen
 
 import (
+	"github.com/techrail/ground/typs/integer"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 	"strings"
 )
+
+var baseLmidSeconds int64
+
+func init() {
+	baseLmidSeconds = 1700000000
+}
 
 func (g *Generator) getGoImportForDataType(datatype string, nullable bool) string {
 	switch datatype {
@@ -48,7 +55,7 @@ func (g *Generator) removeTrailingNewlines(input string) string {
 }
 
 // Function to get the Go name for a given PostgreSQL table or column name
-func (g *Generator) getGoName(name string) string {
+func getGoName(name string) string {
 	nameParts := strings.Split(name, ".")
 	if len(nameParts) > 1 {
 		name = nameParts[1]
@@ -57,3 +64,39 @@ func (g *Generator) getGoName(name string) string {
 	retVal := strings.ReplaceAll(caser.String(strings.ReplaceAll(name, "_", " ")), " ", "")
 	return retVal
 }
+
+func isColumnInList(columnName string, list []DbColumn) bool {
+	for _, col := range list {
+		if col.Name == columnName {
+			return true
+		}
+	}
+	return false
+}
+
+func newUniqueLmid() string {
+	repeatZeros := func(times int) string {
+		r := ""
+		for i := 0; i < times; i++ {
+			r += "0"
+		}
+		return r
+	}
+	baseLmidSeconds += 1
+	lmid := integer.Base10ToBase36(baseLmidSeconds - 1600000000)
+	prefix := ""
+	if len(lmid) < 6 {
+		prefix = repeatZeros(6 - len(lmid))
+	}
+	return prefix + lmid
+}
+
+func lowerFirstChar(input string) string {
+	return strings.ToLower(input[:1]) + input[1:]
+}
+
+func upperFirstChar(input string) string {
+	return strings.ToUpper(input[:1]) + input[1:]
+}
+
+func breakInPiecesOfStringSlicesIn3()

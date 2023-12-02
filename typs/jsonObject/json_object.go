@@ -1,4 +1,4 @@
-package types
+package jsonObject
 
 import (
 	"database/sql/driver"
@@ -49,7 +49,7 @@ const (
 const topLevelArrayKey = "topLevelArrayKeyb8d8c89aea51f88b1af1144e3e0b8b74ac2a2c257d08cb80ebc99a7262e5dd8c"
 
 type StringAnyMap map[string]any
-type JsonObject struct {
+type Typ struct {
 	Valid            bool
 	hasTopLevelArray bool
 	StringAnyMap
@@ -58,30 +58,30 @@ type JsonObject struct {
 	// sync.Mutex // To ensure two routines do not access the same object and work on it at the same time
 }
 
-var NullJsonObject JsonObject
+var NullJsonObject Typ
 
-// EmptyNotNullJsonObject returns a new blank JsonObject
+// EmptyNotNullJsonObject returns a new blank Typ
 // NOTE: We cannot use a var for the EmptyNotNullJsonObject value because when we copy a lot of values around and
 //
 //	assign the var to multiple values throughout the program in multiple goroutines, we might get the panic message
 //	"concurrent map read and map write" indicating that the value is being written and read simultaneously because
 //	the same variable is being used at multiple places
-func EmptyNotNullJsonObject() JsonObject {
-	return JsonObject{
+func EmptyNotNullJsonObject() Typ {
+	return Typ{
 		StringAnyMap: StringAnyMap{},
 		Valid:        true,
 	}
 }
 
 func init() {
-	NullJsonObject = JsonObject{
+	NullJsonObject = Typ{
 		StringAnyMap: nil,
 		Valid:        false,
 	}
 }
 
-func NewJsonObject(key string, value interface{}) JsonObject {
-	j := JsonObject{
+func NewJsonObject(key string, value interface{}) Typ {
+	j := Typ{
 		StringAnyMap: map[string]interface{}{
 			key: value,
 		},
@@ -90,7 +90,7 @@ func NewJsonObject(key string, value interface{}) JsonObject {
 	return j
 }
 
-func (j *JsonObject) IsEmpty() bool {
+func (j *Typ) IsEmpty() bool {
 	if j.Valid == false {
 		// An invalid json is effectively an empty one
 		return true
@@ -102,9 +102,9 @@ func (j *JsonObject) IsEmpty() bool {
 	return false
 }
 
-// ToJsonObject will convert interface{} object type to JsonObject using json.Marshal and json.Unmarshal
-func ToJsonObject(v interface{}) (JsonObject, error) {
-	jsonObj := JsonObject{
+// ToJsonObject will convert interface{} object type to Typ using json.Marshal and json.Unmarshal
+func ToJsonObject(v interface{}) (Typ, error) {
+	jsonObj := Typ{
 		Valid:        true,
 		StringAnyMap: StringAnyMap{},
 	}
@@ -139,11 +139,11 @@ func ToJsonObject(v interface{}) (JsonObject, error) {
 	return jsonObj, nil
 }
 
-func (j *JsonObject) IsNotEmpty() bool {
+func (j *Typ) IsNotEmpty() bool {
 	return !j.IsEmpty()
 }
 
-func (j *JsonObject) SetNewTopLevelElement(key string, value interface{}) (replacedExistingKey bool) {
+func (j *Typ) SetNewTopLevelElement(key string, value interface{}) (replacedExistingKey bool) {
 	if j.Valid == false {
 		// We are making this object into a valid one
 		j.Valid = true
@@ -163,14 +163,14 @@ func (j *JsonObject) SetNewTopLevelElement(key string, value interface{}) (repla
 }
 
 // GetTopLevelElement will return Top-Level element identified by key. If the key does not exist, nil is returned
-func (j *JsonObject) GetTopLevelElement(key string) any {
+func (j *Typ) GetTopLevelElement(key string) any {
 	if val, ok := j.StringAnyMap[key]; ok {
 		return val
 	}
 	return nil
 }
 
-func (j *JsonObject) GetValueFromJsonObjectByJPath(path string) (string, any, appError.Typ) {
+func (j *Typ) GetValueFromJsonObjectByJPath(path string) (string, any, appError.Typ) {
 	vTyp := typeUnknown
 	firstLetter := ""
 	lastLetter := ""
@@ -265,7 +265,7 @@ func (j *JsonObject) GetValueFromJsonObjectByJPath(path string) (string, any, ap
 	pathSplits := strings.Split(path, ".")
 
 	if !j.Valid {
-		return vTyp, nil, appError.NewError(appError.Error, errCode.JsonObjectInvalid, "195ARA -> Cannot process an invalid JsonObject")
+		return vTyp, nil, appError.NewError(appError.Error, errCode.JsonObjectInvalid, "195ARA -> Cannot process an invalid Typ")
 	}
 
 	if len(pathSplits) == 0 {
@@ -397,7 +397,7 @@ func (j *JsonObject) GetValueFromJsonObjectByJPath(path string) (string, any, ap
 					return vTyp, nil, appError.NewError(
 						appError.Error,
 						errCode.JsonObjectElementNotFound,
-						fmt.Sprintf("195BLY -> No such key in JsonObject: %v", p))
+						fmt.Sprintf("195BLY -> No such key in Typ: %v", p))
 				}
 				setVal(val)
 			default:
@@ -444,9 +444,9 @@ func (j *JsonObject) GetValueFromJsonObjectByJPath(path string) (string, any, ap
 	}
 }
 
-// SetValueInJsonObjectByJPath will set a value in the JsonObject given its JPath
-func SetValueInJsonObjectByJPath(obj JsonObject, path string, valueToSet any) (JsonObject, error) {
-	objToReturn := JsonObject{}
+// SetValueInJsonObjectByJPath will set a value in the Typ given its JPath
+func SetValueInJsonObjectByJPath(obj Typ, path string, valueToSet any) (Typ, error) {
+	objToReturn := Typ{}
 	vTyp := typeUnknown
 	firstLetter := ""
 	lastLetter := ""
@@ -615,7 +615,7 @@ func SetValueInJsonObjectByJPath(obj JsonObject, path string, valueToSet any) (J
 	err := fmt.Errorf("E#1N7FIX - UnsetError")
 
 	if !obj.Valid {
-		return objToReturn, fmt.Errorf("E#1N7FJ0 - Cannot process an invalid JsonObject")
+		return objToReturn, fmt.Errorf("E#1N7FJ0 - Cannot process an invalid Typ")
 	}
 	if len(pathSplits) == 0 {
 		return objToReturn, fmt.Errorf("E#1N7FJ2 - Len 0 --- UNEXPECTED")
@@ -1297,7 +1297,7 @@ func SetValueInJsonObjectByJPath(obj JsonObject, path string, valueToSet any) (J
 	return objToReturn, nil
 }
 
-// ValidateJPathSyntax validates JPath syntax (not against any specific JsonObject)
+// ValidateJPathSyntax validates JPath syntax (not against any specific Typ)
 func ValidateJPathSyntax(path string) error {
 	var firstLetter string
 	var lastLetter string
@@ -1334,7 +1334,7 @@ func ValidateJPathSyntax(path string) error {
 
 // MARKER: Stringer interface implementation
 
-func (j *JsonObject) String() string {
+func (j *Typ) String() string {
 	if !j.Valid {
 		return ""
 	}
@@ -1347,8 +1347,8 @@ func (j *JsonObject) String() string {
 	return string(bytes)
 }
 
-// PrettyString will give the formatted string for this JsonObject
-func (j *JsonObject) PrettyString() string {
+// PrettyString will give the formatted string for this Typ
+func (j *Typ) PrettyString() string {
 	if !j.Valid {
 		return ""
 	}
@@ -1361,7 +1361,7 @@ func (j *JsonObject) PrettyString() string {
 	return string(bytes)
 }
 
-func (j *JsonObject) HasTopLevelArray() bool {
+func (j *Typ) HasTopLevelArray() bool {
 	if j.Valid && len(j.StringAnyMap) == 1 && j.hasTopLevelArray {
 		if _, ok := j.StringAnyMap[topLevelArrayKey]; ok {
 			return true
@@ -1371,14 +1371,14 @@ func (j *JsonObject) HasTopLevelArray() bool {
 	return false
 }
 
-func (j *JsonObject) AsByteSlice() []byte {
+func (j *Typ) AsByteSlice() []byte {
 	return []byte(j.String())
 }
 
 // MARKER: DB Interface implementations
 
 // Value implements the driver.Valuer interface. This method returns the JSON-encoded representation of the struct.
-func (j *JsonObject) Value() (driver.Value, error) {
+func (j *Typ) Value() (driver.Value, error) {
 	if j.Valid == false {
 		return nil, nil
 	}
@@ -1392,7 +1392,7 @@ func (j *JsonObject) Value() (driver.Value, error) {
 }
 
 // Scan implements the sql.Scanner interface. This method decodes a JSON-encoded value into the struct fields.
-func (j *JsonObject) Scan(value interface{}) error {
+func (j *Typ) Scan(value interface{}) error {
 	var arrAnys []any = make([]any, 0)
 	switch value.(type) {
 	case nil:
@@ -1447,7 +1447,7 @@ func (j *JsonObject) Scan(value interface{}) error {
 // MARKER: Custom implementation of JSON Encoder for this type
 
 // MarshalJSON implements json.Marshaler interface
-func (j JsonObject) MarshalJSON() ([]byte, error) {
+func (j Typ) MarshalJSON() ([]byte, error) {
 	if !j.Valid {
 		return []byte("null"), nil
 	}
@@ -1458,7 +1458,7 @@ func (j JsonObject) MarshalJSON() ([]byte, error) {
 }
 
 // UnmarshalJSON implements json.Unmarshaler.
-func (j *JsonObject) UnmarshalJSON(dataToUnmarshal []byte) error {
+func (j *Typ) UnmarshalJSON(dataToUnmarshal []byte) error {
 	var err error
 	var v interface{}
 	if err = json.Unmarshal(dataToUnmarshal, &v); err != nil {
@@ -1476,7 +1476,7 @@ func (j *JsonObject) UnmarshalJSON(dataToUnmarshal []byte) error {
 		j.StringAnyMap = nil
 		return nil
 	default:
-		err = fmt.Errorf("E#1N7RTW - Cannot convert object of type %v to JsonObject", reflect.TypeOf(v).Name())
+		err = fmt.Errorf("E#1N7RTW - Cannot convert object of type %v to Typ", reflect.TypeOf(v).Name())
 	}
 
 	j.Valid = true
@@ -1487,7 +1487,7 @@ func (j *JsonObject) UnmarshalJSON(dataToUnmarshal []byte) error {
 	return err
 }
 
-func (j *JsonObject) FindKeyByValue(value interface{}) string {
+func (j *Typ) FindKeyByValue(value interface{}) string {
 	for key, val := range j.StringAnyMap {
 		//fmt.Println("key...", key, "val...", val)
 		switch val := val.(type) {
