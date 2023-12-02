@@ -264,7 +264,7 @@ func (g *Generator) Generate() appError.Typ {
 		} else {
 			s := DbSchema{
 				Name:   table.Schema,
-				GoName: g.getGoName(table.GoName),
+				GoName: g.getGoName(table.Schema),
 				Tables: map[string]DbTable{table.Name: table},
 			}
 			g.Schemas[table.Schema] = s
@@ -354,7 +354,7 @@ func (g *Generator) Generate() appError.Typ {
 
 		_, fkInfoFound := g.Schemas[fkInf.FromSchema].Tables[fkInf.FromTable].FKeyMap[fkInf.ConstraintName]
 		if !fkInfoFound {
-			//g.Schemas[fkInf.FromSchema].Tables[fkInf.FromTable].FKeyMap = map[string]DbFkInfo{}
+			// g.Schemas[fkInf.FromSchema].Tables[fkInf.FromTable].FKeyMap = map[string]DbFkInfo{}
 
 			g.Schemas[fkInf.FromSchema].Tables[fkInf.FromTable].FKeyMap[fkInf.ConstraintName] = DbFkInfo{
 				FromSchema: fkInf.FromSchema,
@@ -445,7 +445,7 @@ func (g *Generator) Generate() appError.Typ {
 
 		outputFile, err := os.Create(fmt.Sprintf("%s/%s", g.Config.DbModelPackagePath, outputFileName))
 		if err != nil {
-			panic(err)
+			panic(fmt.Sprintf("P#1OECMC - %v", err))
 		}
 
 		fileContentBytes, err := format.Source([]byte(fileContent))
