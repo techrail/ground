@@ -2,22 +2,147 @@ package dbCodegen
 
 import (
 	"fmt"
+	"math"
 	"strings"
 )
 
 func (g *Generator) buildTableBaseFuncs(table DbTable, importList []string) (string, []string) {
+	tableBaseValidationFuncStr := ""
+	tableBaseValidationFuncStr, importList = g.buildTableBaseValidation(table, importList)
+	tableCommonValidationFuncStr := ""
+	tableCommonValidationFuncStr, importList = g.buildTableCommonValidation(table, importList)
 	tableInsertionValidationFuncStr := ""
-	tableInsertionValidationFuncStr, importList = g.buildTableInsertionValidation(table, importList)
+	tableInsertionValidationFuncStr, importList = g.buildTableInsertValidation(table, importList)
+	tableUpdateValidationFuncStr := ""
+	tableUpdateValidationFuncStr, importList = g.buildTableUpdateValidation(table, importList)
 	tableInsertionFuncStr := ""
 	tableInsertionFuncStr, importList = g.buildTableInsertMethod(table, importList)
 
-	tableBaseFuncStr := tableInsertionValidationFuncStr + tableInsertionFuncStr
+	tableBaseFuncStr := tableBaseValidationFuncStr + tableCommonValidationFuncStr + tableInsertionValidationFuncStr +
+		tableUpdateValidationFuncStr + tableInsertionFuncStr
 	return tableBaseFuncStr, importList
 }
 
-func (g *Generator) buildTableInsertionValidation(table DbTable, importList []string) (string, []string) {
+func (g *Generator) buildTableBaseValidation(table DbTable, importList []string) (string, []string) {
+	tabCommonValidation := ""
+	tabCommonValidation += fmt.Sprintf("func (%v *%v) baseValidation() error {\n",
+		table.variableName(), table.fullyQualifiedStructName())
+
+	for _, col := range table.ColumnList {
+		switch col.GoDataType {
+		case "string":
+			// Non nullable string
+			maxLen, lenCheckReasonComment := getMaxlenWithReasonCommentForStringColumn(col)
+			if maxLen > 0 {
+				tabCommonValidation += lenCheckReasonComment
+				tabCommonValidation += fmt.Sprintf("if len(%v.%v) > %v {\n",
+					table.variableName(), col.GoName, maxLen)
+				tabCommonValidation += `return fmt.Errorf("E#` + newUniqueLmid() +
+					fmt.Sprintf(` - Invalid length for %v.%v`,
+						table.variableName(), col.GoName) +
+					` %v", ` + fmt.Sprintf("len(%v.%v))\n",
+					table.variableName(), col.GoName)
+				tabCommonValidation += fmt.Sprintf("}\n")
+			}
+
+			minLen := col.CommentProperties.MinStrLen
+			if minLen > 0 {
+				tabCommonValidation += fmt.Sprintf("if len(%v.%v) < %v {\n",
+					table.variableName(), col.GoName, minLen)
+				tabCommonValidation += `return fmt.Errorf("E#` + newUniqueLmid() +
+					fmt.Sprintf(` - Length too less for %v.%v`,
+						table.variableName(), col.GoName) +
+					` %v", ` + fmt.Sprintf("len(%v.%v))\n",
+					table.variableName(), col.GoName)
+				tabCommonValidation += fmt.Sprintf("}\n")
+			}
+
+			if col.CommentProperties.StrValidateAs == "email" {
+				tabCommonValidation += fmt.Sprintf("if !types.IsValidEmail(%v.%v) {\n",
+					table.variableName(), col.GoName)
+				tabCommonValidation += `return fmt.Errorf("E#` + newUniqueLmid() +
+					fmt.Sprintf(` - Value for %v.%v is expected to be a valid email")`,
+						table.variableName(), col.GoName)
+				tabCommonValidation += fmt.Sprintf("}\n")
+			}
+		case "sql.NullString":
+			// Nullable string.
+			// Rule: A nullable string can be either null or have a max length specified
+			maxLen, lenCheckReasonComment := getMaxlenWithReasonCommentForStringColumn(col)
+			if maxLen > 0 {
+				tabCommonValidation += fmt.Sprintf("if %v.%v.Valid {\n", table.variableName(), col.GoName)
+				tabCommonValidation += lenCheckReasonComment
+				tabCommonValidation += fmt.Sprintf("if len(%v.%v.String) > %v {\n",
+					table.variableName(), col.GoName, col.CharacterLength)
+				tabCommonValidation += `return fmt.Errorf("E#` + newUniqueLmid() +
+					fmt.Sprintf(` - Invalid length for %v.%v`,
+						table.variableName(), col.GoName) +
+					` %v", ` + fmt.Sprintf("len(%v.%v.String))\n",
+					table.variableName(), col.GoName)
+				tabCommonValidation += fmt.Sprintf("}\n")
+				tabCommonValidation += fmt.Sprintf("}\n")
+			}
+
+			minLen := col.CommentProperties.MinStrLen
+			if minLen > 0 {
+				tabCommonValidation += fmt.Sprintf("if %v.%v.Valid {\n", table.variableName(), col.GoName)
+				tabCommonValidation += fmt.Sprintf("if len(%v.%v.String) < %v {\n",
+					table.variableName(), col.GoName, minLen)
+				tabCommonValidation += `return fmt.Errorf("E#` + newUniqueLmid() +
+					fmt.Sprintf(` - Length too less for %v.%v`,
+						table.variableName(), col.GoName) +
+					` %v", ` + fmt.Sprintf("len(%v.%v.String))\n",
+					table.variableName(), col.GoName)
+				tabCommonValidation += fmt.Sprintf("}\n")
+				tabCommonValidation += fmt.Sprintf("}\n")
+			}
+
+			if col.CommentProperties.StrValidateAs == "email" {
+				tabCommonValidation += fmt.Sprintf("if !types.IsValidEmail(%v.%v) {\n",
+					table.variableName(), col.GoName)
+				tabCommonValidation += `return fmt.Errorf("E#` + newUniqueLmid() +
+					fmt.Sprintf(` - Value for %v.%v is expected to be a valid email")`,
+						table.variableName(), col.GoName)
+				tabCommonValidation += fmt.Sprintf("}\n")
+			}
+		// TODO: Write cases for int64, sql.NullInt64 and other data types
+		case "int64":
+			minVal := col.CommentProperties.MinIntVal
+			if minVal != 0 && minVal < math.MaxInt64 {
+				tabCommonValidation += fmt.Sprintf("if %v.%v < int%v {\n",
+					table.variableName(), col.GoName, minVal)
+				tabCommonValidation += `return fmt.Errorf("E#` + newUniqueLmid() +
+					fmt.Sprintf(` - Value too less for %v.%v`,
+						table.variableName(), col.GoName) +
+					` %v", ` + fmt.Sprintf("len(%v.%v))\n",
+					table.variableName(), col.GoName)
+				tabCommonValidation += fmt.Sprintf("}\n")
+			}
+		}
+	}
+
+	tabCommonValidation += "return nil\n"
+	tabCommonValidation += "}\n\n"
+
+	return tabCommonValidation, importList
+}
+
+func (g *Generator) buildTableCommonValidation(table DbTable, importList []string) (string, []string) {
+	tabCommonValidation := ""
+	tabCommonValidation += fmt.Sprintf("func (%v *%v) commonValidation() error {\n",
+		table.variableName(), table.fullyQualifiedStructName())
+	tabCommonValidation += fmt.Sprintf("err := %v.baseValidation()\n", lowerFirstChar(table.GoNameSingular))
+	tabCommonValidation += "if err != nil{\nreturn err\n}\n"
+	tabCommonValidation += "// More code to be written here for validation\n"
+	tabCommonValidation += "return nil\n"
+	tabCommonValidation += "}\n\n"
+
+	return tabCommonValidation, importList
+}
+
+func (g *Generator) buildTableInsertValidation(table DbTable, importList []string) (string, []string) {
 	tabInsertValidation := ""
-	tabInsertValidation += fmt.Sprintf("func (%v *%v) validateForInsertion() error {\n",
+	tabInsertValidation += fmt.Sprintf("func (%v *%v) validateForInsert() error {\n",
 		table.variableName(), table.fullyQualifiedStructName())
 	tabInsertValidation += fmt.Sprintf("err := %v.commonValidation()\n", table.variableName())
 	tabInsertValidation += "if err != nil{\nreturn err\n}\n"
@@ -28,12 +153,25 @@ func (g *Generator) buildTableInsertionValidation(table DbTable, importList []st
 	return tabInsertValidation, importList
 }
 
+func (g *Generator) buildTableUpdateValidation(table DbTable, importList []string) (string, []string) {
+	tabUpdateValidation := ""
+	tabUpdateValidation += fmt.Sprintf("func (%v *%v) validateForUpdate() error {\n",
+		table.variableName(), table.fullyQualifiedStructName())
+	tabUpdateValidation += fmt.Sprintf("err := %v.commonValidation()\n", lowerFirstChar(table.GoNameSingular))
+	tabUpdateValidation += "if err != nil{\nreturn err\n}\n"
+	tabUpdateValidation += "// More code to be written here for validation\n"
+	tabUpdateValidation += "return nil\n"
+	tabUpdateValidation += "}\n\n"
+
+	return tabUpdateValidation, importList
+}
+
 func (g *Generator) buildTableInsertMethod(table DbTable, importList []string) (string, []string) {
 	insertCode := ""
 	insertCode += fmt.Sprintf("func (%v *%v) insert() error {\n",
 		table.variableName(), table.fullyQualifiedStructName())
 	insertCode += "var err error\n"
-	insertCode += fmt.Sprintf("err = %v.validateForInsertion()\n", table.variableName())
+	insertCode += fmt.Sprintf("err = %v.validateForInsert()\n", table.variableName())
 	insertCode += "if err != nil{\nreturn err\n}\n"
 
 	insertCode += fmt.Sprintf("insertQuery := `INSERT INTO %v.%v (\n", table.Schema, table.Name)
@@ -45,7 +183,7 @@ func (g *Generator) buildTableInsertMethod(table DbTable, importList []string) (
 	returningColsSlice := []DbColumn{}
 	goColumnNameSlice := []string{}
 	i := 0
-	for _, column := range table.ColumnList {
+	for _, column := range table.ColumnMap {
 		if !(column.Name == "created_at" && g.Config.InsertCreatedAtInCode == false && // Created at timestamps might not need to be created in code
 			(column.GoDataType == "time.Time" || column.GoDataType == "sql.NullTime")) &&
 			!(column.Name == "updated_at" && g.Config.InsertUpdatedAtInCode == false && // Updated at timestamps might not need to be created in code
@@ -70,7 +208,7 @@ func (g *Generator) buildTableInsertMethod(table DbTable, importList []string) (
 		pkeyAmpInsertedColumnNameSlice = append(pkeyAmpInsertedColumnNameSlice, "&inserted"+column.GoName)
 	}
 
-	for _, column := range table.ColumnList {
+	for _, column := range table.ColumnMap {
 		if (column.Name == "created_at" && g.Config.InsertCreatedAtInCode == false &&
 			(column.GoDataType == "time.Time" || column.GoDataType == "sql.NullTime")) ||
 			(column.Name == "updated_at" && g.Config.InsertUpdatedAtInCode == false &&

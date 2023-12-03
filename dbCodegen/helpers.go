@@ -1,6 +1,7 @@
 package dbCodegen
 
 import (
+	"fmt"
 	"github.com/techrail/ground/typs/integer"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
@@ -99,4 +100,38 @@ func upperFirstChar(input string) string {
 	return strings.ToUpper(input[:1]) + input[1:]
 }
 
-func breakInPiecesOfStringSlicesIn3()
+func getMaxlenWithReasonCommentForStringColumn(col DbColumn) (int, string) {
+	maxLenFromComment := col.CommentProperties.MaxStrLen
+	maxLenFromColDefinition := col.CharacterLength
+	maxLen := 0
+
+	if maxLenFromColDefinition == 0 {
+		// 'text' field.
+		maxLen = maxLenFromComment
+	} else {
+		// 'varchar' field.
+		maxLen = maxLenFromColDefinition
+		if maxLenFromComment > 0 {
+			// There is a length specified in comment
+			if maxLenFromComment > maxLenFromColDefinition {
+				// length in comment is greater than the column definition (which can't happen)
+				maxLen = maxLenFromColDefinition
+			} else {
+				maxLen = maxLenFromComment
+			}
+		}
+	}
+
+	maxlenFromDbDefinitionCommentPart := fmt.Sprintf("%v", maxLenFromColDefinition)
+	if maxLenFromColDefinition == 0 {
+		maxlenFromDbDefinitionCommentPart = "none"
+	}
+	maxlenFromCommentCommentPart := fmt.Sprintf("%v", maxLenFromComment)
+	if maxLenFromComment == 0 {
+		maxlenFromCommentCommentPart = "none"
+	}
+	lenCheckReasonComment := fmt.Sprintf(
+		"// Max length by column definition: %v. Max length by Column Comment: %v\n",
+		maxlenFromDbDefinitionCommentPart, maxlenFromCommentCommentPart)
+	return maxLen, lenCheckReasonComment
+}
