@@ -9,10 +9,10 @@ import (
 func main() {
 	cnf := dbCodegen.CodegenConfig{
 		DbModelPackageName: "mainDb",
-		DbModelPackagePath: "/Users/vaibhavkaushal/code/Techrail/ground/tmp/mainDb",
-		//DbModelPackagePath: "/Volumes/TestVM/other_data/obsidian_docker_root/ground/tmp/mainDb",
-		PgDbUrl: "postgres://vaibhav:vaibhav@127.0.0.1:5432/twitter_clone?sslmode=disable",
-		//PgDbUrl: "postgres://vkaushal288:vkaushal288@127.0.0.1:5432/ac_dev?sslmode=disable",
+		//DbModelPackagePath: "/Users/vaibhavkaushal/code/Techrail/ground/tmp/mainDb",
+		DbModelPackagePath: "/Volumes/TestVM/other_data/obsidian_docker_root/ground/tmp/mainDb",
+		//PgDbUrl: "postgres://vaibhav:vaibhav@127.0.0.1:5432/twitter_clone?sslmode=disable",
+		PgDbUrl: "postgres://vkaushal288:vkaushal288@127.0.0.1:5432/ac_dev?sslmode=disable",
 	}
 	g, e := dbCodegen.NewCodeGenerator(cnf)
 	if e.IsNotBlank() {

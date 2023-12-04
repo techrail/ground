@@ -11,7 +11,7 @@ import (
 var baseLmidSeconds int64
 
 func init() {
-	baseLmidSeconds = 1700000000
+	baseLmidSeconds = 1701620110
 }
 
 func (g *Generator) getGoImportForDataType(datatype string, nullable bool) string {
@@ -84,7 +84,7 @@ func newUniqueLmid() string {
 		return r
 	}
 	baseLmidSeconds += 1
-	lmid := integer.Base10ToBase36(baseLmidSeconds - 1600000000)
+	lmid := integer.Base10ToBase36(baseLmidSeconds - 1700000000)
 	prefix := ""
 	if len(lmid) < 6 {
 		prefix = repeatZeros(6 - len(lmid))
@@ -134,4 +134,13 @@ func getMaxlenWithReasonCommentForStringColumn(col DbColumn) (int, string) {
 		"// Max length by column definition: %v. Max length by Column Comment: %v\n",
 		maxlenFromDbDefinitionCommentPart, maxlenFromCommentCommentPart)
 	return maxLen, lenCheckReasonComment
+}
+
+func columnInList(columnName string, list []DbColumn) bool {
+	for _, col := range list {
+		if col.Name == columnName {
+			return true
+		}
+	}
+	return false
 }

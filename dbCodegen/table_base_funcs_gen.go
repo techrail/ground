@@ -17,9 +17,11 @@ func (g *Generator) buildTableBaseFuncs(table DbTable, importList []string) (str
 	tableUpdateValidationFuncStr, importList = g.buildTableUpdateValidation(table, importList)
 	tableInsertionFuncStr := ""
 	tableInsertionFuncStr, importList = g.buildTableInsertMethod(table, importList)
+	tableUpdateFuncStr := ""
+	tableUpdateFuncStr, importList = g.buildTableUpdateMethod(table, importList)
 
 	tableBaseFuncStr := tableBaseValidationFuncStr + tableCommonValidationFuncStr + tableInsertionValidationFuncStr +
-		tableUpdateValidationFuncStr + tableInsertionFuncStr
+		tableUpdateValidationFuncStr + tableInsertionFuncStr + tableUpdateFuncStr
 	return tableBaseFuncStr, importList
 }
 
@@ -174,7 +176,7 @@ func (g *Generator) buildTableInsertMethod(table DbTable, importList []string) (
 	insertCode += fmt.Sprintf("err = %v.validateForInsert()\n", table.variableName())
 	insertCode += "if err != nil{\nreturn err\n}\n"
 
-	insertCode += fmt.Sprintf("insertQuery := `INSERT INTO %v.%v (\n", table.Schema, table.Name)
+	insertCode += fmt.Sprintf("insertQuery := `INSERT INTO %v (\n", table.fullyQualifiedTableName())
 
 	colNameSlice := []string{}
 	argPositionSlice := []string{}
@@ -265,10 +267,10 @@ func (g *Generator) buildTableInsertMethod(table DbTable, importList []string) (
 	insertCode += "}\n\n"
 
 	for _, col := range table.PkColumnList {
-		insertCode += fmt.Sprintf("%v.%v = inserted%v\n", lowerFirstChar(table.GoNameSingular), col.GoName, col.GoName)
+		insertCode += fmt.Sprintf("%v.%v = inserted%v\n", table.variableName(), col.GoName, col.GoName)
 	}
 	for _, col := range returningColsSlice {
-		insertCode += fmt.Sprintf("%v.%v = inserted%v\n", lowerFirstChar(table.GoNameSingular), col.GoName, col.GoName)
+		insertCode += fmt.Sprintf("%v.%v = inserted%v\n", table.variableName(), col.GoName, col.GoName)
 	}
 
 	insertCode += "return nil"
@@ -278,4 +280,76 @@ func (g *Generator) buildTableInsertMethod(table DbTable, importList []string) (
 	importList = g.addToImports("fmt", importList)
 	importList = g.addToImports("errors", importList)
 	return insertCode, importList
+}
+
+func (g *Generator) buildTableUpdateMethod(table DbTable, importList []string) (string, []string) {
+	updateCode := ""
+
+	updateCode += fmt.Sprintf("func (%v *%v) update() error {\n",
+		table.variableName(), table.fullyQualifiedStructName())
+
+	if len(table.PkColumnList) == 0 {
+		updateCode += "return errors.New(\"E#" + newUniqueLmid() + " - Cannot update " + table.fullyQualifiedTableName() + " because of no primary key\")\n"
+		updateCode += "}\n"
+		importList = g.addToImports("errors", importList)
+		return updateCode, importList
+	}
+
+	updateCode += fmt.Sprintf("err := %v.validateForUpdate()\n", table.variableName())
+	updateCode += "if err != nil{\nreturn err\n}\n"
+
+	updateCode += fmt.Sprintf("updateQuery := `UPDATE %v SET\n\t\t\t", table.fullyQualifiedTableName())
+	// Get the column information
+	columnNameArgPositionPairCollection := []string{}
+	goColumnNameCollection := []string{}
+
+	i := 0
+	for _, column := range table.ColumnList {
+		if !columnInList(column.Name, table.PkColumnList) {
+			if !(column.Name == "created_at" && // Created at timestamps are never to be updated.
+				(column.GoDataType == "time.Time" || column.GoDataType == "sql.NullTime")) &&
+				!(column.Name == "updated_at" && g.Config.UpdateUpdatedAtInCode == false &&
+					(column.GoDataType == "time.Time" || column.GoDataType == "sql.NullTime")) {
+				i += 1
+				columnNameArgPositionPairCollection = append(columnNameArgPositionPairCollection, fmt.Sprintf(`"%v" = $%v`, column.Name, i))
+				if column.DataType == "json" || column.DataType == "jsonb" {
+					goColumnNameCollection = append(goColumnNameCollection, fmt.Sprintf("%v.%v.String()", table.variableName(), column.GoName))
+				} else {
+					goColumnNameCollection = append(goColumnNameCollection, fmt.Sprintf("%v.%v", table.variableName(), column.GoName))
+				}
+			}
+		}
+	}
+
+	updateCode += strings.Join(columnNameArgPositionPairCollection, ",\n\t\t\t")
+	updateCode += "\n\t\tWHERE \n\t\t\t"
+
+	for k, column := range table.PkColumnList {
+		comma := " AND "
+		if k == len(table.PkColumnList)-1 {
+			comma = ""
+		}
+		updateCode += fmt.Sprintf(`"%v" = $%v%v`, column.Name, i+1, comma)
+		if column.DataType == "json" || column.DataType == "jsonb" {
+			goColumnNameCollection = append(goColumnNameCollection, fmt.Sprintf("%v.%v.String()", table.variableName(), column.GoName))
+		} else {
+			goColumnNameCollection = append(goColumnNameCollection, fmt.Sprintf("%v.%v", table.variableName(), column.GoName))
+		}
+		i += 1
+	}
+
+	updateCode += "`\n\n"
+	updateCode += fmt.Sprintf("_, err = %v.Exec(updateQuery,\n%v)\n", upperFirstChar(g.Config.DbModelPackageName), strings.Join(goColumnNameCollection, ",\n"))
+	updateCode += "if err != nil {\n"
+	updateCode += "return fmt.Errorf(\"E#" + newUniqueLmid() + " - Could not update " + table.fullyQualifiedStructName() + " in database: %v\", err)"
+	updateCode += "}\n"
+
+	// updateCode += `fmt.Printf("query: %v\n", updateQuery)`
+
+	updateCode += "\nreturn nil\n"
+	updateCode += "}\n\n"
+
+	//importList = g.addToImports(baseGoModuleName+"/resources", importList)
+
+	return updateCode, importList
 }

@@ -8,7 +8,7 @@ func (g *Generator) buildTableStructString(table DbTable, importList []string) (
 
 	// tableName := getGoName(table.Name)
 	tableStruct += fmt.Sprintf("// %v struct corresponds to the %v table in %v schema of the DB\n",
-		table.GoNameSingular, table.Name, table.Schema)
+		table.fullyQualifiedStructName(), table.Name, table.Schema)
 	tableStruct += fmt.Sprintf("// Table Comment: %v\n", table.commentForStruct())
 	tableStruct += fmt.Sprintf("type %s struct {\n", table.fullyQualifiedStructName())
 	for _, column := range table.ColumnMap {
