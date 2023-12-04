@@ -13,7 +13,7 @@ func (g *Generator) buildSchemaStructString(schemaName string, importList []stri
 
 	schemaStruct := ""
 
-	schemaStruct += fmt.Sprintf("// %v struct corresponds to the %v schema of the DB\n",
+	schemaStruct += fmt.Sprintf("// %vSchema struct corresponds to the %v schema of the DB\n",
 		schema.GoName, schema.Name)
 	schemaStruct += fmt.Sprintf("type %sSchema struct {\n", schema.GoName)
 	for _, table := range schema.Tables {
@@ -27,13 +27,18 @@ func (g *Generator) buildSchemaStructString(schemaName string, importList []stri
 		}
 		schemaStruct += fmt.Sprintf("\t%s %s %v\n",
 			table.GoNameSingular, table.fullyQualifiedStructName(), tableComment)
-		schemaStruct += fmt.Sprintf("\t%sDao %sDao // Dao for %v\n",
+		schemaStruct += fmt.Sprintf("\t%sDao *%sDao // Dao for %v\n",
 			table.GoNameSingular, table.fullyQualifiedStructName(), table.Name)
 	}
 	schemaStruct += "}\n"
 	schemaStruct += fmt.Sprintf("var %v %vSchema\n\n", schema.GoName, schema.GoName)
 	schemaStruct += "func init() {\n"
-	schemaStruct += fmt.Sprintf("%v = %vSchema{}\n", schema.GoName, schema.GoName)
+	schemaStruct += fmt.Sprintf("%v = %vSchema{\n", schema.GoName, schema.GoName)
+	for _, table := range schema.Tables {
+		schemaStruct += fmt.Sprintf("\t%sDao: New%sDao(), // Dao for %v\n",
+			table.GoNameSingular, table.fullyQualifiedStructName(), table.Name)
+	}
+	schemaStruct += "}\n"
 	schemaStruct += "}\n"
 
 	return schemaStruct, importList

@@ -44,10 +44,20 @@ func (g *Generator) buildTableBaseFuncs(table DbTable, importList []string) (str
 	}
 
 	// Now the Dao Ones
+	tableMethodAndDaoSeparator := "\n// ============================================="
+	tableMethodAndDaoSeparator += "\n// Table methods end here. Dao functions below"
+	tableMethodAndDaoSeparator += "\n// =============================================\n\n"
+	// TODO: Write the Dao functions
+	tableDaoStructAndNew := ""
+	tableDaoStructAndNew, importList = g.buildTableDaoStructAndNewFunc(table, importList)
+
+	tableDaoFunctions := ""
+	tableDaoFunctions, importList = g.buildTableDaoIdxFuncCreator(table, importList)
 
 	tableBaseFuncStr := tableBaseValidationFuncStr + tableCommonValidationFuncStr + tableInsertionValidationFuncStr +
 		tableUpdateValidationFuncStr + tableInsertionFuncStr + tableUpdateFuncStr +
-		tableUpdateByIndexes + tableDeleteFuncStr + tabForeignKeyMethods
+		tableUpdateByIndexes + tableDeleteFuncStr + tabForeignKeyMethods +
+		tableMethodAndDaoSeparator + tableDaoStructAndNew + tableDaoFunctions
 	return tableBaseFuncStr, importList
 }
 
@@ -582,4 +592,123 @@ func (g *Generator) buildSingleTableFkeyFunc(table DbTable, fkey DbFkInfo, impor
 	tabFKeyMethod += "}\n"
 
 	return tabFKeyMethod, importList
+}
+
+func (g *Generator) buildTableDaoStructAndNewFunc(table DbTable, importList []string) (string, []string) {
+	daoCode := ""
+
+	daoCode += fmt.Sprintf("\ntype %vDao struct{}\n", table.fullyQualifiedStructName())
+	daoCode += fmt.Sprintf("func New%vDao() *%vDao {\n", table.fullyQualifiedStructName(), table.fullyQualifiedStructName())
+	daoCode += fmt.Sprintf("return &%vDao{}\n", table.fullyQualifiedStructName())
+	daoCode += "}\n"
+
+	return daoCode, importList
+}
+
+func (g *Generator) buildTableDaoIdxFuncCreator(table DbTable, importList []string) (string, []string) {
+	daoIdxCode := ""
+	for _, idx := range table.IndexList {
+		daoSingleIdxCode, iList := g.buildSingleTableDaoIdxFunc(table, idx, importList)
+		daoIdxCode += daoSingleIdxCode + "\n\n"
+		importList = iList
+	}
+
+	return daoIdxCode, importList
+}
+
+func (g *Generator) buildSingleTableDaoIdxFunc(table DbTable, idx DbIndex, importList []string) (string, []string) {
+	daoSingleIdxCode := ""
+	// Columns in IndexList
+	funcNamePart := ""
+	argList := ""
+	argListWithoutTypes := []string{}
+	for i, col := range idx.ColumnList {
+		funcNamePart += col.GoName
+		argList += lowerFirstChar(col.GoNameSingular) + " " + col.GoDataType
+		argListWithoutTypes = append(argListWithoutTypes, lowerFirstChar(col.GoNameSingular))
+		if i+1 != len(idx.ColumnList) {
+			argList += ","
+		}
+		i += 1
+	}
+
+	if idx.IsUnique {
+		// Create a function to get a single item
+		daoSingleIdxCode += fmt.Sprintf("func (%vDao *%vDao)GetFromDbBy%v(%v,getFromMainDb ...bool) (%v, error) {\n",
+			lowerFirstChar(table.GoNameSingular), table.GoNameSingular, funcNamePart, argList, table.GoNameSingular)
+		daoSingleIdxCode += "var err error\n"
+
+		// Create the query now
+		daoSingleIdxCode += fmt.Sprintf("query:=`SELECT * FROM %v WHERE ", table.Name)
+		for k, column := range idx.ColumnList {
+			comma := " AND "
+			if k == len(idx.ColumnList)-1 {
+				comma = ""
+			}
+			daoSingleIdxCode += fmt.Sprintf(`"%v" = $%v%v`, column.Name, k+1, comma)
+			k += 1
+		}
+		daoSingleIdxCode += "`\n"
+
+		daoSingleIdxCode += fmt.Sprintf("%v := %v{}\n", lowerFirstChar(table.GoNameSingular), table.GoNameSingular)
+
+		daoSingleIdxCode += "\nif len(getFromMainDb) > 0 && getFromMainDb[0] == true {\n"
+		daoSingleIdxCode += fmt.Sprintf("err = resources.MainDb.Get(&%v, query, %v)\n", lowerFirstChar(table.GoNameSingular), strings.Join(argListWithoutTypes, ", "))
+		daoSingleIdxCode += "} else {\n"
+		daoSingleIdxCode += fmt.Sprintf("err = resources.ReaderDb.Get(&%v, query, %v)\n", lowerFirstChar(table.GoNameSingular), strings.Join(argListWithoutTypes, ", "))
+		daoSingleIdxCode += "}\n\n"
+
+		daoSingleIdxCode += "if err==sql.ErrNoRows {\n"
+		daoSingleIdxCode += fmt.Sprintf("return %v, err\n", lowerFirstChar(table.GoNameSingular))
+		daoSingleIdxCode += "}\n"
+		importList = g.addToImports("database/sql", importList)
+
+		daoSingleIdxCode += "if err!=nil {\n"
+		daoSingleIdxCode += "errMsg := fmt.Sprintf(\"E#" + newUniqueLmid() + " - Could not load " + table.GoName + " by " + funcNamePart + " Error: %v\", err)\n"
+		daoSingleIdxCode += "resources.Logger.LogString(errMsg)\n"
+		daoSingleIdxCode += fmt.Sprintf("return %v, errors.New(errMsg)\n", lowerFirstChar(table.GoNameSingular))
+		daoSingleIdxCode += "}\n"
+
+		daoSingleIdxCode += fmt.Sprintf("return %v, nil\n", lowerFirstChar(table.GoNameSingular))
+		daoSingleIdxCode += "}\n "
+	} else {
+		// Create a function to get a list of items
+		daoSingleIdxCode += fmt.Sprintf("// GetListFromDbBy%v fetches a list of %v items from DB using given parameters\n",
+			funcNamePart, table.GoNameSingular)
+		daoSingleIdxCode += "// NOTE: This function does not implement pagination.\n"
+		daoSingleIdxCode += fmt.Sprintf("func (%vDao *%vDao)GetListFromDbBy%v(%v,getFromMainDb ...bool) ([]*%v, error) {\n",
+			lowerFirstChar(table.GoNameSingular), table.GoNameSingular, funcNamePart, argList, table.GoNameSingular)
+
+		daoSingleIdxCode += "var err error\n"
+
+		// Create the query now
+		daoSingleIdxCode += fmt.Sprintf("query:=`SELECT * FROM %v WHERE ", table.Name)
+		for k, column := range idx.ColumnList {
+			comma := " AND "
+			if k == len(idx.ColumnList)-1 {
+				comma = ""
+			}
+			daoSingleIdxCode += fmt.Sprintf(`"%v" = $%v%v`, column.Name, k+1, comma)
+			k += 1
+		}
+		daoSingleIdxCode += "`\n"
+
+		daoSingleIdxCode += fmt.Sprintf("%v := make([]*%v, 0)\n", lowerFirstChar(table.GoNamePlural), table.GoNameSingular)
+		daoSingleIdxCode += "\nif len(getFromMainDb) > 0 && getFromMainDb[0] == true {\n"
+		daoSingleIdxCode += fmt.Sprintf("err = resources.MainDb.Select(&%v, query, %v)\n", lowerFirstChar(table.GoNamePlural), strings.Join(argListWithoutTypes, ", "))
+		daoSingleIdxCode += "} else {\n"
+		daoSingleIdxCode += fmt.Sprintf("err = resources.ReaderDb.Select(&%v, query, %v)\n", lowerFirstChar(table.GoNamePlural), strings.Join(argListWithoutTypes, ", "))
+		daoSingleIdxCode += "}\n\n"
+
+		daoSingleIdxCode += "if err!=nil {\n"
+		daoSingleIdxCode += "errMsg := fmt.Sprintf(\"E#" + newUniqueLmid() + " - Could not load " + table.GoName + " by " + funcNamePart + " Error: %v\", err)\n"
+		daoSingleIdxCode += "resources.Logger.LogString(errMsg)\n"
+		daoSingleIdxCode += "return nil, errors.New(errMsg)\n"
+		daoSingleIdxCode += "}\n"
+
+		daoSingleIdxCode += fmt.Sprintf("return %v, nil\n", lowerFirstChar(table.GoNamePlural))
+		daoSingleIdxCode += "}\n "
+	}
+
+	return daoSingleIdxCode, importList
 }

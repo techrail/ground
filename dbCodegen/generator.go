@@ -17,6 +17,17 @@ import (
 	"github.com/techrail/ground/typs/appError"
 )
 
+var goKeywords []string
+
+func init() {
+	goKeywords = []string{
+		"break", "default", "func", "interface", "select",
+		"case", "defer", "go", "map", "struct",
+		"chan", "else", "goto", "package", "switch",
+		"const", "fallthrough", "if", "range", "type",
+		"continue", "for", "import", "return", "var"}
+}
+
 // DbSchema represents the schema in the database
 type DbSchema struct {
 	Name   string             // Name of the schema
@@ -45,7 +56,8 @@ func (table *DbTable) fullyQualifiedTableName() string {
 }
 
 func (table *DbTable) fullyQualifiedStructName() string {
-	return getGoName(table.Schema) + "_" + table.GoNameSingular
+	//return getGoName(table.Schema) + "_" + table.GoNameSingular
+	return getGoName(table.Schema) + table.GoNameSingular
 }
 
 func (table *DbTable) fullyQualifiedVariableName() string {
@@ -85,6 +97,27 @@ func (col *DbColumn) newlineEscapedComment() string {
 
 func (col *DbColumn) fullyQualifiedColumnName() string {
 	return col.Schema + "." + col.Table + "." + col.Name
+}
+
+func (col *DbColumn) asSafeVariableName() string {
+	n := lowerFirstChar(col.GoNameSingular)
+	// Should not be a keyword
+	if isGoKeyword(n) {
+		// repeat the last character
+		return n + n[len(n)-1:]
+	}
+	return n
+}
+
+func isGoKeyword(word string) bool {
+	isKeyword := false
+	for _, w := range goKeywords {
+		if w == word {
+			isKeyword = true
+			break
+		}
+	}
+	return isKeyword
 }
 
 // Properties that would be expressed as json in the column comment **after** the actual comment
