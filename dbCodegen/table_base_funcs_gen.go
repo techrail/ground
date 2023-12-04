@@ -20,8 +20,34 @@ func (g *Generator) buildTableBaseFuncs(table DbTable, importList []string) (str
 	tableUpdateFuncStr := ""
 	tableUpdateFuncStr, importList = g.buildTableUpdateMethod(table, importList)
 
+	tableUpdateByIndexes := ""
+	singleIdxUpdateFuncStr := ""
+	if g.Config.BuildUpdateByUniqueIndex == true {
+		for _, idx := range table.IndexList {
+			if idx.IsUnique {
+				singleIdxUpdateFuncStr, importList = g.buildTableUpdateMethodBySingleIndex(table, idx, importList)
+				tableUpdateByIndexes += singleIdxUpdateFuncStr
+			}
+		}
+	}
+
+	tableDeleteFuncStr := ""
+	tableDeleteFuncStr, importList = g.buildTableDeleteMethod(table, importList)
+
+	// Foreign key funcs
+	tabForeignKeyMethods := ""
+
+	for _, fkey := range table.FKeyMap {
+		tabSingleFkeyMethod, iList := g.buildSingleTableFkeyFunc(table, fkey, importList)
+		tabForeignKeyMethods += tabSingleFkeyMethod + "\n\n"
+		importList = iList
+	}
+
+	// Now the Dao Ones
+
 	tableBaseFuncStr := tableBaseValidationFuncStr + tableCommonValidationFuncStr + tableInsertionValidationFuncStr +
-		tableUpdateValidationFuncStr + tableInsertionFuncStr + tableUpdateFuncStr
+		tableUpdateValidationFuncStr + tableInsertionFuncStr + tableUpdateFuncStr +
+		tableUpdateByIndexes + tableDeleteFuncStr + tabForeignKeyMethods
 	return tableBaseFuncStr, importList
 }
 
@@ -224,10 +250,12 @@ func (g *Generator) buildTableInsertMethod(table DbTable, importList []string) (
 	insertCode += "\n\t\t) VALUES (\n\t\t\t"
 	insertCode += strings.Join(argPositionSlice, ", \n\t\t\t")
 	insertCode += "\n\t\t) "
-	insertCode += "RETURNING "
-	insertCode += strings.Join(pkeyColumnNameSlice, ", ")
-	for _, col := range returningColsSlice {
-		insertCode += `, "` + col.Name + `"`
+	if len(pkeyColumnNameSlice) > 0 || len(returningColsSlice) > 0 {
+		insertCode += "RETURNING "
+		insertCode += strings.Join(pkeyColumnNameSlice, ", ")
+		for _, col := range returningColsSlice {
+			insertCode += `, "` + col.Name + `"`
+		}
 	}
 	insertCode += "`;\n\n"
 
@@ -237,9 +265,10 @@ func (g *Generator) buildTableInsertMethod(table DbTable, importList []string) (
 	insertCode += ",\n)\n\n"
 	insertCode += "if resultRow.Err() != nil {\n"
 	insertCode += "errMsg := fmt.Sprintf(\"E#" + newUniqueLmid() + " - Could not insert into database: %v\", resultRow.Err())\n"
-	importList = append(importList, "fmt", "errors")
+	importList = g.addToImports("fmt", importList)
+	importList = g.addToImports("errors", importList)
 	insertCode += "logger.Println(errMsg)\n"
-	importList = append(importList, "github.com/techrail/ground/logger")
+	importList = g.addToImports("github.com/techrail/ground/logger", importList)
 	insertCode += "return errors.New(errMsg)\n"
 	insertCode += "}\n\n"
 
@@ -260,11 +289,13 @@ func (g *Generator) buildTableInsertMethod(table DbTable, importList []string) (
 		}
 	}
 
-	insertCode += fmt.Sprintf("\nerr = resultRow.Scan(%v)\n", returningColList)
+	if len(pkeyColumnNameSlice) > 0 || len(returningColsSlice) > 0 {
+		insertCode += fmt.Sprintf("\nerr = resultRow.Scan(%v)\n", returningColList)
 
-	insertCode += "if err != nil {\n"
-	insertCode += "return fmt.Errorf(\"E#" + newUniqueLmid() + " - Scan failed. Error: %v\", err)\n"
-	insertCode += "}\n\n"
+		insertCode += "if err != nil {\n"
+		insertCode += "return fmt.Errorf(\"E#" + newUniqueLmid() + " - Scan failed. Error: %v\", err)\n"
+		insertCode += "}\n\n"
+	}
 
 	for _, col := range table.PkColumnList {
 		insertCode += fmt.Sprintf("%v.%v = inserted%v\n", table.variableName(), col.GoName, col.GoName)
@@ -282,6 +313,80 @@ func (g *Generator) buildTableInsertMethod(table DbTable, importList []string) (
 	return insertCode, importList
 }
 
+func (g *Generator) buildTableUpdateMethodBySingleIndex(table DbTable, index DbIndex, importList []string) (string, []string) {
+	if !index.IsUnique {
+		return "", importList
+	}
+
+	updateCode := ""
+
+	updateCode += fmt.Sprintf("func (%v *%v) updateBy%v() error {\n",
+		table.variableName(), table.fullyQualifiedStructName(), index.GetFuncNamePart())
+
+	updateCode += fmt.Sprintf("err := %v.validateForUpdate()\n", table.variableName())
+	updateCode += "if err != nil{\nreturn err\n}\n"
+
+	updateCode += fmt.Sprintf("updateQuery := `UPDATE %v SET\n\t\t\t", table.fullyQualifiedTableName())
+	// Get the column information
+	columnNameArgPositionPairCollection := []string{}
+	goColumnNameCollection := []string{}
+
+	i := 0
+	for _, column := range table.ColumnList {
+		if !columnInList(column.Name, table.PkColumnList) {
+			if !(column.Name == "created_at" && // Created at timestamps are never to be updated.
+				(column.GoDataType == "time.Time" || column.GoDataType == "sql.NullTime")) &&
+				!(column.Name == "updated_at" && g.Config.UpdateUpdatedAtInCode == false &&
+					(column.GoDataType == "time.Time" || column.GoDataType == "sql.NullTime")) {
+				i += 1
+				columnNameArgPositionPairCollection = append(columnNameArgPositionPairCollection, fmt.Sprintf(`"%v" = $%v`, column.Name, i))
+				if column.DataType == "json" || column.DataType == "jsonb" {
+					goColumnNameCollection = append(goColumnNameCollection, fmt.Sprintf("%v.%v.String()", table.variableName(), column.GoName))
+				} else {
+					goColumnNameCollection = append(goColumnNameCollection, fmt.Sprintf("%v.%v", table.variableName(), column.GoName))
+				}
+			}
+		}
+	}
+
+	updateCode += strings.Join(columnNameArgPositionPairCollection, ",\n\t\t\t")
+	updateCode += "\n\t\tWHERE \n\t\t\t"
+
+	for k, column := range index.ColumnList {
+		comma := " AND "
+		if k == len(index.ColumnList)-1 {
+			comma = ""
+		}
+		updateCode += fmt.Sprintf(`"%v" = $%v%v`, column.Name, i+1, comma)
+		if column.DataType == "json" {
+			fmt.Printf("E#1OJ6NP - It is not possible to compare two JSON values while JSOB values are comparable, in fact. For column: %v\n", column.fullyQualifiedColumnName())
+			return "", importList
+		}
+
+		if column.DataType == "jsonb" {
+			goColumnNameCollection = append(goColumnNameCollection, fmt.Sprintf("%v.%v.String()", table.variableName(), column.GoName))
+		} else {
+			goColumnNameCollection = append(goColumnNameCollection, fmt.Sprintf("%v.%v", table.variableName(), column.GoName))
+		}
+		i += 1
+	}
+
+	updateCode += "`\n\n"
+	updateCode += fmt.Sprintf("_, err = %v.Exec(updateQuery,\n%v)\n", upperFirstChar(g.Config.DbModelPackageName), strings.Join(goColumnNameCollection, ",\n"))
+	updateCode += "if err != nil {\n"
+	updateCode += "return fmt.Errorf(\"E#" + newUniqueLmid() + " - Could not update " + table.fullyQualifiedStructName() + " in database: %v\", err)"
+	updateCode += "}\n"
+
+	// updateCode += `fmt.Printf("query: %v\n", updateQuery)`
+
+	updateCode += "\nreturn nil\n"
+	updateCode += "}\n\n"
+
+	//importList = g.addToImports(baseGoModuleName+"/resources", importList)
+
+	return updateCode, importList
+}
+
 func (g *Generator) buildTableUpdateMethod(table DbTable, importList []string) (string, []string) {
 	updateCode := ""
 
@@ -289,7 +394,7 @@ func (g *Generator) buildTableUpdateMethod(table DbTable, importList []string) (
 		table.variableName(), table.fullyQualifiedStructName())
 
 	if len(table.PkColumnList) == 0 {
-		updateCode += "return errors.New(\"E#" + newUniqueLmid() + " - Cannot update " + table.fullyQualifiedTableName() + " because of no primary key\")\n"
+		updateCode += "return errors.New(\"E#" + newUniqueLmid() + " - Cannot update " + table.fullyQualifiedTableName() + " because of no primary key. Please write update query yourself\")\n"
 		updateCode += "}\n"
 		importList = g.addToImports("errors", importList)
 		return updateCode, importList
@@ -330,7 +435,12 @@ func (g *Generator) buildTableUpdateMethod(table DbTable, importList []string) (
 			comma = ""
 		}
 		updateCode += fmt.Sprintf(`"%v" = $%v%v`, column.Name, i+1, comma)
-		if column.DataType == "json" || column.DataType == "jsonb" {
+		if column.DataType == "json" {
+			fmt.Printf("E#1OJ6NP - It is not possible to compare two JSON values while JSOB values are comparable, in fact. For column: %v\n", column.fullyQualifiedColumnName())
+			return "", importList
+		}
+
+		if column.DataType == "jsonb" {
 			goColumnNameCollection = append(goColumnNameCollection, fmt.Sprintf("%v.%v.String()", table.variableName(), column.GoName))
 		} else {
 			goColumnNameCollection = append(goColumnNameCollection, fmt.Sprintf("%v.%v", table.variableName(), column.GoName))
@@ -352,4 +462,124 @@ func (g *Generator) buildTableUpdateMethod(table DbTable, importList []string) (
 	//importList = g.addToImports(baseGoModuleName+"/resources", importList)
 
 	return updateCode, importList
+}
+
+func (g *Generator) buildTableDeleteMethod(table DbTable, importList []string) (string, []string) {
+	deleteCode := ""
+	deleteCode += fmt.Sprintf("func (%v *%v) delete() error {\n",
+		table.variableName(), table.fullyQualifiedStructName())
+
+	if len(table.PkColumnList) == 0 {
+		deleteCode += "return errors.New(\"E#" + newUniqueLmid() + " - Cannot delete " + table.fullyQualifiedTableName() + " because of no primary key. Please write deletion query yourself\")\n"
+		deleteCode += "}\n"
+		importList = g.addToImports("errors", importList)
+		return deleteCode, importList
+	}
+
+	deleteCode += fmt.Sprintf("_, err := %v.Exec(`DELETE FROM %v WHERE ",
+		upperFirstChar(g.Config.DbModelPackageName), table.fullyQualifiedTableName())
+	// id = $1`, user.Id)")
+	pks := []string{}
+	for k, column := range table.PkColumnList {
+		comma := " AND "
+		if k == len(table.PkColumnList)-1 {
+			comma = ""
+		}
+		pks = append(pks, fmt.Sprintf("%v.%v", lowerFirstChar(table.GoNameSingular), column.GoName))
+		deleteCode += fmt.Sprintf("%v = $%v%v", column.Name, k+1, comma)
+	}
+	deleteCode += "`," + strings.Join(pks, ", ") + ")\n"
+	deleteCode += "if err != nil {\n"
+	deleteCode += "return fmt.Errorf(\"E#" + newUniqueLmid() + " - Could not delete " + table.GoNameSingular + " from database: %v\", err)"
+	deleteCode += "}\n"
+
+	deleteCode += "\nreturn nil\n"
+	deleteCode += "}\n\n"
+
+	//importList = addToImports(baseGoModuleName+"/resources", importList)
+
+	return deleteCode, importList
+}
+
+func (g *Generator) buildSingleTableFkeyFunc(table DbTable, fkey DbFkInfo, importList []string) (string, []string) {
+	tabFKeyMethod := ""
+
+	// The target table should be there
+	_, ok := g.Schemas[fkey.ToSchema]
+	if !ok {
+		panic(fmt.Sprintf("E#1OJ0XX - Expected the toSchema %v to be there but was not", fkey.ToSchema))
+	}
+	targetTable, ok := g.Schemas[fkey.ToSchema].Tables[fkey.ToTable]
+	if !ok {
+		panic(fmt.Sprintf("E#1OJ13B - Expected the toTable %v in toSchema %v to be there but was not", fkey.ToTable, fkey.ToSchema))
+	}
+
+	funcNamePart := ""
+	// funcArgs := make([]string, 0)
+	queryValPairs := make([]string, 0)
+	queryVars := make([]string, 0)
+	i := 1
+	for fromColName, toColName := range fkey.References {
+		fromCol, err := g.getColumnFromListByName(fromColName, table.ColumnList)
+
+		if err != nil {
+			panic(fmt.Sprintf("E#1OJ1JG - Expected column %v is not prsent in table %v in schema %v",
+				fromColName, table.Name, table.Schema))
+		}
+
+		funcNamePart += fromCol.GoName
+		queryValPairs = append(queryValPairs, fmt.Sprintf("%v = $%v", toColName, i))
+		i += 1
+		if fromCol.Nullable && fromCol.GoDataType != "interface{}" {
+			switch fromCol.GoDataType {
+			case "sql.NullInt64":
+				queryVars = append(queryVars, lowerFirstChar(table.GoNameSingular)+"."+fromCol.GoName+".Int64")
+			case "sql.NullInt32":
+				queryVars = append(queryVars, lowerFirstChar(table.GoNameSingular)+"."+fromCol.GoName+".Int32")
+			case "sql.NullInt16":
+				queryVars = append(queryVars, lowerFirstChar(table.GoNameSingular)+"."+fromCol.GoName+".Int16")
+			case "sql.NullFloat64":
+				queryVars = append(queryVars, lowerFirstChar(table.GoNameSingular)+"."+fromCol.GoName+".Float64")
+			case "sql.NullBool":
+				queryVars = append(queryVars, lowerFirstChar(table.GoNameSingular)+"."+fromCol.GoName+".Bool")
+			case "sql.NullString":
+				queryVars = append(queryVars, lowerFirstChar(table.GoNameSingular)+"."+fromCol.GoName+".String")
+			case "types.JsonObject":
+				queryVars = append(queryVars, lowerFirstChar(table.GoNameSingular)+"."+fromCol.GoName+".String()")
+			default:
+				queryVars = append(queryVars, lowerFirstChar(table.GoNameSingular)+"."+fromCol.GoName)
+			}
+		} else {
+			queryVars = append(queryVars, lowerFirstChar(table.GoNameSingular)+"."+fromCol.GoName)
+		}
+	}
+	fmt.Println("E#1C7C24 -", funcNamePart)
+
+	tabFKeyMethod += fmt.Sprintf("func (%v *%v) Get%vFromDbBy%v(getFromMainDb ...bool) (%v, error) {\n",
+		table.variableName(), table.fullyQualifiedStructName(), targetTable.GoNameSingular, funcNamePart, targetTable.fullyQualifiedStructName())
+	tabFKeyMethod += "var err error\n"
+	tabFKeyMethod += fmt.Sprintf("query := `SELECT * FROM %v WHERE %v;`\n", targetTable.fullyQualifiedTableName(), strings.Join(queryValPairs, " AND "))
+	tabFKeyMethod += fmt.Sprintf("linked%v := %v{}\n\n", targetTable.GoNameSingular, targetTable.fullyQualifiedStructName())
+
+	tabFKeyMethod += "if len(getFromMainDb) > 0 && getFromMainDb[0] == true {\n"
+	tabFKeyMethod += fmt.Sprintf("err = %v.Get(&linked%v, query, %v)\n", upperFirstChar(g.Config.DbModelPackageName), targetTable.GoNameSingular, strings.Join(queryVars, ", "))
+	tabFKeyMethod += "} else {\n"
+	tabFKeyMethod += fmt.Sprintf("err = %vReader.Get(&linked%v, query, %v)\n", upperFirstChar(g.Config.DbModelPackageName), targetTable.GoNameSingular, strings.Join(queryVars, ", "))
+	tabFKeyMethod += "}\n"
+	tabFKeyMethod += "\nif err == sql.ErrNoRows {\n"
+	importList = g.addToImports("database/sql", importList)
+	tabFKeyMethod += fmt.Sprintf("return linked%v, err\n", targetTable.GoNameSingular)
+	tabFKeyMethod += "}\n\n"
+
+	tabFKeyMethod += "if err != nil {\n"
+	tabFKeyMethod += `errMsg := fmt.Sprintf("E#` + newUniqueLmid() + ` - Could not load ` + ` by Id Error: %v", err)` + "\n"
+	tabFKeyMethod += "logger.Println(errMsg)\n"
+	importList = g.addToImports("github.com/techrail/ground/logger", importList)
+	tabFKeyMethod += fmt.Sprintf("return linked%v, errors.New(errMsg)\n", targetTable.GoNameSingular)
+	tabFKeyMethod += "}\n"
+
+	tabFKeyMethod += fmt.Sprintf("return linked%v, nil\n", targetTable.GoNameSingular)
+	tabFKeyMethod += "}\n"
+
+	return tabFKeyMethod, importList
 }
