@@ -21,6 +21,7 @@ SELECT pg_stat_user_tables.relname                         AS table_name,
 FROM pg_stat_user_tables
          LEFT JOIN information_schema.columns
                    ON pg_stat_user_tables.relname = information_schema.columns.table_name
+                       AND pg_stat_user_tables.schemaname = information_schema.columns.table_schema
          LEFT JOIN pg_description
                    ON pg_description.objoid = pg_stat_user_tables.relid
                        AND pg_description.objsubid = information_schema.columns.ordinal_position
