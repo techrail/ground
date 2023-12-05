@@ -11,7 +11,17 @@ func (g *Generator) buildTableStructString(table DbTable, importList []string) (
 		table.fullyQualifiedStructName(), table.Name, table.Schema)
 	tableStruct += fmt.Sprintf("// Table Comment: %v\n", table.commentForStruct())
 	tableStruct += fmt.Sprintf("type %s struct {\n", table.fullyQualifiedStructName())
-	for _, column := range table.ColumnMap {
+
+	colNames := table.ColumnList
+	if g.Config.ColumnOrderAlphabetic {
+		colNames = table.ColumnListA2z
+	}
+	for _, columnName := range colNames {
+		column, columnFound := table.ColumnMap[columnName]
+		if !columnFound {
+			panic(fmt.Sprintf("P#1OL11R - Column %v not found in table %v of schema %v", columnName, table.Name, table.Schema))
+		}
+
 		fmt.Printf("Table: %v | Column: %v | PG DataType: %v | Nullable: %v | Go DataType: %v\n",
 			table.Name, column.Name, column.DataType, column.Nullable, column.GoDataType)
 		columnComment := ""

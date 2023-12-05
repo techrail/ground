@@ -66,94 +66,103 @@ func (g *Generator) buildTableBaseValidation(table DbTable, importList []string)
 	tabCommonValidation += fmt.Sprintf("func (%v *%v) baseValidation() error {\n",
 		table.variableName(), table.fullyQualifiedStructName())
 
-	for _, col := range table.ColumnList {
-		switch col.GoDataType {
+	colNames := table.ColumnList
+	if g.Config.ColumnOrderAlphabetic {
+		colNames = table.ColumnListA2z
+	}
+	for _, columnName := range colNames {
+		column, columnFound := table.ColumnMap[columnName]
+		if !columnFound {
+			panic(fmt.Sprintf("P#1OL34O - Column %v not found in table %v of schema %v", columnName, table.Name, table.Schema))
+		}
+
+		switch column.GoDataType {
 		case "string":
 			// Non nullable string
-			maxLen, lenCheckReasonComment := getMaxlenWithReasonCommentForStringColumn(col)
+			maxLen, lenCheckReasonComment := getMaxlenWithReasonCommentForStringColumn(column)
 			if maxLen > 0 {
 				tabCommonValidation += lenCheckReasonComment
 				tabCommonValidation += fmt.Sprintf("if len(%v.%v) > %v {\n",
-					table.variableName(), col.GoName, maxLen)
+					table.variableName(), column.GoName, maxLen)
 				tabCommonValidation += `return fmt.Errorf("E#` + newUniqueLmid() +
 					fmt.Sprintf(` - Invalid length for %v.%v`,
-						table.variableName(), col.GoName) +
+						table.variableName(), column.GoName) +
 					` %v", ` + fmt.Sprintf("len(%v.%v))\n",
-					table.variableName(), col.GoName)
+					table.variableName(), column.GoName)
 				tabCommonValidation += fmt.Sprintf("}\n")
 			}
 
-			minLen := col.CommentProperties.MinStrLen
+			minLen := column.CommentProperties.MinStrLen
 			if minLen > 0 {
 				tabCommonValidation += fmt.Sprintf("if len(%v.%v) < %v {\n",
-					table.variableName(), col.GoName, minLen)
+					table.variableName(), column.GoName, minLen)
 				tabCommonValidation += `return fmt.Errorf("E#` + newUniqueLmid() +
 					fmt.Sprintf(` - Length too less for %v.%v`,
-						table.variableName(), col.GoName) +
+						table.variableName(), column.GoName) +
 					` %v", ` + fmt.Sprintf("len(%v.%v))\n",
-					table.variableName(), col.GoName)
+					table.variableName(), column.GoName)
 				tabCommonValidation += fmt.Sprintf("}\n")
 			}
 
-			if col.CommentProperties.StrValidateAs == "email" {
+			if column.CommentProperties.StrValidateAs == "email" {
 				tabCommonValidation += fmt.Sprintf("if !types.IsValidEmail(%v.%v) {\n",
-					table.variableName(), col.GoName)
+					table.variableName(), column.GoName)
 				tabCommonValidation += `return fmt.Errorf("E#` + newUniqueLmid() +
 					fmt.Sprintf(` - Value for %v.%v is expected to be a valid email")`,
-						table.variableName(), col.GoName)
+						table.variableName(), column.GoName)
 				tabCommonValidation += fmt.Sprintf("}\n")
 			}
 		case "sql.NullString":
 			// Nullable string.
 			// Rule: A nullable string can be either null or have a max length specified
-			maxLen, lenCheckReasonComment := getMaxlenWithReasonCommentForStringColumn(col)
+			maxLen, lenCheckReasonComment := getMaxlenWithReasonCommentForStringColumn(column)
 			if maxLen > 0 {
-				tabCommonValidation += fmt.Sprintf("if %v.%v.Valid {\n", table.variableName(), col.GoName)
+				tabCommonValidation += fmt.Sprintf("if %v.%v.Valid {\n", table.variableName(), column.GoName)
 				tabCommonValidation += lenCheckReasonComment
 				tabCommonValidation += fmt.Sprintf("if len(%v.%v.String) > %v {\n",
-					table.variableName(), col.GoName, col.CharacterLength)
+					table.variableName(), column.GoName, column.CharacterLength)
 				tabCommonValidation += `return fmt.Errorf("E#` + newUniqueLmid() +
 					fmt.Sprintf(` - Invalid length for %v.%v`,
-						table.variableName(), col.GoName) +
+						table.variableName(), column.GoName) +
 					` %v", ` + fmt.Sprintf("len(%v.%v.String))\n",
-					table.variableName(), col.GoName)
+					table.variableName(), column.GoName)
 				tabCommonValidation += fmt.Sprintf("}\n")
 				tabCommonValidation += fmt.Sprintf("}\n")
 			}
 
-			minLen := col.CommentProperties.MinStrLen
+			minLen := column.CommentProperties.MinStrLen
 			if minLen > 0 {
-				tabCommonValidation += fmt.Sprintf("if %v.%v.Valid {\n", table.variableName(), col.GoName)
+				tabCommonValidation += fmt.Sprintf("if %v.%v.Valid {\n", table.variableName(), column.GoName)
 				tabCommonValidation += fmt.Sprintf("if len(%v.%v.String) < %v {\n",
-					table.variableName(), col.GoName, minLen)
+					table.variableName(), column.GoName, minLen)
 				tabCommonValidation += `return fmt.Errorf("E#` + newUniqueLmid() +
 					fmt.Sprintf(` - Length too less for %v.%v`,
-						table.variableName(), col.GoName) +
+						table.variableName(), column.GoName) +
 					` %v", ` + fmt.Sprintf("len(%v.%v.String))\n",
-					table.variableName(), col.GoName)
+					table.variableName(), column.GoName)
 				tabCommonValidation += fmt.Sprintf("}\n")
 				tabCommonValidation += fmt.Sprintf("}\n")
 			}
 
-			if col.CommentProperties.StrValidateAs == "email" {
+			if column.CommentProperties.StrValidateAs == "email" {
 				tabCommonValidation += fmt.Sprintf("if !types.IsValidEmail(%v.%v) {\n",
-					table.variableName(), col.GoName)
+					table.variableName(), column.GoName)
 				tabCommonValidation += `return fmt.Errorf("E#` + newUniqueLmid() +
 					fmt.Sprintf(` - Value for %v.%v is expected to be a valid email")`,
-						table.variableName(), col.GoName)
+						table.variableName(), column.GoName)
 				tabCommonValidation += fmt.Sprintf("}\n")
 			}
 		// TODO: Write cases for int64, sql.NullInt64 and other data types
 		case "int64":
-			minVal := col.CommentProperties.MinIntVal
+			minVal := column.CommentProperties.MinIntVal
 			if minVal != 0 && minVal < math.MaxInt64 {
 				tabCommonValidation += fmt.Sprintf("if %v.%v < int%v {\n",
-					table.variableName(), col.GoName, minVal)
+					table.variableName(), column.GoName, minVal)
 				tabCommonValidation += `return fmt.Errorf("E#` + newUniqueLmid() +
 					fmt.Sprintf(` - Value too less for %v.%v`,
-						table.variableName(), col.GoName) +
+						table.variableName(), column.GoName) +
 					` %v", ` + fmt.Sprintf("len(%v.%v))\n",
-					table.variableName(), col.GoName)
+					table.variableName(), column.GoName)
 				tabCommonValidation += fmt.Sprintf("}\n")
 			}
 		}
@@ -206,7 +215,7 @@ func (g *Generator) buildTableUpdateValidation(table DbTable, importList []strin
 
 func (g *Generator) buildTableInsertMethod(table DbTable, importList []string) (string, []string) {
 	insertCode := ""
-	insertCode += fmt.Sprintf("func (%v *%v) insert() error {\n",
+	insertCode += fmt.Sprintf("func (%v *%v) Insert() error {\n",
 		table.variableName(), table.fullyQualifiedStructName())
 	insertCode += "var err error\n"
 	insertCode += fmt.Sprintf("err = %v.validateForInsert()\n", table.variableName())
@@ -221,7 +230,15 @@ func (g *Generator) buildTableInsertMethod(table DbTable, importList []string) (
 	returningColsSlice := []DbColumn{}
 	goColumnNameSlice := []string{}
 	i := 0
-	for _, column := range table.ColumnMap {
+	colNames := table.ColumnList
+	if g.Config.ColumnOrderAlphabetic {
+		colNames = table.ColumnListA2z
+	}
+	for _, columnName := range colNames {
+		column, columnFound := table.ColumnMap[columnName]
+		if !columnFound {
+			panic(fmt.Sprintf("P#1OL34D - Column %v not found in table %v of schema %v", columnName, table.Name, table.Schema))
+		}
 		if !(column.Name == "created_at" && g.Config.InsertCreatedAtInCode == false && // Created at timestamps might not need to be created in code
 			(column.GoDataType == "time.Time" || column.GoDataType == "sql.NullTime")) &&
 			!(column.Name == "updated_at" && g.Config.InsertUpdatedAtInCode == false && // Updated at timestamps might not need to be created in code
@@ -246,7 +263,11 @@ func (g *Generator) buildTableInsertMethod(table DbTable, importList []string) (
 		pkeyAmpInsertedColumnNameSlice = append(pkeyAmpInsertedColumnNameSlice, "&inserted"+column.GoName)
 	}
 
-	for _, column := range table.ColumnMap {
+	for _, columnName := range colNames {
+		column, columnFound := table.ColumnMap[columnName]
+		if !columnFound {
+			panic(fmt.Sprintf("P#1OL34D - Column %v not found in table %v of schema %v", columnName, table.Name, table.Schema))
+		}
 		if (column.Name == "created_at" && g.Config.InsertCreatedAtInCode == false &&
 			(column.GoDataType == "time.Time" || column.GoDataType == "sql.NullTime")) ||
 			(column.Name == "updated_at" && g.Config.InsertUpdatedAtInCode == false &&
@@ -330,7 +351,7 @@ func (g *Generator) buildTableUpdateMethodBySingleIndex(table DbTable, index DbI
 
 	updateCode := ""
 
-	updateCode += fmt.Sprintf("func (%v *%v) updateBy%v() error {\n",
+	updateCode += fmt.Sprintf("func (%v *%v) UpdateBy%v() error {\n",
 		table.variableName(), table.fullyQualifiedStructName(), index.GetFuncNamePart())
 
 	updateCode += fmt.Sprintf("err := %v.validateForUpdate()\n", table.variableName())
@@ -342,7 +363,15 @@ func (g *Generator) buildTableUpdateMethodBySingleIndex(table DbTable, index DbI
 	goColumnNameCollection := []string{}
 
 	i := 0
-	for _, column := range table.ColumnList {
+	colNames := table.ColumnList
+	if g.Config.ColumnOrderAlphabetic {
+		colNames = table.ColumnListA2z
+	}
+	for _, columnName := range colNames {
+		column, columnFound := table.ColumnMap[columnName]
+		if !columnFound {
+			panic(fmt.Sprintf("P#1OL34D - Column %v not found in table %v of schema %v", columnName, table.Name, table.Schema))
+		}
 		if !columnInList(column.Name, table.PkColumnList) {
 			if !(column.Name == "created_at" && // Created at timestamps are never to be updated.
 				(column.GoDataType == "time.Time" || column.GoDataType == "sql.NullTime")) &&
@@ -400,7 +429,7 @@ func (g *Generator) buildTableUpdateMethodBySingleIndex(table DbTable, index DbI
 func (g *Generator) buildTableUpdateMethod(table DbTable, importList []string) (string, []string) {
 	updateCode := ""
 
-	updateCode += fmt.Sprintf("func (%v *%v) update() error {\n",
+	updateCode += fmt.Sprintf("func (%v *%v) Update() error {\n",
 		table.variableName(), table.fullyQualifiedStructName())
 
 	if len(table.PkColumnList) == 0 {
@@ -419,7 +448,15 @@ func (g *Generator) buildTableUpdateMethod(table DbTable, importList []string) (
 	goColumnNameCollection := []string{}
 
 	i := 0
-	for _, column := range table.ColumnList {
+	colNames := table.ColumnList
+	if g.Config.ColumnOrderAlphabetic {
+		colNames = table.ColumnListA2z
+	}
+	for _, columnName := range colNames {
+		column, columnFound := table.ColumnMap[columnName]
+		if !columnFound {
+			panic(fmt.Sprintf("P#1OL34Y - Column %v not found in table %v of schema %v", columnName, table.Name, table.Schema))
+		}
 		if !columnInList(column.Name, table.PkColumnList) {
 			if !(column.Name == "created_at" && // Created at timestamps are never to be updated.
 				(column.GoDataType == "time.Time" || column.GoDataType == "sql.NullTime")) &&
@@ -476,7 +513,7 @@ func (g *Generator) buildTableUpdateMethod(table DbTable, importList []string) (
 
 func (g *Generator) buildTableDeleteMethod(table DbTable, importList []string) (string, []string) {
 	deleteCode := ""
-	deleteCode += fmt.Sprintf("func (%v *%v) delete() error {\n",
+	deleteCode += fmt.Sprintf("func (%v *%v) Delete() error {\n",
 		table.variableName(), table.fullyQualifiedStructName())
 
 	if len(table.PkColumnList) == 0 {
@@ -530,9 +567,9 @@ func (g *Generator) buildSingleTableFkeyFunc(table DbTable, fkey DbFkInfo, impor
 	queryVars := make([]string, 0)
 	i := 1
 	for fromColName, toColName := range fkey.References {
-		fromCol, err := g.getColumnFromListByName(fromColName, table.ColumnList)
+		fromCol, colFound := table.ColumnMap[fromColName]
 
-		if err != nil {
+		if !colFound {
 			panic(fmt.Sprintf("E#1OJ1JG - Expected column %v is not prsent in table %v in schema %v",
 				fromColName, table.Name, table.Schema))
 		}
@@ -597,9 +634,9 @@ func (g *Generator) buildSingleTableFkeyFunc(table DbTable, fkey DbFkInfo, impor
 func (g *Generator) buildTableDaoStructAndNewFunc(table DbTable, importList []string) (string, []string) {
 	daoCode := ""
 
-	daoCode += fmt.Sprintf("\ntype %vDao struct{}\n", table.fullyQualifiedStructName())
-	daoCode += fmt.Sprintf("func New%vDao() *%vDao {\n", table.fullyQualifiedStructName(), table.fullyQualifiedStructName())
-	daoCode += fmt.Sprintf("return &%vDao{}\n", table.fullyQualifiedStructName())
+	daoCode += fmt.Sprintf("\ntype %v struct{}\n", table.fullyQualifiedDaoName())
+	daoCode += fmt.Sprintf("func New%v() *%v {\n", table.fullyQualifiedDaoName(), table.fullyQualifiedDaoName())
+	daoCode += fmt.Sprintf("return &%v{}\n", table.fullyQualifiedDaoName())
 	daoCode += "}\n"
 
 	return daoCode, importList
@@ -624,8 +661,8 @@ func (g *Generator) buildSingleTableDaoIdxFunc(table DbTable, idx DbIndex, impor
 	argListWithoutTypes := []string{}
 	for i, col := range idx.ColumnList {
 		funcNamePart += col.GoName
-		argList += lowerFirstChar(col.GoNameSingular) + " " + col.GoDataType
-		argListWithoutTypes = append(argListWithoutTypes, lowerFirstChar(col.GoNameSingular))
+		argList += col.asSafeVariableName() + " " + col.GoDataType
+		argListWithoutTypes = append(argListWithoutTypes, col.asSafeVariableName())
 		if i+1 != len(idx.ColumnList) {
 			argList += ","
 		}
@@ -634,12 +671,12 @@ func (g *Generator) buildSingleTableDaoIdxFunc(table DbTable, idx DbIndex, impor
 
 	if idx.IsUnique {
 		// Create a function to get a single item
-		daoSingleIdxCode += fmt.Sprintf("func (%vDao *%vDao)GetFromDbBy%v(%v,getFromMainDb ...bool) (%v, error) {\n",
-			lowerFirstChar(table.GoNameSingular), table.GoNameSingular, funcNamePart, argList, table.GoNameSingular)
+		daoSingleIdxCode += fmt.Sprintf("func (%vDao *%v)GetFromDbBy%v(%v,getFromMainDb ...bool) (%v, error) {\n",
+			table.variableName(), table.fullyQualifiedDaoName(), funcNamePart, argList, table.fullyQualifiedStructName())
 		daoSingleIdxCode += "var err error\n"
 
 		// Create the query now
-		daoSingleIdxCode += fmt.Sprintf("query:=`SELECT * FROM %v WHERE ", table.Name)
+		daoSingleIdxCode += fmt.Sprintf("query:=`SELECT * FROM %v WHERE ", table.fullyQualifiedTableName())
 		for k, column := range idx.ColumnList {
 			comma := " AND "
 			if k == len(idx.ColumnList)-1 {
@@ -650,39 +687,40 @@ func (g *Generator) buildSingleTableDaoIdxFunc(table DbTable, idx DbIndex, impor
 		}
 		daoSingleIdxCode += "`\n"
 
-		daoSingleIdxCode += fmt.Sprintf("%v := %v{}\n", lowerFirstChar(table.GoNameSingular), table.GoNameSingular)
+		daoSingleIdxCode += fmt.Sprintf("%v := %v{}\n", table.variableName(), table.fullyQualifiedStructName())
 
 		daoSingleIdxCode += "\nif len(getFromMainDb) > 0 && getFromMainDb[0] == true {\n"
-		daoSingleIdxCode += fmt.Sprintf("err = resources.MainDb.Get(&%v, query, %v)\n", lowerFirstChar(table.GoNameSingular), strings.Join(argListWithoutTypes, ", "))
+		daoSingleIdxCode += fmt.Sprintf("err = %v.Get(&%v, query, %v)\n", upperFirstChar(g.Config.DbModelPackageName), table.variableName(), strings.Join(argListWithoutTypes, ", "))
 		daoSingleIdxCode += "} else {\n"
-		daoSingleIdxCode += fmt.Sprintf("err = resources.ReaderDb.Get(&%v, query, %v)\n", lowerFirstChar(table.GoNameSingular), strings.Join(argListWithoutTypes, ", "))
+		daoSingleIdxCode += fmt.Sprintf("err = %vReader.Get(&%v, query, %v)\n", upperFirstChar(g.Config.DbModelPackageName), table.variableName(), strings.Join(argListWithoutTypes, ", "))
 		daoSingleIdxCode += "}\n\n"
 
 		daoSingleIdxCode += "if err==sql.ErrNoRows {\n"
-		daoSingleIdxCode += fmt.Sprintf("return %v, err\n", lowerFirstChar(table.GoNameSingular))
+		daoSingleIdxCode += fmt.Sprintf("return %v, err\n", table.variableName())
 		daoSingleIdxCode += "}\n"
 		importList = g.addToImports("database/sql", importList)
 
 		daoSingleIdxCode += "if err!=nil {\n"
 		daoSingleIdxCode += "errMsg := fmt.Sprintf(\"E#" + newUniqueLmid() + " - Could not load " + table.GoName + " by " + funcNamePart + " Error: %v\", err)\n"
-		daoSingleIdxCode += "resources.Logger.LogString(errMsg)\n"
-		daoSingleIdxCode += fmt.Sprintf("return %v, errors.New(errMsg)\n", lowerFirstChar(table.GoNameSingular))
+		daoSingleIdxCode += "logger.Println(errMsg)\n"
+		importList = g.addToImports("github.com/techrail/ground/logger", importList)
+		daoSingleIdxCode += fmt.Sprintf("return %v, errors.New(errMsg)\n", table.variableName())
 		daoSingleIdxCode += "}\n"
 
-		daoSingleIdxCode += fmt.Sprintf("return %v, nil\n", lowerFirstChar(table.GoNameSingular))
+		daoSingleIdxCode += fmt.Sprintf("return %v, nil\n", table.variableName())
 		daoSingleIdxCode += "}\n "
 	} else {
 		// Create a function to get a list of items
 		daoSingleIdxCode += fmt.Sprintf("// GetListFromDbBy%v fetches a list of %v items from DB using given parameters\n",
 			funcNamePart, table.GoNameSingular)
 		daoSingleIdxCode += "// NOTE: This function does not implement pagination.\n"
-		daoSingleIdxCode += fmt.Sprintf("func (%vDao *%vDao)GetListFromDbBy%v(%v,getFromMainDb ...bool) ([]*%v, error) {\n",
-			lowerFirstChar(table.GoNameSingular), table.GoNameSingular, funcNamePart, argList, table.GoNameSingular)
+		daoSingleIdxCode += fmt.Sprintf("func (%vDao *%v)GetListFromDbBy%v(%v,getFromMainDb ...bool) ([]*%v, error) {\n",
+			table.variableName(), table.fullyQualifiedDaoName(), funcNamePart, argList, table.fullyQualifiedStructName())
 
 		daoSingleIdxCode += "var err error\n"
 
 		// Create the query now
-		daoSingleIdxCode += fmt.Sprintf("query:=`SELECT * FROM %v WHERE ", table.Name)
+		daoSingleIdxCode += fmt.Sprintf("query:=`SELECT * FROM %v WHERE ", table.fullyQualifiedTableName())
 		for k, column := range idx.ColumnList {
 			comma := " AND "
 			if k == len(idx.ColumnList)-1 {
@@ -693,16 +731,17 @@ func (g *Generator) buildSingleTableDaoIdxFunc(table DbTable, idx DbIndex, impor
 		}
 		daoSingleIdxCode += "`\n"
 
-		daoSingleIdxCode += fmt.Sprintf("%v := make([]*%v, 0)\n", lowerFirstChar(table.GoNamePlural), table.GoNameSingular)
+		daoSingleIdxCode += fmt.Sprintf("%v := make([]*%v, 0)\n", lowerFirstChar(table.GoNamePlural), table.fullyQualifiedStructName())
 		daoSingleIdxCode += "\nif len(getFromMainDb) > 0 && getFromMainDb[0] == true {\n"
-		daoSingleIdxCode += fmt.Sprintf("err = resources.MainDb.Select(&%v, query, %v)\n", lowerFirstChar(table.GoNamePlural), strings.Join(argListWithoutTypes, ", "))
+		daoSingleIdxCode += fmt.Sprintf("err = %v.Select(&%v, query, %v)\n", upperFirstChar(g.Config.DbModelPackageName), lowerFirstChar(table.GoNamePlural), strings.Join(argListWithoutTypes, ", "))
 		daoSingleIdxCode += "} else {\n"
-		daoSingleIdxCode += fmt.Sprintf("err = resources.ReaderDb.Select(&%v, query, %v)\n", lowerFirstChar(table.GoNamePlural), strings.Join(argListWithoutTypes, ", "))
+		daoSingleIdxCode += fmt.Sprintf("err = %vReader.Select(&%v, query, %v)\n", upperFirstChar(g.Config.DbModelPackageName), lowerFirstChar(table.GoNamePlural), strings.Join(argListWithoutTypes, ", "))
 		daoSingleIdxCode += "}\n\n"
 
 		daoSingleIdxCode += "if err!=nil {\n"
 		daoSingleIdxCode += "errMsg := fmt.Sprintf(\"E#" + newUniqueLmid() + " - Could not load " + table.GoName + " by " + funcNamePart + " Error: %v\", err)\n"
-		daoSingleIdxCode += "resources.Logger.LogString(errMsg)\n"
+		daoSingleIdxCode += "logger.Println(errMsg)\n"
+		importList = g.addToImports("github.com/techrail/ground/logger", importList)
 		daoSingleIdxCode += "return nil, errors.New(errMsg)\n"
 		daoSingleIdxCode += "}\n"
 
