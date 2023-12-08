@@ -22,8 +22,9 @@ func (g *Generator) buildTableStructString(table DbTable, importList []string) (
 			panic(fmt.Sprintf("P#1OL11R - Column %v not found in table %v of schema %v", columnName, table.Name, table.Schema))
 		}
 
-		fmt.Printf("Table: %v | Column: %v | PG DataType: %v | Nullable: %v | Go DataType: %v\n",
-			table.Name, column.Name, column.DataType, column.Nullable, column.GoDataType)
+		//fmt.Printf("Table: %v | Column: %v | PG DataType: %v | Nullable: %v | Go DataType: %v\n",
+		//	table.Name, column.Name, column.DataType, column.Nullable, column.GoDataType)
+
 		columnComment := ""
 		if column.Comment != "" {
 			columnComment = "// " + column.newlineEscapedComment()
