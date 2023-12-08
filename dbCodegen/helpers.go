@@ -16,7 +16,7 @@ func init() {
 
 func (g *Generator) getGoImportForDataType(datatype string, nullable bool) string {
 	switch datatype {
-	case "bigint", "integer", "smallint", "boolean", "character varying", "text", "numeric":
+	case "bigint", "integer", "smallint", "boolean", "character varying", "text", "numeric", "double precision":
 		if nullable {
 			return "database/sql"
 		}

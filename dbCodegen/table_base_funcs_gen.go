@@ -35,11 +35,19 @@ func (g *Generator) buildTableBaseFuncs(table DbTable, importList []string) (str
 	tableDeleteFuncStr, importList = g.buildTableDeleteMethod(table, importList)
 
 	// Foreign key funcs
-	tabForeignKeyMethods := ""
+	tabFwdForeignKeyMethods := ""
 
+	// Forward references
 	for _, fkey := range table.FKeyMap {
-		tabSingleFkeyMethod, iList := g.buildSingleTableFkeyFunc(table, fkey, importList)
-		tabForeignKeyMethods += tabSingleFkeyMethod + "\n\n"
+		tabSingleFkeyMethod, iList := g.buildSingleTableFwdFkeyFunc(table, fkey, importList)
+		tabFwdForeignKeyMethods += tabSingleFkeyMethod + "\n\n"
+		importList = iList
+	}
+
+	// Reverse references
+	for _, rFkey := range table.ReverseFKeyMap {
+		tabSingleFkeyMethod, iList := g.buildSingleTableRevFkeyFunc(table, rFkey, importList)
+		tabFwdForeignKeyMethods += tabSingleFkeyMethod + "\n\n"
 		importList = iList
 	}
 
@@ -56,7 +64,7 @@ func (g *Generator) buildTableBaseFuncs(table DbTable, importList []string) (str
 
 	tableBaseFuncStr := tableBaseValidationFuncStr + tableCommonValidationFuncStr + tableInsertionValidationFuncStr +
 		tableUpdateValidationFuncStr + tableInsertionFuncStr + tableUpdateFuncStr +
-		tableUpdateByIndexes + tableDeleteFuncStr + tabForeignKeyMethods +
+		tableUpdateByIndexes + tableDeleteFuncStr + tabFwdForeignKeyMethods +
 		tableMethodAndDaoSeparator + tableDaoStructAndNew + tableDaoFunctions
 	return tableBaseFuncStr, importList
 }
@@ -548,7 +556,10 @@ func (g *Generator) buildTableDeleteMethod(table DbTable, importList []string) (
 	return deleteCode, importList
 }
 
-func (g *Generator) buildSingleTableFkeyFunc(table DbTable, fkey DbFkInfo, importList []string) (string, []string) {
+// For generating the forward foreign key function
+// e.g. If user_addresses.user_id points to users.id, then this function will generate the
+// userAddress.GetUserByUserId function for the user_addresses table
+func (g *Generator) buildSingleTableFwdFkeyFunc(table DbTable, fkey DbFkInfo, importList []string) (string, []string) {
 	tabFKeyMethod := ""
 
 	// The target table should be there
@@ -562,11 +573,16 @@ func (g *Generator) buildSingleTableFkeyFunc(table DbTable, fkey DbFkInfo, impor
 	}
 
 	funcNamePart := ""
-	// funcArgs := make([]string, 0)
 	queryValPairs := make([]string, 0)
 	queryVars := make([]string, 0)
 	i := 1
-	for fromColName, toColName := range fkey.References {
+	for _, fromColName := range fkey.FromColOrder {
+		toColName, fromColNameFound := fkey.References[fromColName]
+		if !fromColNameFound {
+			panic(fmt.Sprintf("E#1OR6RQ - Expected column %v is not present in fkey %v in table %v in schema %v",
+				fromColName, fkey.ConstraintName, table.Name, table.Schema))
+		}
+
 		fromCol, colFound := table.ColumnMap[fromColName]
 
 		if !colFound {
@@ -577,7 +593,7 @@ func (g *Generator) buildSingleTableFkeyFunc(table DbTable, fkey DbFkInfo, impor
 		funcNamePart += fromCol.GoName
 		queryValPairs = append(queryValPairs, fmt.Sprintf("%v = $%v", toColName, i))
 		i += 1
-		if fromCol.Nullable && fromCol.GoDataType != "interface{}" {
+		if fromCol.Nullable && fromCol.GoDataType != "any" {
 			switch fromCol.GoDataType {
 			case "sql.NullInt64":
 				queryVars = append(queryVars, lowerFirstChar(table.GoNameSingular)+"."+fromCol.GoName+".Int64")
@@ -629,6 +645,42 @@ func (g *Generator) buildSingleTableFkeyFunc(table DbTable, fkey DbFkInfo, impor
 	tabFKeyMethod += "}\n"
 
 	return tabFKeyMethod, importList
+}
+
+// For generating the forward foreign key function
+// e.g. If user_addresses.user_id points to users.id, then this function will generate the
+// user.GetUserAddressByUserId function for the user_addresses table
+func (g *Generator) buildSingleTableRevFkeyFunc(table DbTable, rFkey DbFkInfo, importList []string) (string, []string) {
+	tabFKeyMethod := ""
+
+	// The source/from schema should be there
+	_, ok := g.Schemas[rFkey.FromSchema]
+	if !ok {
+		panic(fmt.Sprintf("E#1OR7AL - Expected the FromSchema %v to be there but was not", rFkey.FromSchema))
+	}
+	fromTable, ok := g.Schemas[rFkey.FromSchema].Tables[rFkey.FromTable]
+	if !ok {
+		panic(fmt.Sprintf("E#1OR7BG - Expected the fromTable %v in fromSchema %v to be there but was not", rFkey.FromTable, rFkey.FromSchema))
+	}
+
+	funcNamePart := ""
+	queryValPairs := make([]string, 0)
+	queryVars := make([]string, 0)
+
+	for _, fromColName := range rFkey.FromColOrder {
+		toColName, fromColNameFound := rFkey.References[fromColName]
+		if !fromColNameFound {
+			panic(fmt.Sprintf("E#1OR7II - Expected column %v is not present in fkey %v in table %v in schema %v",
+				fromColName, rFkey.ConstraintName, table.Name, table.Schema))
+		}
+
+		fromCol, colFound := table.ColumnMap[fromColName]
+
+		if !colFound {
+			panic(fmt.Sprintf("E#1OR7XB - Expected column %v is not prsent in table %v in schema %v",
+				fromColName, table.Name, table.Schema))
+		}
+	}
 }
 
 func (g *Generator) buildTableDaoStructAndNewFunc(table DbTable, importList []string) (string, []string) {

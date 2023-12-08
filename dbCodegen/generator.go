@@ -2,6 +2,7 @@ package dbCodegen
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"go/format"
 	"os"
@@ -51,6 +52,7 @@ type DbTable struct {
 	PkColumnList   []DbColumn          // List of columns that make the primary key (slice because order matters)
 	IndexList      []DbIndex           // List of indexes on this table
 	FKeyMap        map[string]DbFkInfo // List of foreign keys in table as map from constraint name to DbFkInfo type
+	ReverseFKeyMap map[string]DbFkInfo // List of foreign keys in table as map from constraint name to DbFkInfo type
 }
 
 func (table *DbTable) fullyQualifiedTableName() string {
@@ -76,6 +78,33 @@ func (table *DbTable) variableName() string {
 
 func (table *DbTable) commentForStruct() string {
 	return strings.ReplaceAll(table.Comment, "\n", "\n// ")
+}
+
+func (table *DbTable) FindIndexByColumnNames(colNames []string) DbIndex {
+	slices.Sort(colNames)
+
+	for _, idx := range table.IndexList {
+		// Check if the index has the same number of columns or not
+		if len(idx.ColumnList) == len(colNames) {
+			// Is this the index we are looking for?
+			thisIsTheIndex := true
+			// Now check that the columns mentioned in the input match with the ones in this index
+			sortedIdxColNames := idx.GetSortedColumnNames()
+			for i := 0; i < len(idx.ColumnList); i++ {
+				if colNames[i] != sortedIdxColNames[i] {
+					// At least this is not the index
+					thisIsTheIndex = false
+					break
+				}
+			}
+
+			if thisIsTheIndex {
+				return idx
+			}
+		}
+	}
+
+	return DbIndex{}
 }
 
 // DbColumn is the column representation of a table in the database for the generator
@@ -164,14 +193,28 @@ func (idx *DbIndex) GetFuncNamePart() string {
 	return funcNamePart
 }
 
+func (idx *DbIndex) GetSortedColumnNames() []string {
+	colNames := []string{}
+	for _, col := range idx.ColumnList {
+		colNames = append(colNames, col.Name)
+	}
+	slices.Sort(colNames)
+	return colNames
+}
+
 // DbFkInfo represents a single foreign key in a table
 type DbFkInfo struct {
 	FromSchema     string            // The schema name of the table from which the foreign key reference is being made
 	FromTable      string            // The table name which is referencing the target table
 	ToSchema       string            // The schema name of the table whose column is being referenced
 	ToTable        string            // The table name of the table which is being referenced
+	FromColOrder   []string          // The order which the columns appear in the FromTable
 	References     map[string]string // The reference map ([from_column]to_column format)
 	ConstraintName string            // Name of the foreign key constraint
+}
+
+func (fki *DbFkInfo) GetReverseRefName() string {
+	return fki.FromSchema + "." + fki.FromTable + "." + fki.ConstraintName
 }
 
 type fkInfoFromDb struct {
@@ -283,7 +326,7 @@ func (g *Generator) Generate() appError.Typ {
 		}
 
 		if table, tableOk := tables[columnDetail.Schema.String+"."+columnDetail.TableName.String]; tableOk {
-			dbColProp, colComment := getCommentAndPropertyFromComment(columnDetail.ColumnComment.String)
+			dbColProp, colComment := g.getCommentAndPropertyFromComment(columnDetail.ColumnComment.String)
 			goDataType, networkDataType := g.getGoType(columnDetail.ColumnDataType.String, columnDetail.ColumnNullable.Bool)
 			dbCol := DbColumn{
 				Schema:            columnDetail.Schema.String,
@@ -310,7 +353,7 @@ func (g *Generator) Generate() appError.Typ {
 			table.ColumnListA2z = append(table.ColumnListA2z, dbCol.Name)
 			tables[columnDetail.Schema.String+"."+columnDetail.TableName.String] = table
 		} else {
-			dbColProp, colComment := getCommentAndPropertyFromComment(columnDetail.ColumnComment.String)
+			dbColProp, colComment := g.getCommentAndPropertyFromComment(columnDetail.ColumnComment.String)
 			goDataType, networkDataType := g.getGoType(columnDetail.ColumnDataType.String, columnDetail.ColumnNullable.Bool)
 			dbCol := DbColumn{
 				Schema:            columnDetail.Schema.String,
@@ -377,7 +420,7 @@ func (g *Generator) Generate() appError.Typ {
 			if err != nil {
 				fmt.Println("..............", err)
 			}
-			fmt.Println("I#1O4FCO - ", schema.Name, ".", table.Name, "==>", strings.Join(pkColumnNames, ","))
+			//fmt.Println("I#1O4FCO - ", schema.Name, ".", table.Name, "==>", strings.Join(pkColumnNames, ","))
 
 			for _, colname := range pkColumnNames {
 				table.PkColumnList = append(table.PkColumnList, table.ColumnMap[colname])
@@ -435,9 +478,10 @@ func (g *Generator) Generate() appError.Typ {
 
 	err = db.Select(&fkInfoArr, query)
 	if err != nil {
-		fmt.Println("ERROR FKS -->-->-->-->-->-->", err)
+		fmt.Printf("E#1OMHRT - %v\n", err)
 	}
 
+	// Forward references
 	for _, fkInf := range fkInfoArr {
 		_, schemaFound := g.Schemas[fkInf.FromSchema]
 		if !schemaFound {
@@ -454,10 +498,11 @@ func (g *Generator) Generate() appError.Typ {
 			// g.Schemas[fkInf.FromSchema].Tables[fkInf.FromTable].FKeyMap = map[string]DbFkInfo{}
 
 			g.Schemas[fkInf.FromSchema].Tables[fkInf.FromTable].FKeyMap[fkInf.ConstraintName] = DbFkInfo{
-				FromSchema: fkInf.FromSchema,
-				FromTable:  fkInf.FromTable,
-				ToSchema:   fkInf.ToSchema,
-				ToTable:    fkInf.ToTable,
+				FromSchema:   fkInf.FromSchema,
+				FromTable:    fkInf.FromTable,
+				ToSchema:     fkInf.ToSchema,
+				ToTable:      fkInf.ToTable,
+				FromColOrder: []string{fkInf.FromColumn},
 				References: map[string]string{
 					fkInf.FromColumn: fkInf.ToColumn,
 				},
@@ -466,6 +511,25 @@ func (g *Generator) Generate() appError.Typ {
 		} else {
 			g.Schemas[fkInf.FromSchema].Tables[fkInf.FromTable].FKeyMap[fkInf.ConstraintName].References[fkInf.FromColumn] = fkInf.ToColumn
 		}
+
+		fkeyFromSchemaChain := g.Schemas[fkInf.FromSchema].Tables[fkInf.FromTable].FKeyMap[fkInf.ConstraintName]
+		fkeyFromSchemaChain.FromColOrder = append(fkeyFromSchemaChain.FromColOrder, fkInf.FromColumn)
+		g.Schemas[fkInf.FromSchema].Tables[fkInf.FromTable].FKeyMap[fkInf.ConstraintName] = fkeyFromSchemaChain
+	}
+
+	// Reverse References
+	for _, schema := range g.Schemas {
+		for _, table := range schema.Tables {
+			revFkeyMap := table.ReverseFKeyMap
+
+			for _, fkey := range table.FKeyMap {
+				revFkeyMap[fkey.GetReverseRefName()] = fkey
+			}
+
+			table.ReverseFKeyMap = revFkeyMap
+			schema.Tables[table.Name] = table
+		}
+		g.Schemas[schema.Name] = schema
 	}
 
 	// Let's sort things alphabetically and ordinarily where possible
@@ -489,8 +553,6 @@ func (g *Generator) Generate() appError.Typ {
 
 		g.Schemas[schema.Name] = schema
 	}
-
-	// Sort the columns
 
 	// MARKER: Start processing for Schema structs
 	schemaFileTemplate := `
@@ -728,7 +790,7 @@ func (g *Generator) getGoType(datatype string, nullable bool) (string, string) {
 			return "sql.NullInt16", "*int16"
 		}
 		return "int16", "int16"
-	case "numeric":
+	case "numeric", "double precision":
 		if nullable {
 			return "sql.NullFloat64", "*float64"
 		}
@@ -772,6 +834,20 @@ func (g *Generator) addToImports(str string, impList []string) []string {
 // This function tries to read the comment and separate the comment and the column properties json and return the
 // properties object and the comment separately.
 // TODO: Implement later
-func getCommentAndPropertyFromComment(comment string) (dbColumnProperty, string) {
-	return dbColumnProperty{}, comment
+func (g *Generator) getCommentAndPropertyFromComment(comment string) (dbColumnProperty, string) {
+	dbColProp := dbColumnProperty{}
+	// Split by delimiter
+	commentParts := strings.Split(comment, g.Config.ColCommentSeparator)
+	if len(commentParts) != 2 {
+		// More than 2 would mean that the comment was not written properly
+		return dbColProp, comment
+	}
+
+	colComment := commentParts[0]
+	err := json.Unmarshal([]byte(commentParts[1]), &dbColProp)
+	if err != nil {
+		return dbColumnProperty{}, colComment
+	}
+
+	return dbColProp, colComment
 }
