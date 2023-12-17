@@ -5,12 +5,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/techrail/ground/constants/errCode"
-	typs "github.com/techrail/ground/typs"
-	"github.com/techrail/ground/typs/appError"
 	"reflect"
 	"strconv"
 	"strings"
+
+	"github.com/techrail/ground/constants/errCode"
+	typs "github.com/techrail/ground/typs"
+	"github.com/techrail/ground/typs/appError"
 )
 
 // IMPORTANT: Please don't  try to replace the usage of this type in the DB model fields with something you think is
@@ -444,8 +445,14 @@ func (j *Typ) GetValueFromJsonObjectByJPath(path string) (string, any, appError.
 	}
 }
 
-// SetValueInJsonObjectByJPath will set a value in the Typ given its JPath
+// SetValueInJsonObjectByJPath will set a value in the Typ given its JPath.
 func SetValueInJsonObjectByJPath(obj Typ, path string, valueToSet any) (Typ, error) {
+	return SetValueAndOverrideInJsonObjectByJPath(obj, path, valueToSet, false)
+}
+
+// SetValueAndOverrideInJsonObjectByJPath will set a value in the Typ given its JPath.
+// If the JPath contains non-existing keys then original object will be overridden based override parameter.
+func SetValueAndOverrideInJsonObjectByJPath(obj Typ, path string, valueToSet any, override bool) (Typ, error) {
 	objToReturn := Typ{}
 	vTyp := typeUnknown
 	firstLetter := ""
@@ -647,7 +654,41 @@ func SetValueInJsonObjectByJPath(obj Typ, path string, valueToSet any) (Typ, err
 	}
 	actionPlan = append(actionPlan, jA)
 
+	createOverridingJsonActionPlan := func(index int) {
+		atKeyIndex := 0
+		for i := index; i < len(pathSplits); i++ {
+			resetInternalValues()
+			if i == len(pathSplits)-1 {
+				setVal(valueToSet)
+			} else {
+				setVal(map[string]any{})
+			}
+			jA := jsonAction{
+				DataType:       vTyp,
+				ToBeCreated:    true,
+				AtIndex:        atKeyIndex,
+				AtKey:          pathSplits[i],
+				ArrayOfAny:     internalArrayAny,
+				ArrayOfStrings: internalArrayString,
+				ArrayOfInts:    internalArrayInt,
+				ArrayOfFloats:  internalArrayFloat64,
+				ArrayOfBools:   internalArrayBool,
+				ArrayOfObjects: internalArrayObject,
+				StringValue:    internalString,
+				IntValue:       internalInt,
+				FloatValue:     internalFloat64,
+				BoolValue:      internalBool,
+				ObjectValue:    internalObj,
+				AnyValue:       internalAny,
+				IsNil:          internalNil,
+				IsUnknown:      internalUnknown,
+			}
+			actionPlan = append(actionPlan, jA)
+		}
+	}
+
 	// Loop to create the actionPlan
+forLoop:
 	for i, p := range pathSplits {
 		if len(p) == 0 {
 			return objToReturn, fmt.Errorf("E#1N7FJ7 - path starts or ends with a dot (.) or there are double dots (..) in path: %v", path)
@@ -846,6 +887,10 @@ func SetValueInJsonObjectByJPath(obj Typ, path string, valueToSet any) (Typ, err
 					// Check that this is the last element in pathSplits or not
 					if i < len(pathSplits)-1 {
 						// We are not in the last element
+						if override {
+							createOverridingJsonActionPlan(i)
+							break forLoop
+						}
 						return objToReturn, fmt.Errorf("E#1N7RO8 - Cannot assign value beyond last known path element %v", strings.Join(pathSplits[0:i], "."))
 					}
 					// Insert

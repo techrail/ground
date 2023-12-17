@@ -2011,3 +2011,16 @@ func TestSetValueInJsonObjectByJPath(t *testing.T) {
 		}
 	}
 }
+
+func TestSetValueAndOverrideInJsonObjectByJPath(t *testing.T) {
+	json, err := ToJsonObject(jsonString)
+	if err != nil {
+		fmt.Println("Failed to load JSON object")
+	}
+	fmt.Printf("Before value:\n %s\n", json.String())
+	json, err = SetValueAndOverrideInJsonObjectByJPath(json, "obj.nestedObj.child0.key1.key2.key3", "Hurrah!", true)
+	if err != nil {
+		fmt.Println("Failed to set value", err)
+	}
+	fmt.Printf("After value:\n %s\n", json.String())
+}
