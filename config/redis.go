@@ -4,15 +4,24 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"time"
 
 	goredis "github.com/redis/go-redis/v9"
-	"github.com/techrail/ground/constants"
 	"github.com/techrail/ground/constants/exitCode"
 )
 
 type redis struct {
-	Main redisConfig
+	Main        redisConfig
+	RedisClient connection
+}
+
+type Cache struct {
+	config redis
+	client *connection
+}
+
+type connection struct {
+	SingleClient  *goredis.Client
+	ClusterClient *goredis.ClusterClient
 }
 
 type redisConfig struct {
@@ -28,16 +37,17 @@ type redisConfig struct {
 	ConnectRetryIntervalInSeconds      int
 	AutoExpireTopLevelKeysAfterSeconds int
 	AppNamespace                       string
+	Address                            string
 }
 
 func init() {
 	config.Redis = redis{
 		Main: redisConfig{
-			Enabled:                            false,
+			Enabled:                            true,
 			Url:                                "redis://127.0.0.1:6379",
 			Username:                           "",
 			Password:                           "",
-			OperationMode:                      "auto",
+			OperationMode:                      "cluster",
 			MaxActiveConnections:               10,
 			MaxIdleConnections:                 10,
 			IdleTimeoutInSeconds:               60,
@@ -45,9 +55,12 @@ func init() {
 			ConnectRetryIntervalInSeconds:      10,
 			AutoExpireTopLevelKeysAfterSeconds: 0,
 			AppNamespace:                       "ground-based-serviceNs",
+			Address:                            ":7000",
 		},
 	}
 }
+
+var ctx = context.Background()
 
 func initializeRedisConfig() {
 	config.Redis.Main.Enabled = envOrViperOrDefaultBool("redis.main.enabled", config.Redis.Main.Enabled)
@@ -63,6 +76,7 @@ func initializeRedisConfig() {
 		"connectRetryIntervalInSeconds", int64(config.Redis.Main.ConnectRetryIntervalInSeconds)))
 	config.Redis.Main.AutoExpireTopLevelKeysAfterSeconds = int(envOrViperOrDefaultInt64("redis.main.autoExpireTopLevelKeysAfterSeconds", int64(config.Redis.Main.AutoExpireTopLevelKeysAfterSeconds)))
 	config.Redis.Main.AppNamespace = envOrViperOrDefaultString("redis.main.appNamespace", config.Redis.Main.AppNamespace)
+	config.Redis.Main.Address = envOrViperOrDefaultString("redis.main.address", config.Redis.Main.Address)
 
 	// TODO: work on it and implement it
 	if config.Redis.Main.Enabled &&
@@ -71,164 +85,129 @@ func initializeRedisConfig() {
 		config.Redis.Main.OperationMode != "standalone" {
 		fmt.Printf("P#1MQUNR - Invalid redis operation mode. Cannot proceed.")
 		os.Exit(exitCode.RedisConnectionFailed)
-	}
-}
-
-func NewClientWithUrl(url string) *goredis.Client {
-	opts, err := goredis.ParseURL(url)
-	if err != nil {
-		fmt.Println("E#1OELAY - Could not parse the Redis URL provided.")
-		panic(err)
-	}
-	rdb := goredis.NewClient(opts)
-	return rdb
-}
-
-var rdb *goredis.Client
-
-var ctx = context.Background()
-
-func (r *redis) NewClientFromConfig() *goredis.Client {
-
-	// If caching is not enabled, connecting attempt will not go through.
-	if !r.Main.Enabled {
-		fmt.Println("E#1OELCB - Enable Redis in the configuration file to create a client.")
-		panic("Redis is not enabled. Enable it to start using Redis.")
-	}
-
-	// If username and password are provided, use the provided credentials to connect.
-	if r.Main.Username != "" && r.Main.Password != "" {
-		rdb = goredis.NewClient(&goredis.Options{
-			Username: r.Main.Username,
-			Addr:     constants.RedisDefaultAddr,
-			Password: r.Main.Password,
-			DB:       constants.RedisDefaultDbNumber,
-			Protocol: constants.RedisDefaultProtocol,
-		})
-
-		fmt.Println("I#1OEMDA - Connected to Redis server using provided credentials.")
-		return rdb
-
-	}
-
-	// If only password is provided, use the default username to connect.
-	if r.Main.Password != "" {
-		rdb = goredis.NewClient(&goredis.Options{
-			Addr:     constants.RedisDefaultAddr,
-			Password: r.Main.Password,
-			DB:       constants.RedisDefaultDbNumber,
-			Protocol: constants.RedisDefaultProtocol,
-		})
-
-		fmt.Println("I#1OEO9R - Connected to Redis server using default host and port.")
-		return rdb
-
-	}
-
-	// Check if connection URL is available, if yes, then connect using that.
-	if r.Main.Url != "" {
-		opts, err := goredis.ParseURL(r.Main.Url)
-		if err != nil {
-			fmt.Println("E#1OEMOC - Could not parse the Redis URL provided in configuration file.")
-			panic(err)
+	} else {
+		// Try to connect to redis, check if operation mode is cluster, if yes then try all possible ways to connect.
+		if config.Redis.Main.OperationMode == "cluster" {
+			// Check using single/multiple addresses (host:port combinations)
+			if config.Redis.Main.Address != "" {
+				config.Redis.RedisClient.ClusterClient = goredis.NewClusterClient(&goredis.ClusterOptions{
+					Addrs: []string{config.Redis.Main.Address},
+				})
+				err := config.Redis.RedisClient.ClusterClient.ClusterNodes(ctx).Err()
+				if err != nil {
+					fmt.Println("E#1P87GS - Could not connect to redis cluster. Check the address provided.")
+				} else {
+					fmt.Println("I#1P87H7 - Connection established to redis cluster using node(s) address.")
+				}
+			} else if config.Redis.Main.Username != "" {
+				config.Redis.RedisClient.ClusterClient = goredis.NewClusterClient(&goredis.ClusterOptions{
+					Username: config.Redis.Main.Username,
+				})
+				err := config.Redis.RedisClient.ClusterClient.ClusterNodes(ctx).Err()
+				if err != nil {
+					fmt.Println("E#1P87HK - Could not connect to redis cluster. Check the username provided.")
+				} else {
+					fmt.Println("I#1P87I1 - Connection established to redis cluster using node username.")
+				}
+			} else if config.Redis.Main.Username != "" && config.Redis.Main.Password != "" {
+				config.Redis.RedisClient.ClusterClient = goredis.NewClusterClient(&goredis.ClusterOptions{
+					Username: config.Redis.Main.Username,
+					Password: config.Redis.Main.Password,
+				})
+				err := config.Redis.RedisClient.ClusterClient.ClusterNodes(ctx).Err()
+				if err != nil {
+					fmt.Println("E#1P87JF - Could not connect to redis cluster. Check the username and password provided.")
+				} else {
+					fmt.Println("I#1P87JK - Connection established to redis cluster using node username and password.")
+				}
+			}
+			// Try to connect to redis, check if operation mode is standalone, if yes then try all possible ways to connect.
+			// If not we will connect using auto mode, which is, standalone mode.
+		} else if config.Redis.Main.OperationMode == "standalone" || config.Redis.Main.OperationMode == "auto" {
+			if config.Redis.Main.Address != "" {
+				config.Redis.RedisClient.SingleClient = goredis.NewClient(&goredis.Options{
+					Addr: config.Redis.Main.Address,
+				})
+				err := config.Redis.RedisClient.SingleClient.Ping(ctx).Err()
+				if err != nil {
+					fmt.Println("E#1P87JU - Could not connect to redis server. Check the address provided.")
+				} else {
+					fmt.Println("I#1P87K1 - Connection established to redis server using server address.")
+				}
+			} else if config.Redis.Main.Url != "" {
+				opts, err := goredis.ParseURL(config.Redis.Main.Url)
+				if err != nil {
+					fmt.Println("E#1OEMOC - Could not parse the connection URL.")
+					panic(err)
+				}
+				config.Redis.RedisClient.SingleClient = goredis.NewClient(opts)
+				errPing := config.Redis.RedisClient.SingleClient.Ping(ctx).Err()
+				if errPing != nil {
+					fmt.Println("E#1P87KH - Could not connect to redis server. Check the connection url provided.")
+				} else {
+					fmt.Println("I#1P87KQ - Connection established to redis server using connection url.")
+				}
+			} else if config.Redis.Main.Username != "" {
+				config.Redis.RedisClient.SingleClient = goredis.NewClient(&goredis.Options{
+					Username: config.Redis.Main.Username,
+				})
+				err := config.Redis.RedisClient.SingleClient.Ping(ctx).Err()
+				if err != nil {
+					fmt.Println("E#1P87KX - Could not connect to redis server. Check the username provided.")
+				} else {
+					fmt.Println("I#1P87L8 - Connection established to redis server using instance username.")
+				}
+			} else if config.Redis.Main.Username != "" && config.Redis.Main.Password != "" {
+				config.Redis.RedisClient.SingleClient = goredis.NewClient(&goredis.Options{
+					Username: config.Redis.Main.Username,
+					Password: config.Redis.Main.Password,
+				})
+				err := config.Redis.RedisClient.SingleClient.Ping(ctx).Err()
+				if err != nil {
+					fmt.Println("E#1P87LK - Could not connect to redis server. Check the username and password provided.")
+				} else {
+					fmt.Println("I#1P87LS - Connection established to redis cluster using instance username and password.")
+				}
+			}
+		} else {
+			fmt.Println("P#1P87M6 - No operation mode for redis found, exiting.")
+			os.Exit(exitCode.RedisConnectionFailed)
 		}
-		rdb = goredis.NewClient(opts)
-		fmt.Println("I#1OEO90 - Connected to Redis server using connection url.")
-		return rdb
-	}
-	// TODO - More options to be added
-
-	//Nothing is provided, try with default config
-	rdb = goredis.NewClient(&goredis.Options{
-		Addr:     constants.RedisDefaultAddr,
-		Password: constants.RedisDefaultPassword,
-		DB:       constants.RedisDefaultDbNumber,
-		Protocol: constants.RedisDefaultProtocol,
-	})
-
-	return rdb
-
-}
-
-// TODO - func for clusters and TLS connections
-
-// We want this function to take any value (string, hash, set, list) and get it from cache,
-// if the key does not exist, we want to set it in cache
-func GetOrSet(key string, value []any) {
-
-}
-
-// This function would get the value for provided key from cache - works with all datatypes
-func GetFromCache() {
-
-}
-
-// This function would set the provided value in cache - works with all datatypes
-func SetInCache() {
-
-}
-
-// This function can take in a key, look up in cache, if not present in cache,
-// the function would call the provided database function, to get the value from DB
-// This should also work with all major types of data structures
-func GetFromCacheOrDb() {
-
-}
-
-// Gets the string value associated with the given key.
-func GetString(key string) string {
-	value, err := rdb.Get(ctx, key).Result()
-	if err == goredis.Nil {
-		fmt.Println("E#1OIBZH - Key does not exist. " + err.Error())
-	}
-	return value
-}
-
-// Sets a string value with the provided expiry duration.
-func SetStringWithExpiry(key, value string, ttl time.Duration) {
-	err := rdb.Set(ctx, key, value, ttl).Err()
-	if err != nil {
-		fmt.Println("E#1OICUW - Error occurred while setting string " + err.Error())
 	}
 }
 
-// Sets a string value with no expiry.
-func SetStringNoExpiry(key, value string) {
-	err := rdb.SetNX(ctx, key, value, -1).Err()
-	if err != nil {
-		fmt.Println("E#1OICT1 - Error occurred while setting string " + err.Error())
+// Cluster management methods
+
+func (c *Cache) Info() *goredis.StringCmd {
+	if c.client.ClusterClient != nil {
+		return config.Redis.RedisClient.ClusterClient.ClusterInfo(ctx)
+	} else {
+		return config.Redis.RedisClient.SingleClient.Info(ctx)
+	}
+}
+
+// func (c *Cache) ClusterNodes() *goredis.StringCmd {
+// 	if c.client.ClusterClient != nil {
+// 		return config.Redis.RedisClient.ClusterClient.ClusterNodes(ctx)
+// 	} else {
+// 		cmd := NewStringCmd(ctx, "cluster", "cluster not enabled")
+// 		return &goredis.StringCmd{cmd}
+// 	}
+// }
+
+func (c *Cache) PoolStats() *goredis.PoolStats {
+	if c.client.ClusterClient != nil {
+		return config.Redis.RedisClient.ClusterClient.PoolStats()
+	} else {
+		return config.Redis.RedisClient.SingleClient.PoolStats()
 	}
 
 }
 
-// This function appends the provided string to the existing string value mapped with the key.
-func AppendToString(key, value string) {
-	err := rdb.Append(ctx, key, value).Err()
-	if err != nil {
-		fmt.Println("E#1OJ0IC - Error occurred while appending to string " + err.Error())
-	}
-}
-
-// This function increments the value associated with key by 1
-func IncrementString(key string) {
-	err := rdb.Incr(ctx, key).Err()
-	if err != nil {
-		fmt.Println("E#1OJ0SV - Error occurred while incrementing value. " + err.Error())
-	}
-
-}
-
-func IncrementStringBy(key string, value int64) {
-	err := rdb.IncrBy(ctx, key, value).Err()
-	if err != nil {
-		fmt.Println("E#1OJ16B - Error occurred while incrementing value by the given integer. " + err.Error())
-	}
-
-}
-
-func IncrementStringByFloat(key string, value float64) {
-	err := rdb.IncrByFloat(ctx, key, value).Err()
-	if err != nil {
-		fmt.Println("E#1OJ22L - Error occurred while incrementing value by given float. " + err.Error())
-	}
-}
+// func (c *Cache) ForEachShard(client *goredis.Client,fn func(contxt context.Context, goredis.Client)) goredis.Error {
+// 	if c.client.ClusterClient != nil {
+// 		return config.Redis.RedisClient.ClusterClient.ForEachShard(ctx, fn, )
+// 	} else {
+//
+// 	}
+// }
