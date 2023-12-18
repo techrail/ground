@@ -653,21 +653,57 @@ func SetValueAndOverrideInJsonObjectByJPath(obj Typ, path string, valueToSet any
 		IsUnknown:      internalUnknown,
 	}
 	actionPlan = append(actionPlan, jA)
-
-	createOverridingJsonActionPlan := func(index int) {
-		atKeyIndex := 0
-		for i := index; i < len(pathSplits); i++ {
-			resetInternalValues()
-			if i == len(pathSplits)-1 {
+	allocate := func(size int) {
+		switch valueToSet.(type) {
+		case int:
+			setVal(make([]int, size))
+		case float64:
+			setVal(make([]float64, size))
+		case string:
+			setVal(make([]string, size))
+		case bool:
+			setVal(make([]bool, size))
+		case any:
+			setVal(make([]any, size))
+		default:
+			fmt.Println("E#1P84CQ - Found an invalid value to set.")
+		}
+	}
+	createOverridingJsonActionPlan := func(index, arrExpectedIndex int) {
+		N := len(pathSplits)
+		expectedIndex := 0
+		for i := index; i < N; i++ {
+			atKey := pathSplits[i]
+			atKeyIndex := 0
+			if strings.Contains(pathSplits[i], "[") {
+				atKey = ""
+				atKeyIndex = expectedIndex
+			}
+			if i == N-1 {
 				setVal(valueToSet)
 			} else {
-				setVal(map[string]any{})
+				nxtIndex := i + 1
+				if nxtIndex == N-1 && strings.Contains(pathSplits[nxtIndex], "[") {
+					expectedIndex, err = strconv.Atoi(pathSplits[nxtIndex][1 : len(pathSplits[nxtIndex])-1])
+					if err != nil {
+						fmt.Println("E#1P9WON - Found an Invalid array index in path", err)
+					}
+					allocate(expectedIndex)
+				} else if nxtIndex != N-1 && strings.Contains(pathSplits[nxtIndex], "[") {
+					expectedIndex, err = strconv.Atoi(pathSplits[nxtIndex][1 : len(pathSplits[nxtIndex])-1])
+					if err != nil {
+						fmt.Println("E#1P9WOT - Found an Invalid array index in path", err)
+					}
+					setVal(make([]map[string]any, expectedIndex))
+				} else {
+					setVal(map[string]any{})
+				}
 			}
 			jA := jsonAction{
 				DataType:       vTyp,
 				ToBeCreated:    true,
 				AtIndex:        atKeyIndex,
-				AtKey:          pathSplits[i],
+				AtKey:          atKey,
 				ArrayOfAny:     internalArrayAny,
 				ArrayOfStrings: internalArrayString,
 				ArrayOfInts:    internalArrayInt,
@@ -722,6 +758,11 @@ forLoop:
 			if vTyp != typeArrayAny && vTyp != typeArrayInt && vTyp != typeArrayFloat64 &&
 				vTyp != typeArrayString && vTyp != typeArrayBool && vTyp != typeArrayObject {
 				// ... nope, don't think it was an array
+				if override {
+					actionPlan = actionPlan[:len(actionPlan)-1]
+					createOverridingJsonActionPlan(i-1, expectedIndex)
+					break forLoop
+				}
 				return objToReturn, fmt.Errorf("E#1N7FJK - Cannot treat entity of type %v as array", vTyp)
 			}
 
@@ -888,7 +929,7 @@ forLoop:
 					if i < len(pathSplits)-1 {
 						// We are not in the last element
 						if override {
-							createOverridingJsonActionPlan(i)
+							createOverridingJsonActionPlan(i, 0)
 							break forLoop
 						}
 						return objToReturn, fmt.Errorf("E#1N7RO8 - Cannot assign value beyond last known path element %v", strings.Join(pathSplits[0:i], "."))
@@ -987,7 +1028,7 @@ forLoop:
 
 				if ok {
 					// Key is present
-					if prevJa.ToBeCreated {
+					if prevJa.ToBeCreated && !override {
 						// Key is present and is being asked to be created as well. That amounts to an error
 						return objToReturn, fmt.Errorf("E#1N7RPM - Value is present and was asked to be created for key %v", prevJa.AtKey)
 					} else {
