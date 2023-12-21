@@ -5,12 +5,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/techrail/ground/constants/errCode"
-	typs "github.com/techrail/ground/typs"
-	"github.com/techrail/ground/typs/appError"
 	"reflect"
 	"strconv"
 	"strings"
+
+	"github.com/techrail/ground/constants/errCode"
+	typs "github.com/techrail/ground/typs"
+	"github.com/techrail/ground/typs/appError"
 )
 
 // IMPORTANT: Please don't  try to replace the usage of this type in the DB model fields with something you think is
@@ -444,8 +445,14 @@ func (j *Typ) GetValueFromJsonObjectByJPath(path string) (string, any, appError.
 	}
 }
 
-// SetValueInJsonObjectByJPath will set a value in the Typ given its JPath
+// SetValueInJsonObjectByJPath will set a value in the Typ given its JPath.
 func SetValueInJsonObjectByJPath(obj Typ, path string, valueToSet any) (Typ, error) {
+	return SetValueAndOverrideInJsonObjectByJPath(obj, path, valueToSet, false)
+}
+
+// SetValueAndOverrideInJsonObjectByJPath will set a value in the Typ given its JPath.
+// If the JPath contains non-existing keys then original object will be overridden based override parameter.
+func SetValueAndOverrideInJsonObjectByJPath(obj Typ, path string, valueToSet any, override bool) (Typ, error) {
 	objToReturn := Typ{}
 	vTyp := typeUnknown
 	firstLetter := ""
@@ -646,8 +653,78 @@ func SetValueInJsonObjectByJPath(obj Typ, path string, valueToSet any) (Typ, err
 		IsUnknown:      internalUnknown,
 	}
 	actionPlan = append(actionPlan, jA)
+	allocate := func(size int) {
+		switch valueToSet.(type) {
+		case int:
+			setVal(make([]int, size))
+		case float64:
+			setVal(make([]float64, size))
+		case string:
+			setVal(make([]string, size))
+		case bool:
+			setVal(make([]bool, size))
+		case any:
+			setVal(make([]any, size))
+		default:
+			fmt.Println("E#1P84CQ - Found an invalid value to set.")
+		}
+	}
+	createOverridingJsonActionPlan := func(index, arrExpectedIndex int) {
+		N := len(pathSplits)
+		expectedIndex := 0
+		for i := index; i < N; i++ {
+			atKey := pathSplits[i]
+			atKeyIndex := 0
+			if strings.Contains(pathSplits[i], "[") {
+				atKey = ""
+				atKeyIndex = expectedIndex
+			}
+			if i == N-1 {
+				setVal(valueToSet)
+			} else {
+				nxtIndex := i + 1
+				if nxtIndex == N-1 && strings.Contains(pathSplits[nxtIndex], "[") {
+					expectedIndex, err = strconv.Atoi(pathSplits[nxtIndex][1 : len(pathSplits[nxtIndex])-1])
+					if err != nil {
+						fmt.Println("E#1P9WON - Found an Invalid array index in path", err)
+					}
+					allocate(expectedIndex)
+				} else if nxtIndex != N-1 && strings.Contains(pathSplits[nxtIndex], "[") {
+					expectedIndex, err = strconv.Atoi(pathSplits[nxtIndex][1 : len(pathSplits[nxtIndex])-1])
+					if err != nil {
+						fmt.Println("E#1P9WOT - Found an Invalid array index in path", err)
+					}
+					setVal(make([]map[string]any, expectedIndex))
+				} else {
+					setVal(map[string]any{})
+				}
+			}
+			jA := jsonAction{
+				DataType:       vTyp,
+				ToBeCreated:    true,
+				AtIndex:        atKeyIndex,
+				AtKey:          atKey,
+				ArrayOfAny:     internalArrayAny,
+				ArrayOfStrings: internalArrayString,
+				ArrayOfInts:    internalArrayInt,
+				ArrayOfFloats:  internalArrayFloat64,
+				ArrayOfBools:   internalArrayBool,
+				ArrayOfObjects: internalArrayObject,
+				StringValue:    internalString,
+				IntValue:       internalInt,
+				FloatValue:     internalFloat64,
+				BoolValue:      internalBool,
+				ObjectValue:    internalObj,
+				AnyValue:       internalAny,
+				IsNil:          internalNil,
+				IsUnknown:      internalUnknown,
+			}
+			actionPlan = append(actionPlan, jA)
+		}
+	}
 
 	// Loop to create the actionPlan
+forLoop:
 	for i, p := range pathSplits {
 		if len(p) == 0 {
 			return objToReturn, fmt.Errorf("E#1N7FJ7 - path starts or ends with a dot (.) or there are double dots (..) in path: %v", path)
@@ -681,6 +758,11 @@ func SetValueInJsonObjectByJPath(obj Typ, path string, valueToSet any) (Typ, err
 			if vTyp != typeArrayAny && vTyp != typeArrayInt && vTyp != typeArrayFloat64 &&
 				vTyp != typeArrayString && vTyp != typeArrayBool && vTyp != typeArrayObject {
 				// ... nope, don't think it was an array
+				if override {
+					actionPlan = actionPlan[:len(actionPlan)-1]
+					createOverridingJsonActionPlan(i-1, expectedIndex)
+					break forLoop
+				}
 				return objToReturn, fmt.Errorf("E#1N7FJK - Cannot treat entity of type %v as array", vTyp)
 			}
 
@@ -846,6 +928,10 @@ func SetValueInJsonObjectByJPath(obj Typ, path string, valueToSet any) (Typ, err
 					// Check that this is the last element in pathSplits or not
 					if i < len(pathSplits)-1 {
 						// We are not in the last element
+						if override {
+							createOverridingJsonActionPlan(i, 0)
+							break forLoop
+						}
 						return objToReturn, fmt.Errorf("E#1N7RO8 - Cannot assign value beyond last known path element %v", strings.Join(pathSplits[0:i], "."))
 					}
 					// Insert
@@ -942,7 +1028,7 @@ func SetValueInJsonObjectByJPath(obj Typ, path string, valueToSet any) (Typ, err
 
 				if ok {
 					// Key is present
-					if prevJa.ToBeCreated {
+					if prevJa.ToBeCreated && !override {
 						// Key is present and is being asked to be created as well. That amounts to an error
 						return objToReturn, fmt.Errorf("E#1N7RPM - Value is present and was asked to be created for key %v", prevJa.AtKey)
 					} else {

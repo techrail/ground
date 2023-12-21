@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"runtime"
+	"strings"
 	"testing"
 
 	"github.com/techrail/ground/typs/appError"
@@ -104,6 +105,7 @@ var jsonString = `
   }
 }
 `
+var jsonObj Typ
 
 // getTestsSuccessful indicates if the TestGetValueFromJsonObjectByJPath encountered no errors
 //
@@ -2010,4 +2012,87 @@ func TestSetValueInJsonObjectByJPath(t *testing.T) {
 			fmt.Printf("~~~~~~~\nL#14BKRU - ==> AS EXPECTED!! <==  \nErr: %v \nTyp: %v \nValue : %v\n", getErr, typ, val)
 		}
 	}
+}
+
+// Scenarios 1: Non existing object path
+func TestCreateNonExistingObject(t *testing.T) {
+	jsonObj, _ := ToJsonObject(jsonString)
+	json, err := SetValueAndOverrideInJsonObjectByJPath(jsonObj, "obj.noneixistent.key1.key2.kye3.key4.key5", 2, true)
+	if err != nil {
+		t.Error("E#1P9WMG - Failed to set value of nonexisting object", err)
+	}
+	_, value, appErr := json.GetValueFromJsonObjectByJPath("obj.noneixistent.key1.key2.kye3.key4.key5")
+	if !appErr.IsBlank() {
+		t.Error("E#1P9WMO - Failed to get value of nonexisting object", err)
+	}
+	if value != 2 {
+		t.Error("E#1P9WMT - Incorrect value of nonexisting object")
+	}
+}
+
+// Scenario 2: Non existing object with Array
+func TestCreateNonExistingObjectWithArray(t *testing.T) {
+	jsonObj, _ := ToJsonObject(jsonString)
+	json, err := SetValueAndOverrideInJsonObjectByJPath(jsonObj, "obj.noneixistent.key1.[1]", 10.00, true)
+	if err != nil {
+		t.Error("E#1P9WN7 - Failed to set value of nonexisting object", err)
+	}
+	_, value, appErr := json.GetValueFromJsonObjectByJPath("obj.noneixistent.key1.[1]")
+	if !appErr.IsBlank() {
+		t.Error("E#1P9WNC - Failed to get value of nonexisting object", appErr)
+	}
+	if value != 10.00 {
+		t.Error("E#1P9WNJ - Incorrect value of nonexisting object")
+	}
+}
+
+// Scenario 3: Override object with array
+func TestOverrideObjectWithArray(t *testing.T) {
+	jsonObj, _ := ToJsonObject(jsonString)
+	json, err := SetValueAndOverrideInJsonObjectByJPath(jsonObj, "obj.nestedObj.[1]", 10.01, true)
+	if err != nil {
+		t.Error("E#1P9WNX - Failed to set value of nonexisting object", err)
+	}
+	_, value, appErr := json.GetValueFromJsonObjectByJPath("obj.nestedObj.[1]")
+	if !appErr.IsBlank() {
+		t.Error("E#1P9WO3 - Failed to get value of nonexisting object", appErr)
+	}
+	if value != 10.01 {
+		t.Error("E#1P9WO9 - Incorrect value of nonexisting object")
+	}
+}
+
+// Scenario 4: Create a non-existing continuous array
+func TestCreateNonExistingContinuosArray(t *testing.T) {
+	jsonObj, _ := ToJsonObject(jsonString)
+	json, err := SetValueAndOverrideInJsonObjectByJPath(jsonObj, "obj.nestedObj.[3].[3].[3]", 10.01, true)
+	if err != nil {
+		t.Error("Failed to set value of nonexisting object", err)
+	}
+	_, value, appErr := json.GetValueFromJsonObjectByJPath("obj.nestedObj.[3].[3].[3]")
+	if !appErr.IsBlank() {
+		t.Error("Failed to get value of nonexisting object", appErr)
+	}
+	if value != 10.01 {
+		t.Error("Incorrect value of nonexisting object")
+	}
+}
+
+// Scenario 5: Complex non existing path
+func TestComplexNonExistingPath(t *testing.T) {
+	jsonObj, _ := ToJsonObject(jsonString)
+	// fmt.Println("Before:", jsonObj.PrettyString())
+	json, err := SetValueAndOverrideInJsonObjectByJPath(jsonObj, "obj.somenewObj.somearr.[3].someNewObj.anotherArr.[8].field", "hello", true)
+	if err != nil {
+		t.Error("Failed to set value of nonexisting object", err)
+	}
+	_, value, appErr := json.GetValueFromJsonObjectByJPath("obj.somenewObj.somearr.[3].someNewObj.anotherArr.[8].field")
+	if !appErr.IsBlank() {
+		t.Error("Failed to get value of nonexisting object", appErr)
+	}
+	result := strings.TrimSpace(fmt.Sprint(value))
+	if strings.EqualFold("put this value here", result) {
+		t.Error("Incorrect value of nonexisting object")
+	}
+	// fmt.Println("After:", jsonObj.PrettyString())
 }
