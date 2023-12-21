@@ -45,7 +45,7 @@ func (g *Generator) buildTableBaseFuncs(table DbTable, importList []string) (str
 	}
 
 	// Reverse references
-	for _, rFkey := range table.ReverseFKeyMap {
+	for _, rFkey := range table.RevFKeyMap {
 		tabSingleFkeyMethod, iList := g.buildSingleTableRevFkeyFunc(table, rFkey, importList)
 		tabFwdForeignKeyMethods += tabSingleFkeyMethod + "\n\n"
 		importList = iList
@@ -616,32 +616,33 @@ func (g *Generator) buildSingleTableFwdFkeyFunc(table DbTable, fkey DbFkInfo, im
 			queryVars = append(queryVars, lowerFirstChar(table.GoNameSingular)+"."+fromCol.GoName)
 		}
 	}
-	fmt.Println("E#1C7C24 -", funcNamePart)
+	//fmt.Println("E#1C7C24 -", funcNamePart)
 
 	tabFKeyMethod += fmt.Sprintf("func (%v *%v) Get%vFromDbBy%v(getFromMainDb ...bool) (%v, error) {\n",
 		table.variableName(), table.fullyQualifiedStructName(), targetTable.GoNameSingular, funcNamePart, targetTable.fullyQualifiedStructName())
 	tabFKeyMethod += "var err error\n"
 	tabFKeyMethod += fmt.Sprintf("query := `SELECT * FROM %v WHERE %v;`\n", targetTable.fullyQualifiedTableName(), strings.Join(queryValPairs, " AND "))
-	tabFKeyMethod += fmt.Sprintf("linked%v := %v{}\n\n", targetTable.GoNameSingular, targetTable.fullyQualifiedStructName())
+	tabFKeyMethod += fmt.Sprintf("connected%v := %v{}\n\n", targetTable.GoNameSingular, targetTable.fullyQualifiedStructName())
 
 	tabFKeyMethod += "if len(getFromMainDb) > 0 && getFromMainDb[0] == true {\n"
-	tabFKeyMethod += fmt.Sprintf("err = %v.Get(&linked%v, query, %v)\n", upperFirstChar(g.Config.DbModelPackageName), targetTable.GoNameSingular, strings.Join(queryVars, ", "))
+	tabFKeyMethod += fmt.Sprintf("err = %v.Get(&connected%v, query, %v)\n", upperFirstChar(g.Config.DbModelPackageName), targetTable.GoNameSingular, strings.Join(queryVars, ", "))
 	tabFKeyMethod += "} else {\n"
-	tabFKeyMethod += fmt.Sprintf("err = %vReader.Get(&linked%v, query, %v)\n", upperFirstChar(g.Config.DbModelPackageName), targetTable.GoNameSingular, strings.Join(queryVars, ", "))
+	tabFKeyMethod += fmt.Sprintf("err = %vReader.Get(&connected%v, query, %v)\n", upperFirstChar(g.Config.DbModelPackageName), targetTable.GoNameSingular, strings.Join(queryVars, ", "))
 	tabFKeyMethod += "}\n"
-	tabFKeyMethod += "\nif err == sql.ErrNoRows {\n"
+	tabFKeyMethod += "\nif errors.Is(err, sql.ErrNoRows) {\n"
 	importList = g.addToImports("database/sql", importList)
-	tabFKeyMethod += fmt.Sprintf("return linked%v, err\n", targetTable.GoNameSingular)
+	importList = g.addToImports("errors", importList)
+	tabFKeyMethod += fmt.Sprintf("return connected%v, err\n", targetTable.GoNameSingular)
 	tabFKeyMethod += "}\n\n"
 
 	tabFKeyMethod += "if err != nil {\n"
 	tabFKeyMethod += `errMsg := fmt.Sprintf("E#` + newUniqueLmid() + ` - Could not load ` + ` by Id Error: %v", err)` + "\n"
 	tabFKeyMethod += "logger.Println(errMsg)\n"
 	importList = g.addToImports("github.com/techrail/ground/logger", importList)
-	tabFKeyMethod += fmt.Sprintf("return linked%v, errors.New(errMsg)\n", targetTable.GoNameSingular)
+	tabFKeyMethod += fmt.Sprintf("return connected%v, errors.New(errMsg)\n", targetTable.GoNameSingular)
 	tabFKeyMethod += "}\n"
 
-	tabFKeyMethod += fmt.Sprintf("return linked%v, nil\n", targetTable.GoNameSingular)
+	tabFKeyMethod += fmt.Sprintf("return connected%v, nil\n", targetTable.GoNameSingular)
 	tabFKeyMethod += "}\n"
 
 	return tabFKeyMethod, importList
@@ -650,37 +651,126 @@ func (g *Generator) buildSingleTableFwdFkeyFunc(table DbTable, fkey DbFkInfo, im
 // For generating the forward foreign key function
 // e.g. If user_addresses.user_id points to users.id, then this function will generate the
 // user.GetUserAddressByUserId function for the user_addresses table
-func (g *Generator) buildSingleTableRevFkeyFunc(table DbTable, rFkey DbFkInfo, importList []string) (string, []string) {
+func (g *Generator) buildSingleTableRevFkeyFunc(table DbTable, rFkey DbRevFkInfo, importList []string) (string, []string) {
 	tabFKeyMethod := ""
 
-	// The source/from schema should be there
-	_, ok := g.Schemas[rFkey.FromSchema]
+	// The target table should be there
+	_, ok := g.Schemas[rFkey.ToSchema]
 	if !ok {
-		panic(fmt.Sprintf("E#1OR7AL - Expected the FromSchema %v to be there but was not", rFkey.FromSchema))
+		panic(fmt.Sprintf("E#1OUHE2 - Expected the toSchema %v to be there but was not", rFkey.ToSchema))
 	}
-	fromTable, ok := g.Schemas[rFkey.FromSchema].Tables[rFkey.FromTable]
+	targetTable, ok := g.Schemas[rFkey.ToSchema].Tables[rFkey.ToTable]
 	if !ok {
-		panic(fmt.Sprintf("E#1OR7BG - Expected the fromTable %v in fromSchema %v to be there but was not", rFkey.FromTable, rFkey.FromSchema))
+		panic(fmt.Sprintf("E#1OUHE4 - Expected the toTable %v in toSchema %v to be there but was not", rFkey.ToTable, rFkey.ToSchema))
 	}
 
 	funcNamePart := ""
 	queryValPairs := make([]string, 0)
 	queryVars := make([]string, 0)
-
+	i := 1
 	for _, fromColName := range rFkey.FromColOrder {
 		toColName, fromColNameFound := rFkey.References[fromColName]
 		if !fromColNameFound {
-			panic(fmt.Sprintf("E#1OR7II - Expected column %v is not present in fkey %v in table %v in schema %v",
+			panic(fmt.Sprintf("E#1OUHE7 - Expected column %v is not present in fkey %v in table %v in schema %v",
 				fromColName, rFkey.ConstraintName, table.Name, table.Schema))
 		}
 
-		fromCol, colFound := table.ColumnMap[fromColName]
+		fromCol, colFound := table.ColumnMap[toColName]
 
 		if !colFound {
-			panic(fmt.Sprintf("E#1OR7XB - Expected column %v is not prsent in table %v in schema %v",
+			panic(fmt.Sprintf("E#1OUHEA - Expected column %v is not prsent in table %v in schema %v",
 				fromColName, table.Name, table.Schema))
 		}
+
+		funcNamePart += fromCol.GoName
+		queryValPairs = append(queryValPairs, fmt.Sprintf("%v = $%v", fromColName, i))
+		i += 1
+		if fromCol.Nullable && fromCol.GoDataType != "any" {
+			switch fromCol.GoDataType {
+			case "sql.NullInt64":
+				queryVars = append(queryVars, lowerFirstChar(table.GoNameSingular)+"."+fromCol.GoName+".Int64")
+			case "sql.NullInt32":
+				queryVars = append(queryVars, lowerFirstChar(table.GoNameSingular)+"."+fromCol.GoName+".Int32")
+			case "sql.NullInt16":
+				queryVars = append(queryVars, lowerFirstChar(table.GoNameSingular)+"."+fromCol.GoName+".Int16")
+			case "sql.NullFloat64":
+				queryVars = append(queryVars, lowerFirstChar(table.GoNameSingular)+"."+fromCol.GoName+".Float64")
+			case "sql.NullBool":
+				queryVars = append(queryVars, lowerFirstChar(table.GoNameSingular)+"."+fromCol.GoName+".Bool")
+			case "sql.NullString":
+				queryVars = append(queryVars, lowerFirstChar(table.GoNameSingular)+"."+fromCol.GoName+".String")
+			case "types.JsonObject":
+				queryVars = append(queryVars, lowerFirstChar(table.GoNameSingular)+"."+fromCol.GoName+".String()")
+			default:
+				queryVars = append(queryVars, lowerFirstChar(table.GoNameSingular)+"."+fromCol.GoName)
+			}
+		} else {
+			queryVars = append(queryVars, lowerFirstChar(table.GoNameSingular)+"."+fromCol.GoName)
+		}
 	}
+	//fmt.Println("E#1PAJS9 -", funcNamePart)
+
+	//tabFKeyMethod += "/*\n"
+	tabFKeyMethod += fmt.Sprintf("// TargetTable %v Columns %v are unique or not: %v\n", targetTable.Name, funcNamePart, rFkey.UniqueIndex)
+	if rFkey.UniqueIndex {
+		tabFKeyMethod += fmt.Sprintf("func (%v *%v) GetConnected%vFromDbBy%v(getFromMainDb ...bool) (%v, error) {\n",
+			table.variableName(), table.fullyQualifiedStructName(), targetTable.GoNameSingular, funcNamePart, targetTable.fullyQualifiedStructName())
+		tabFKeyMethod += "var err error\n"
+		tabFKeyMethod += fmt.Sprintf("query := `SELECT * FROM %v WHERE %v;`\n", targetTable.fullyQualifiedTableName(), strings.Join(queryValPairs, " AND "))
+		tabFKeyMethod += fmt.Sprintf("connected%v := %v{}\n\n", targetTable.GoNameSingular, targetTable.fullyQualifiedStructName())
+
+		tabFKeyMethod += "if len(getFromMainDb) > 0 && getFromMainDb[0] == true {\n"
+		tabFKeyMethod += fmt.Sprintf("err = %v.Get(&connected%v, query, %v)\n", upperFirstChar(g.Config.DbModelPackageName), targetTable.GoNameSingular, strings.Join(queryVars, ", "))
+		tabFKeyMethod += "} else {\n"
+		tabFKeyMethod += fmt.Sprintf("err = %vReader.Get(&connected%v, query, %v)\n", upperFirstChar(g.Config.DbModelPackageName), targetTable.GoNameSingular, strings.Join(queryVars, ", "))
+		tabFKeyMethod += "}\n"
+		tabFKeyMethod += "\nif errors.Is(err, sql.ErrNoRows) {\n"
+		importList = g.addToImports("database/sql", importList)
+		importList = g.addToImports("errors", importList)
+		tabFKeyMethod += fmt.Sprintf("return connected%v, err\n", targetTable.GoNameSingular)
+		tabFKeyMethod += "}\n\n"
+
+		tabFKeyMethod += "if err != nil {\n"
+		tabFKeyMethod += `errMsg := fmt.Sprintf("E#` + newUniqueLmid() + ` - Could not load ` + ` by Id Error: %v", err)` + "\n"
+		tabFKeyMethod += "logger.Println(errMsg)\n"
+		importList = g.addToImports("github.com/techrail/ground/logger", importList)
+		tabFKeyMethod += fmt.Sprintf("return connected%v, errors.New(errMsg)\n", targetTable.GoNameSingular)
+		tabFKeyMethod += "}\n"
+
+		tabFKeyMethod += fmt.Sprintf("return connected%v, nil\n", targetTable.GoNameSingular)
+		tabFKeyMethod += "}\n"
+	} else {
+		// Not Unique so we will load multiple results
+		tabFKeyMethod += fmt.Sprintf("func (%v *%v) GetConnected%vListFromDbBy%v(getFromMainDb ...bool) ([]*%v, error) {\n",
+			table.variableName(), table.fullyQualifiedStructName(), targetTable.GoNameSingular, funcNamePart, targetTable.fullyQualifiedStructName())
+		tabFKeyMethod += "var err error\n"
+		tabFKeyMethod += fmt.Sprintf("query := `SELECT * FROM %v WHERE %v;`\n", targetTable.fullyQualifiedTableName(), strings.Join(queryValPairs, " AND "))
+		tabFKeyMethod += fmt.Sprintf("connected%v := make([]*%v,0)\n\n", targetTable.GoNamePlural, targetTable.fullyQualifiedStructName())
+
+		tabFKeyMethod += "if len(getFromMainDb) > 0 && getFromMainDb[0] == true {\n"
+		tabFKeyMethod += fmt.Sprintf("err = %v.Select(&connected%v, query, %v)\n", upperFirstChar(g.Config.DbModelPackageName), targetTable.GoNamePlural, strings.Join(queryVars, ", "))
+		tabFKeyMethod += "} else {\n"
+		tabFKeyMethod += fmt.Sprintf("err = %vReader.Select(&connected%v, query, %v)\n", upperFirstChar(g.Config.DbModelPackageName), targetTable.GoNamePlural, strings.Join(queryVars, ", "))
+		tabFKeyMethod += "}\n"
+		tabFKeyMethod += "\nif errors.Is(err, sql.ErrNoRows) {\n"
+		importList = g.addToImports("database/sql", importList)
+		importList = g.addToImports("errors", importList)
+		tabFKeyMethod += fmt.Sprintf("return connected%v, err\n", targetTable.GoNamePlural)
+		tabFKeyMethod += "}\n\n"
+
+		tabFKeyMethod += "if err != nil {\n"
+		tabFKeyMethod += `errMsg := fmt.Sprintf("E#` + newUniqueLmid() + ` - Could not load ` + ` by Id Error: %v", err)` + "\n"
+		tabFKeyMethod += "logger.Println(errMsg)\n"
+		importList = g.addToImports("github.com/techrail/ground/logger", importList)
+		tabFKeyMethod += fmt.Sprintf("return connected%v, errors.New(errMsg)\n", targetTable.GoNamePlural)
+		tabFKeyMethod += "}\n"
+
+		tabFKeyMethod += fmt.Sprintf("return connected%v, nil\n", targetTable.GoNamePlural)
+		tabFKeyMethod += "}\n"
+	}
+	//tabFKeyMethod += "*/\n"
+
+	return tabFKeyMethod, importList
 }
 
 func (g *Generator) buildTableDaoStructAndNewFunc(table DbTable, importList []string) (string, []string) {
@@ -747,7 +837,7 @@ func (g *Generator) buildSingleTableDaoIdxFunc(table DbTable, idx DbIndex, impor
 		daoSingleIdxCode += fmt.Sprintf("err = %vReader.Get(&%v, query, %v)\n", upperFirstChar(g.Config.DbModelPackageName), table.variableName(), strings.Join(argListWithoutTypes, ", "))
 		daoSingleIdxCode += "}\n\n"
 
-		daoSingleIdxCode += "if err==sql.ErrNoRows {\n"
+		daoSingleIdxCode += "if errors.Is(err, sql.ErrNoRows) {\n"
 		daoSingleIdxCode += fmt.Sprintf("return %v, err\n", table.variableName())
 		daoSingleIdxCode += "}\n"
 		importList = g.addToImports("database/sql", importList)

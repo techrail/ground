@@ -40,19 +40,19 @@ type DbSchema struct {
 
 // DbTable represents a table in the database
 type DbTable struct {
-	Name           string              // Table name as got from the query
-	GoName         string              // The name of table as a go variable that we would use
-	GoNameSingular string              // Singular form of GoName
-	GoNamePlural   string              // Plural form of GoName
-	Schema         string              // The name of the schema where this table resides
-	Comment        string              // Comment on the table
-	ColumnMap      map[string]DbColumn // List of columns as a map from the name of the column to the DbColumn type
-	ColumnList     []string            // List of columns (ordinal)
-	ColumnListA2z  []string            // List of column names (alphabetical)
-	PkColumnList   []DbColumn          // List of columns that make the primary key (slice because order matters)
-	IndexList      []DbIndex           // List of indexes on this table
-	FKeyMap        map[string]DbFkInfo // List of foreign keys in table as map from constraint name to DbFkInfo type
-	ReverseFKeyMap map[string]DbFkInfo // List of foreign keys in table as map from constraint name to DbFkInfo type
+	Name           string                 // Table name as got from the query
+	GoName         string                 // The name of table as a go variable that we would use
+	GoNameSingular string                 // Singular form of GoName
+	GoNamePlural   string                 // Plural form of GoName
+	Schema         string                 // The name of the schema where this table resides
+	Comment        string                 // Comment on the table
+	ColumnMap      map[string]DbColumn    // List of columns as a map from the name of the column to the DbColumn type
+	ColumnList     []string               // List of columns (ordinal)
+	ColumnListA2z  []string               // List of column names (alphabetical)
+	PkColumnList   []DbColumn             // List of columns that make the primary key (slice because order matters)
+	IndexList      []DbIndex              // List of indexes on this table
+	FKeyMap        map[string]DbFkInfo    // List of foreign keys in table as map from constraint name to DbFkInfo type
+	RevFKeyMap     map[string]DbRevFkInfo // List of reverse reference in table as map from constraint name to DbRevFkInfo type
 }
 
 func (table *DbTable) fullyQualifiedTableName() string {
@@ -215,6 +215,11 @@ type DbFkInfo struct {
 
 func (fki *DbFkInfo) GetReverseRefName() string {
 	return fki.FromSchema + "." + fki.FromTable + "." + fki.ConstraintName
+}
+
+type DbRevFkInfo struct {
+	DbFkInfo
+	UniqueIndex bool // Is there a unique index on the column set pointing to this column
 }
 
 type fkInfoFromDb struct {
@@ -502,7 +507,7 @@ func (g *Generator) Generate() appError.Typ {
 				FromTable:    fkInf.FromTable,
 				ToSchema:     fkInf.ToSchema,
 				ToTable:      fkInf.ToTable,
-				FromColOrder: []string{fkInf.FromColumn},
+				FromColOrder: []string{},
 				References: map[string]string{
 					fkInf.FromColumn: fkInf.ToColumn,
 				},
@@ -520,18 +525,79 @@ func (g *Generator) Generate() appError.Typ {
 	// Reverse References
 	for _, schema := range g.Schemas {
 		for _, table := range schema.Tables {
-			revFkeyMap := table.ReverseFKeyMap
-
 			for _, fkey := range table.FKeyMap {
-				revFkeyMap[fkey.GetReverseRefName()] = fkey
-			}
+				toSchema, schemaFound := g.Schemas[fkey.ToSchema]
+				if !schemaFound {
+					panic(fmt.Sprintf("P#1OU0YK - %v schema expected but not found", fkey.ToSchema))
+				}
 
-			table.ReverseFKeyMap = revFkeyMap
-			schema.Tables[table.Name] = table
+				toTable, tableFound := toSchema.Tables[fkey.ToTable]
+				if !tableFound {
+					panic(fmt.Sprintf("P#1OU10C - table %v not found in schema %v", fkey.ToTable, fkey.ToSchema))
+				}
+
+				revFkeyMap := toTable.RevFKeyMap
+				if revFkeyMap == nil {
+					revFkeyMap = map[string]DbRevFkInfo{}
+				}
+
+				fromColOrderForRevRef := []string{}
+				reverseReferences := map[string]string{}
+				for _, fromColName := range fkey.FromColOrder {
+					toColName, toColNameFound := fkey.References[fromColName]
+					if !toColNameFound {
+						panic(fmt.Sprintf("P#1OU44G - FromCol was not found %v", fromColName))
+					}
+					fromColOrderForRevRef = append(fromColOrderForRevRef, fromColName)
+					reverseReferences[fromColName] = toColName
+				}
+
+				fromTable, fromTableFound := schema.Tables[fkey.FromTable]
+				if !fromTableFound {
+					panic(fmt.Sprintf("P#1OUPO8 - fromTable %v not found in schema %v", fkey.FromTable, fkey.FromSchema))
+				}
+
+				uniqIdx := false
+				revIdx := fromTable.FindIndexByColumnNames(fromColOrderForRevRef)
+				if revIdx.IsUnique || revIdx.IsPrimary {
+					uniqIdx = true
+				}
+
+				revFkeyMap[fkey.GetReverseRefName()] = DbRevFkInfo{
+					DbFkInfo: DbFkInfo{
+						FromSchema:     fkey.ToSchema,
+						FromTable:      fkey.ToTable,
+						ToSchema:       fkey.FromSchema,
+						ToTable:        fkey.FromTable,
+						FromColOrder:   fromColOrderForRevRef,
+						References:     reverseReferences,
+						ConstraintName: fkey.GetReverseRefName(),
+					},
+					UniqueIndex: uniqIdx,
+				}
+				toTable.RevFKeyMap = revFkeyMap
+
+				schema.Tables[fkey.ToTable] = toTable
+			}
 		}
 		g.Schemas[schema.Name] = schema
 	}
 
+	// There is some trouble with the reverse references. Let's look at them a bit
+	for _, schema := range g.Schemas {
+		if schema.Name != "auth" {
+			continue
+		}
+
+		for _, table := range schema.Tables {
+			for revKeyName, r := range table.RevFKeyMap {
+				for _, fromColName := range r.FromColOrder {
+					fCol, tCol := r.References[fromColName]
+					fmt.Printf("I#1P6NNX - From: %v.%v \tTo %v.%v \t %v \n", r.FromTable, fCol, r.ToTable, tCol, revKeyName)
+				}
+			}
+		}
+	}
 	// Let's sort things alphabetically and ordinarily where possible
 	// Sort the tables in schemas
 	for _, schema := range g.Schemas {
@@ -624,7 +690,7 @@ func (g *Generator) Generate() appError.Typ {
 
 		err = os.Mkdir(g.Config.DbModelPackagePath, 0777)
 		if err != nil {
-			fmt.Println("E#1OBP5N -", err)
+			//fmt.Println("E#1OBP5N -", err)
 		}
 
 		outputFile, err := os.Create(fmt.Sprintf("%s/%s", g.Config.DbModelPackagePath, outputFileName))
@@ -726,7 +792,7 @@ func (g *Generator) Generate() appError.Typ {
 
 			err = os.Mkdir(g.Config.DbModelPackagePath, 0777)
 			if err != nil {
-				fmt.Println("E#1OFXLN -", err)
+				//fmt.Println("E#1OFXLN -", err)
 			}
 
 			outputFile, err := os.Create(fmt.Sprintf("%s/%s", g.Config.DbModelPackagePath, outputFileName))
