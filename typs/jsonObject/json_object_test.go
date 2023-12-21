@@ -2012,6 +2012,91 @@ func TestSetValueInJsonObjectByJPath(t *testing.T) {
 			fmt.Printf("~~~~~~~\nL#14BKRU - ==> AS EXPECTED!! <==  \nErr: %v \nTyp: %v \nValue : %v\n", getErr, typ, val)
 		}
 	}
+
+	// =====================================
+
+	joOrig, err = ToJsonObject(jsonString)
+	if err != nil {
+		_, filename, line, _ := runtime.Caller(0)
+		t.Errorf("~~~~~~~\nToJsonObject Conversion failed in file %v at line %v | Error: %v", filename, line, err)
+	}
+	jo, setErr = SetValueAndOverrideInJsonObjectByJPath(joOrig, "obj.somenewObj.somearr.[3].someNewObj.anotherArr.[8].field", "hello", true)
+	if setErr != nil {
+		t.Errorf("~~~~~~~\nE#1PFF6O - Failed. Error: %v", setErr)
+	} else {
+		// Check what we got there
+		typ, val, getErr := jo.GetValueFromJsonObjectByJPath("obj.somenewObj.somearr.[3].someNewObj.anotherArr.[8].field")
+		if getErr.IsNotBlank() || (typ != "string") || val != "hello" {
+			t.Errorf("~~~~~~~\nE#1PFF7E - ==> [[ERROR]] <== Could not get UPDATED VALUE\nErr: %v \nTyp: %v \nValue : %v\n", getErr, typ, val)
+		} else {
+			fmt.Printf("~~~~~~~\nL#1PFF7J - ==> AS EXPECTED!! <==  \nErr: %v \nTyp: %v \nValue : %v\n", getErr, typ, val)
+		}
+	}
+
+	// NOTE: The following code is disabled because we are going to reuse the object above in this test
+	// joOrig, err = ToJsonObject(jsonString)
+	// if err != nil {
+	// 	_, filename, line, _ := runtime.Caller(0)
+	// 	t.Errorf("~~~~~~~\nToJsonObject Conversion failed in file %v at line %v | Error: %v", filename, line, err)
+	// }
+	jo, setErr = SetValueAndOverrideInJsonObjectByJPath(jo, "obj.somenewObj.somearr.[3].someNewObj.anotherArr.[7]", "hello_again", true)
+	if setErr != nil {
+		t.Errorf("~~~~~~~\nE#1PFFB4 - Failed. Error: %v", setErr)
+	} else {
+		// Check what we got there
+		typ, val, getErr := jo.GetValueFromJsonObjectByJPath("obj.somenewObj.somearr.[3].someNewObj.anotherArr.[7]")
+		if getErr.IsNotBlank() || (typ != "string") || val != "hello_again" {
+			t.Errorf("~~~~~~~\nE#1PFFB8 - ==> [[ERROR]] <== Could not get UPDATED VALUE\nErr: %v \nTyp: %v \nValue : %v\n", getErr, typ, val)
+		} else {
+			fmt.Printf("~~~~~~~\nL#1PFFBB - ==> AS EXPECTED!! <==  \nErr: %v \nTyp: %v \nValue : %v\n", getErr, typ, val)
+		}
+
+		// Check if the previous value exists as well
+		typ, val, getErr = jo.GetValueFromJsonObjectByJPath("obj.somenewObj.somearr.[3].someNewObj.anotherArr.[8].field")
+		if getErr.IsNotBlank() || (typ != "string") || val != "hello" {
+			t.Errorf("~~~~~~~\nE#1PFFD3 - ==> [[ERROR]] <== Could not get UPDATED VALUE\nErr: %v \nTyp: %v \nValue : %v\n", getErr, typ, val)
+		} else {
+			fmt.Printf("~~~~~~~\nL#1PFFD6 - ==> AS EXPECTED!! <==  \nErr: %v \nTyp: %v \nValue : %v\n", getErr, typ, val)
+		}
+	}
+
+	// NOTE: The following code is disabled because we are going to reuse the object above in this test
+	// joOrig, err = ToJsonObject(jsonString)
+	// if err != nil {
+	// 	_, filename, line, _ := runtime.Caller(0)
+	// 	t.Errorf("~~~~~~~\nToJsonObject Conversion failed in file %v at line %v | Error: %v", filename, line, err)
+	// }
+	jo, setErr = SetValueAndOverrideInJsonObjectByJPath(jo, "obj.somenewObj.somearr.[3].someNewObj.anotherNestedObj", 87.2, true)
+	if setErr != nil {
+		t.Errorf("~~~~~~~\nE#1PFFMF - Failed. Error: %v", setErr)
+	} else {
+		// Check what we got there
+		typ, val, getErr := jo.GetValueFromJsonObjectByJPath("obj.somenewObj.somearr.[3].someNewObj.anotherNestedObj")
+		if getErr.IsNotBlank() || (typ != typeFloat64) || val != 87.2 {
+			t.Errorf("~~~~~~~\nE#1PFFRW - ==> [[ERROR]] <== Could not get UPDATED VALUE\nErr: %v \nTyp: %v \nValue : %v\n", getErr, typ, val)
+		} else {
+			fmt.Printf("~~~~~~~\nL#1PFFRZ - ==> AS EXPECTED!! <==  \nErr: %v \nTyp: %v \nValue : %v\n", getErr, typ, val)
+		}
+
+		// Check if previous values are still there
+		typ, val, getErr = jo.GetValueFromJsonObjectByJPath("obj.somenewObj.somearr.[3].someNewObj.anotherArr.[7]")
+		if getErr.IsNotBlank() || (typ != "string") || val != "hello_again" {
+			t.Errorf("~~~~~~~\nE#1PFFB8 - ==> [[ERROR]] <== Could not get UPDATED VALUE\nErr: %v \nTyp: %v \nValue : %v\n", getErr, typ, val)
+		} else {
+			fmt.Printf("~~~~~~~\nL#1PFFMN - ==> AS EXPECTED!! <==  \nErr: %v \nTyp: %v \nValue : %v\n", getErr, typ, val)
+		}
+
+		// Check if the previous value exists as well
+		typ, val, getErr = jo.GetValueFromJsonObjectByJPath("obj.somenewObj.somearr.[3].someNewObj.anotherArr.[8].field")
+		if getErr.IsNotBlank() || (typ != "string") || val != "hello" {
+			t.Errorf("~~~~~~~\nE#1PFFMR - ==> [[ERROR]] <== Could not get UPDATED VALUE\nErr: %v \nTyp: %v \nValue : %v\n", getErr, typ, val)
+		} else {
+			fmt.Printf("~~~~~~~\nL#1PFFMW - ==> AS EXPECTED!! <==  \nErr: %v \nTyp: %v \nValue : %v\n", getErr, typ, val)
+		}
+	}
+	// =====================================
+
+	fmt.Printf("Test ends here")
 }
 
 // Scenarios 1: Non existing object path

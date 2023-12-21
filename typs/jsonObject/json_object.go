@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	"github.com/techrail/ground/constants/errCode"
-	typs "github.com/techrail/ground/typs"
+	"github.com/techrail/ground/typs"
 	"github.com/techrail/ground/typs/appError"
 )
 
@@ -1533,6 +1533,7 @@ func (j *Typ) Scan(value interface{}) error {
 // MARKER: Custom implementation of JSON Encoder for this type
 
 // MarshalJSON implements json.Marshaler interface
+// IMPORTANT: PLEASE DO NOT CONVERT THE RECEIVER TO POINTER TYPE (DESPITE WARNINGS)
 func (j Typ) MarshalJSON() ([]byte, error) {
 	if !j.Valid {
 		return []byte("null"), nil
@@ -1575,7 +1576,7 @@ func (j *Typ) UnmarshalJSON(dataToUnmarshal []byte) error {
 
 func (j *Typ) FindKeyByValue(value interface{}) string {
 	for key, val := range j.StringAnyMap {
-		//fmt.Println("key...", key, "val...", val)
+		// fmt.Println("key...", key, "val...", val)
 		switch val := val.(type) {
 		case map[string]interface{}:
 			if nestedKey := j.FindKeyByValue(value); nestedKey != "" {
