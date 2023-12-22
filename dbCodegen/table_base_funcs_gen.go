@@ -34,6 +34,9 @@ func (g *Generator) buildTableBaseFuncs(table DbTable, importList []string) (str
 	tableDeleteFuncStr := ""
 	tableDeleteFuncStr, importList = g.buildTableDeleteMethod(table, importList)
 
+	tableUpsertFuncStr := ""
+	tableUpsertFuncStr, importList = g.buildTableUpsertMethod(table, importList)
+
 	// Foreign key funcs
 	tabFwdForeignKeyMethods := ""
 
@@ -64,7 +67,7 @@ func (g *Generator) buildTableBaseFuncs(table DbTable, importList []string) (str
 
 	tableBaseFuncStr := tableBaseValidationFuncStr + tableCommonValidationFuncStr + tableInsertionValidationFuncStr +
 		tableUpdateValidationFuncStr + tableInsertionFuncStr + tableUpdateFuncStr +
-		tableUpdateByIndexes + tableDeleteFuncStr + tabFwdForeignKeyMethods +
+		tableUpdateByIndexes + tableDeleteFuncStr + tableUpsertFuncStr + tabFwdForeignKeyMethods +
 		tableMethodAndDaoSeparator + tableDaoStructAndNew + tableDaoFunctions
 	return tableBaseFuncStr, importList
 }
@@ -554,6 +557,107 @@ func (g *Generator) buildTableDeleteMethod(table DbTable, importList []string) (
 	//importList = addToImports(baseGoModuleName+"/resources", importList)
 
 	return deleteCode, importList
+}
+
+func (g *Generator) buildTableUpsertMethod(table DbTable, importList []string) (string, []string) {
+	upsertCode := ""
+	upsertCode += fmt.Sprintf("func (%v *%v) Upsert() error {\n",
+		table.variableName(), table.fullyQualifiedStructName())
+
+	if len(table.PkColumnList) == 0 {
+		upsertCode += "return errors.New(\"E#" + newUniqueLmid() + " - Cannot Upsert " + table.fullyQualifiedTableName() + " because of no primary key. Please write upsert query yourself\")\n"
+		upsertCode += "}\n"
+		importList = g.addToImports("errors", importList)
+		return upsertCode, importList
+	}
+
+	upsertCode += "var err error\n"
+
+	upsertCode += fmt.Sprintf("upsertQuery := `INSERT INTO %v (\n", table.fullyQualifiedTableName())
+
+	colNameSlice := []string{}
+	argPositionSlice := []string{}
+	pkeyColumnNameSlice := []string{}
+	goColumnNameSlice := []string{}
+	i := 0
+	colNames := table.ColumnList
+	if g.Config.ColumnOrderAlphabetic {
+		colNames = table.ColumnListA2z
+	}
+	for _, columnName := range colNames {
+		column, columnFound := table.ColumnMap[columnName]
+		if !columnFound {
+			panic(fmt.Sprintf("P#1OL34D - Column %v not found in table %v of schema %v", columnName, table.Name, table.Schema))
+		}
+		if !(column.Name == "created_at" && g.Config.InsertCreatedAtInCode == false && // Created at timestamps might not need to be created in code
+			(column.GoDataType == "time.Time" || column.GoDataType == "sql.NullTime")) &&
+			!(column.Name == "updated_at" && g.Config.InsertUpdatedAtInCode == false && // Updated at timestamps might not need to be created in code
+				(column.GoDataType == "time.Time" || column.GoDataType == "sql.NullTime")) {
+
+			i += 1
+			colNameSlice = append(colNameSlice, `"`+column.Name+`"`)
+			if column.DataType == "json" || column.DataType == "jsonb" {
+				goColumnNameSlice = append(goColumnNameSlice, fmt.Sprintf("%v.%v.String()", table.variableName(), column.GoName))
+			} else {
+				goColumnNameSlice = append(goColumnNameSlice, fmt.Sprintf("%v.%v", table.variableName(), column.GoName))
+			}
+			argPositionSlice = append(argPositionSlice, fmt.Sprintf("$%v", i))
+		}
+	}
+
+	for _, column := range table.PkColumnList {
+		pkeyColumnNameSlice = append(pkeyColumnNameSlice, `"`+column.Name+`"`)
+	}
+
+	actionColNamesSlice := []string{}
+	for _, columnName := range colNames {
+		column, columnFound := table.ColumnMap[columnName]
+		if !columnFound {
+			panic(fmt.Sprintf("P#1OL34D - Column %v not found in table %v of schema %v", columnName, table.Name, table.Schema))
+		}
+		if !(column.Name == "created_at" && g.Config.InsertCreatedAtInCode == false && // Created at timestamps might not need to be created in code
+			(column.GoDataType == "time.Time" || column.GoDataType == "sql.NullTime")) &&
+			!(column.Name == "updated_at" && g.Config.InsertUpdatedAtInCode == false && // Updated at timestamps might not need to be created in code
+				(column.GoDataType == "time.Time" || column.GoDataType == "sql.NullTime")) {
+			if column.HasDefaultValue && isColumnInList(column.Name, table.PkColumnList) {
+				// Column already has default value for a primary column. Do not include this column in list
+				continue
+			}
+			i += 1
+			actionColNamesSlice = append(actionColNamesSlice, column.Name+` = `+"EXCLUDED."+columnName)
+		}
+	}
+
+	upsertCode += "\t\t\t"
+	upsertCode += strings.Join(colNameSlice, ", \n\t\t\t")
+	upsertCode += "\n\t\t) VALUES (\n\t\t\t"
+	upsertCode += strings.Join(argPositionSlice, ", \n\t\t\t")
+	upsertCode += "\n\t\t) "
+	upsertCode += "\n\t\tON CONFLICT ("
+	upsertCode += strings.Join(pkeyColumnNameSlice, ",")
+	upsertCode += ")"
+	upsertCode += "\n\t\tDO\n\t\t\tUPDATE SET "
+	upsertCode += strings.Join(actionColNamesSlice, ", ")
+	upsertCode += "`;\n\n"
+
+	upsertCode += fmt.Sprintf("resultRow := %v.QueryRowx(upsertQuery,\n", upperFirstChar(g.Config.DbModelPackageName))
+	upsertCode += strings.Join(goColumnNameSlice, ", \n\t\t\t")
+	upsertCode += ",\n)\n\n"
+	upsertCode += "if resultRow.Err() != nil {\n"
+	upsertCode += "errMsg := fmt.Sprintf(\"E#" + newUniqueLmid() + " - Could not insert into database: %v\", resultRow.Err())\n"
+	importList = g.addToImports("fmt", importList)
+	importList = g.addToImports("errors", importList)
+	upsertCode += "logger.Println(errMsg)\n"
+	importList = g.addToImports("github.com/techrail/ground/logger", importList)
+	upsertCode += "return errors.New(errMsg)\n"
+	upsertCode += "}\n\n"
+
+	upsertCode += "return nil"
+	upsertCode += "}\n\n"
+
+	importList = g.addToImports("fmt", importList)
+	importList = g.addToImports("errors", importList)
+	return upsertCode, importList
 }
 
 // For generating the forward foreign key function
