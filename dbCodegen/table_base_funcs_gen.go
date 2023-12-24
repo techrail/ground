@@ -587,7 +587,7 @@ func (g *Generator) buildTableUpsertMethod(table DbTable, importList []string) (
 	for _, columnName := range colNames {
 		column, columnFound := table.ColumnMap[columnName]
 		if !columnFound {
-			panic(fmt.Sprintf("P#1OL34D - Column %v not found in table %v of schema %v", columnName, table.Name, table.Schema))
+			panic(fmt.Sprintf("P#1PKABZ - Column %v not found in table %v of schema %v", columnName, table.Name, table.Schema))
 		}
 		if !(column.Name == "created_at" && g.Config.InsertCreatedAtInCode == false && // Created at timestamps might not need to be created in code
 			(column.GoDataType == "time.Time" || column.GoDataType == "sql.NullTime")) &&
@@ -613,7 +613,7 @@ func (g *Generator) buildTableUpsertMethod(table DbTable, importList []string) (
 	for _, columnName := range colNames {
 		column, columnFound := table.ColumnMap[columnName]
 		if !columnFound {
-			panic(fmt.Sprintf("P#1OL34D - Column %v not found in table %v of schema %v", columnName, table.Name, table.Schema))
+			panic(fmt.Sprintf("P#1PKAEG - Column %v not found in table %v of schema %v", columnName, table.Name, table.Schema))
 		}
 		if !(column.Name == "created_at" && g.Config.InsertCreatedAtInCode == false && // Created at timestamps might not need to be created in code
 			(column.GoDataType == "time.Time" || column.GoDataType == "sql.NullTime")) &&
