@@ -571,8 +571,6 @@ func (g *Generator) buildTableUpsertMethod(table DbTable, importList []string) (
 		return upsertCode, importList
 	}
 
-	upsertCode += "var err error\n"
-
 	upsertCode += fmt.Sprintf("upsertQuery := `INSERT INTO %v (\n", table.fullyQualifiedTableName())
 
 	colNameSlice := []string{}
@@ -636,8 +634,8 @@ func (g *Generator) buildTableUpsertMethod(table DbTable, importList []string) (
 	upsertCode += "\n\t\tON CONFLICT ("
 	upsertCode += strings.Join(pkeyColumnNameSlice, ",")
 	upsertCode += ")"
-	upsertCode += "\n\t\tDO\n\t\t\tUPDATE SET "
-	upsertCode += strings.Join(actionColNamesSlice, ", ")
+	upsertCode += "\n\t\tDO UPDATE SET \n\t\t\t"
+	upsertCode += strings.Join(actionColNamesSlice, ", \n\t\t\t")
 	upsertCode += "`;\n\n"
 
 	upsertCode += fmt.Sprintf("resultRow := %v.QueryRowx(upsertQuery,\n", upperFirstChar(g.Config.DbModelPackageName))
