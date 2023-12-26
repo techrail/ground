@@ -15,6 +15,20 @@ func main() {
 		UpdateUpdatedAtInCode: true,
 		InsertUpdatedAtInCode: true,
 		InsertCreatedAtInCode: true,
+		Enumerations: map[string]dbCodegen.EnumDefinition{
+			"user_type": {
+				Name:            "user_type",
+				Exported:        false,
+				HandleUndefined: false,
+				IsDbType:        true,
+				Mappings: map[string]int16{
+					"guest":         0,
+					"admin":         1,
+					"support_staff": 2,
+					"regular_user":  3,
+				},
+			},
+		},
 	}
 	g, e := dbCodegen.NewCodeGenerator(cnf)
 	if e.IsNotBlank() {
