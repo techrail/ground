@@ -79,7 +79,22 @@ func initializeRedisConfig() {
 	} else {
 		// Try to connect to redis, check if operation mode is cluster, if yes then try all possible ways to connect.
 		if config.Redis.Main.OperationMode == "cluster" {
-			if config.Redis.Main.Address != "" {
+			if config.Redis.Main.Url != "" {
+				opts, errConnect := goredis.ParseURL(config.Redis.Main.Url)
+				if errConnect != nil {
+					fmt.Println("E#1OEMOC - Could not parse the connection URL.")
+					panic(errConnect)
+				}
+				config.Redis.Connection = goredis.NewClusterClient(&goredis.ClusterOptions{
+					Addrs: []string{opts.Addr},
+				})
+				err := config.Redis.Connection.Ping(ctx).Err()
+				if err != nil {
+					fmt.Println("E#1PQSM2 - Could not connect to redis server. Check the url provided.")
+				} else {
+					fmt.Println("I#1PQSLR - Connection to redis in cluster mode established successfully.")
+				}
+			} else if config.Redis.Main.Address != "" {
 				config.Redis.Connection = goredis.NewClusterClient(&goredis.ClusterOptions{
 					Addrs: []string{config.Redis.Main.Address},
 				})
@@ -87,7 +102,7 @@ func initializeRedisConfig() {
 				if err != nil {
 					fmt.Println("E#1P87GS - Could not connect to redis cluster. Check the address provided.")
 				} else {
-					fmt.Println("I#1P87H7 - Connection established to redis cluster using node(s) address.")
+					fmt.Println("I#1P87H7 - Connection to redis in cluster mode established successfully.")
 				}
 			} else if config.Redis.Main.Username != "" {
 				config.Redis.Connection = goredis.NewClusterClient(&goredis.ClusterOptions{
@@ -98,7 +113,7 @@ func initializeRedisConfig() {
 				if err != nil {
 					fmt.Println("E#1P87HK - Could not connect to redis cluster. Check the username provided.")
 				} else {
-					fmt.Println("I#1P87I1 - Connection established to redis cluster using node username.")
+					fmt.Println("I#1P87I1 - Connection to redis in cluster mode established successfully.")
 				}
 			}
 			// Try to connect to redis, check if operation mode is standalone, if yes then try all possible ways to connect.
@@ -111,7 +126,7 @@ func initializeRedisConfig() {
 				if err != nil {
 					fmt.Println("E#1P87JU - Could not connect to redis server. Check the address provided.")
 				} else {
-					fmt.Println("I#1P87K1 - Connection established to redis server using server address.")
+					fmt.Println("I#1P87K1 - Connection to redis in standalone mode established successfully.")
 				}
 			} else if config.Redis.Main.Url != "" {
 				opts, err := goredis.ParseURL(config.Redis.Main.Url)
@@ -124,7 +139,7 @@ func initializeRedisConfig() {
 				if errPing != nil {
 					fmt.Println("E#1P87KH - Could not connect to redis server. Check the connection url provided.")
 				} else {
-					fmt.Println("I#1P87KQ - Connection established to redis server using connection url.")
+					fmt.Println("I#1P87KQ - Connection to redis in standalone mode established successfully.")
 				}
 			} else if config.Redis.Main.Username != "" {
 				config.Redis.Connection = goredis.NewClient(&goredis.Options{
@@ -135,7 +150,7 @@ func initializeRedisConfig() {
 				if err != nil {
 					fmt.Println("E#1P87KX - Could not connect to redis server. Check the username provided.")
 				} else {
-					fmt.Println("I#1P87L8 - Connection established to redis server using instance username.")
+					fmt.Println("I#1P87L8 - Connection to redis in standalone mode established successfully.")
 				}
 			}
 			// redis operation mode is auto, we will detect the redis mode and try to return the connection object accordingly
@@ -155,10 +170,13 @@ func initializeRedisConfig() {
 				if err != nil {
 					fmt.Println("E#1PQR6V - Could not connect to redis. Check the url provided.")
 				} else {
-					fmt.Println("I#1PQR74 - Connection established to redis using url. Detecting redis mode..")
+					fmt.Println("I#1PQR74 - Connection established to redis using url. Detecting redis mode...")
 				}
 
 				if hasClusterEnabled() {
+					config.Redis.Connection = goredis.NewClusterClient(&goredis.ClusterOptions{
+						Addrs: []string{opts.Addr},
+					})
 					config.Redis.Main.OperationMode = "cluster"
 					fmt.Println("I#1PQR7T - Cluster mode detected! Redis is running in cluster mode.")
 
@@ -176,10 +194,13 @@ func initializeRedisConfig() {
 				if err != nil {
 					fmt.Println("E#1PQRCO - Could not connect to redis. Check the address provided.")
 				} else {
-					fmt.Println("I#1PQRCT - Connection established to redis using address. Detecting redis mode..")
+					fmt.Println("I#1PQRCT - Connection established to redis using address. Detecting redis mode...")
 				}
 
 				if hasClusterEnabled() {
+					config.Redis.Connection = goredis.NewClusterClient(&goredis.ClusterOptions{
+						Addrs: []string{config.Redis.Main.Address},
+					})
 					config.Redis.Main.OperationMode = "cluster"
 					fmt.Println("I#1PQRCZ - Cluster mode detected! Redis is running in cluster mode.")
 
@@ -198,10 +219,13 @@ func initializeRedisConfig() {
 				if err != nil {
 					fmt.Println("E#1PQRG2 - Could not connect to redis. Check the credentials provided.")
 				} else {
-					fmt.Println("I#1PQRG9 - Connection established to redis using credentials. Detecting redis mode..")
+					fmt.Println("I#1PQRG9 - Connection established to redis using credentials. Detecting redis mode...")
 				}
 
 				if hasClusterEnabled() {
+					config.Redis.Connection = goredis.NewClusterClient(&goredis.ClusterOptions{
+						Addrs: []string{config.Redis.Main.Address},
+					})
 					config.Redis.Main.OperationMode = "cluster"
 					fmt.Println("I#1PQRGF - Cluster mode detected! Redis is running in cluster mode.")
 
@@ -220,7 +244,7 @@ func initializeRedisConfig() {
 
 func hasClusterEnabled() bool {
 	err := config.Redis.Connection.ClusterNodes(ctx)
-	if err != nil {
+	if err.Err() != nil {
 		return false
 	}
 	return true
