@@ -2,10 +2,11 @@ package dbCodegen
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/techrail/ground/typs/integer"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
-	"strings"
 )
 
 var baseLmidSeconds int64
@@ -143,4 +144,23 @@ func columnInList(columnName string, list []DbColumn) bool {
 		}
 	}
 	return false
+}
+
+func groupBy3(sliceOfStrings []string, commonSep string, newLinePrefix string) string {
+
+	var result strings.Builder
+
+	for i, s := range sliceOfStrings {
+		result.WriteString(s)
+
+		if i+1 != len(sliceOfStrings) {
+			if (i+1)%3 == 0 {
+				result.WriteString(fmt.Sprint(commonSep, newLinePrefix))
+			} else {
+				result.WriteString(commonSep)
+			}
+		}
+	}
+
+	return result.String()
 }
