@@ -46,7 +46,7 @@ func init() {
 			ConnectRetryIntervalInSeconds:      constants.RedisConnectRetryIntervalInSeconds,
 			AutoExpireTopLevelKeysAfterSeconds: constants.RedisAutoExpireTopLevelKeysAfterSeconds,
 			AppNamespace:                       constants.RedisAppNameSpace,
-			Address:                            constants.RedisAddress,
+			Address:                            constants.RedisDefaultAddr,
 		},
 	}
 }

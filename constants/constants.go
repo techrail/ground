@@ -23,5 +23,4 @@ const (
 	RedisConnectRetryIntervalInSeconds      = 10
 	RedisAutoExpireTopLevelKeysAfterSeconds = 0
 	RedisAppNameSpace                       = "ground-based-serviceNs"
-	RedisAddress                            = ":6379"
 )
