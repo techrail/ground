@@ -818,7 +818,7 @@ func (g *Generator) buildSingleTableRevFkeyFunc(table DbTable, rFkey DbRevFkInfo
 	//fmt.Println("E#1PAJS9 -", funcNamePart)
 
 	//tabFKeyMethod += "/*\n"
-	tabFKeyMethod += fmt.Sprintf("// TargetTable %v Columns %v are unique or not: %v\n", targetTable.Name, funcNamePart, rFkey.UniqueIndex)
+	//tabFKeyMethod += fmt.Sprintf("// TargetTable %v Columns %v are unique or not: %v\n", targetTable.Name, funcNamePart, rFkey.UniqueIndex)
 	if rFkey.UniqueIndex {
 		tabFKeyMethod += fmt.Sprintf("func (%v *%v) GetConnected%vFromDbBy%v(getFromMainDb ...bool) (%v, error) {\n",
 			table.variableName(), table.fullyQualifiedStructName(), targetTable.GoNameSingular, funcNamePart, targetTable.fullyQualifiedStructName())
