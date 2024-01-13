@@ -294,9 +294,9 @@ func (g *Generator) buildTableInsertMethod(table DbTable, importList []string) (
 	}
 
 	insertCode += "\t\t\t"
-	insertCode += strings.Join(colNameSlice, ", \n\t\t\t")
+	insertCode += groupBy3(colNameSlice, ", ", "\n\t\t\t")
 	insertCode += "\n\t\t) VALUES (\n\t\t\t"
-	insertCode += strings.Join(argPositionSlice, ", \n\t\t\t")
+	insertCode += groupBy3(argPositionSlice, ", ", "\n\t\t\t")
 	insertCode += "\n\t\t) "
 	if len(pkeyColumnNameSlice) > 0 || len(returningColsSlice) > 0 {
 		insertCode += "RETURNING "
@@ -309,7 +309,7 @@ func (g *Generator) buildTableInsertMethod(table DbTable, importList []string) (
 
 	//
 	insertCode += fmt.Sprintf("resultRow := %v.QueryRowx(insertQuery,\n", upperFirstChar(g.Config.DbModelPackageName))
-	insertCode += strings.Join(goColumnNameSlice, ", \n\t\t\t")
+	insertCode += groupBy3(goColumnNameSlice, ", ", "\n\t\t\t")
 	insertCode += ",\n)\n\n"
 	insertCode += "if resultRow.Err() != nil {\n"
 	insertCode += "errMsg := fmt.Sprintf(\"E#" + newUniqueLmid() + " - Could not insert into database: %v\", resultRow.Err())\n"
@@ -405,7 +405,7 @@ func (g *Generator) buildTableUpdateMethodBySingleIndex(table DbTable, index DbI
 		}
 	}
 
-	updateCode += strings.Join(columnNameArgPositionPairCollection, ",\n\t\t\t")
+	updateCode += groupBy3(columnNameArgPositionPairCollection, ",", "\n\t\t\t")
 	updateCode += "\n\t\tWHERE \n\t\t\t"
 
 	for k, column := range index.ColumnList {
@@ -428,7 +428,7 @@ func (g *Generator) buildTableUpdateMethodBySingleIndex(table DbTable, index DbI
 	}
 
 	updateCode += "`\n\n"
-	updateCode += fmt.Sprintf("_, err = %v.Exec(updateQuery,\n%v)\n", upperFirstChar(g.Config.DbModelPackageName), strings.Join(goColumnNameCollection, ",\n"))
+	updateCode += fmt.Sprintf("_, err = %v.Exec(updateQuery,\n%v,\n)\n", upperFirstChar(g.Config.DbModelPackageName), groupBy3(goColumnNameCollection, ", ", "\n\t\t\t"))
 	updateCode += "if err != nil {\n"
 	updateCode += "return fmt.Errorf(\"E#" + newUniqueLmid() + " - Could not update " + table.fullyQualifiedStructName() + " in database: %v\", err)"
 	updateCode += "}\n"
@@ -490,7 +490,7 @@ func (g *Generator) buildTableUpdateMethod(table DbTable, importList []string) (
 		}
 	}
 
-	updateCode += strings.Join(columnNameArgPositionPairCollection, ",\n\t\t\t")
+	updateCode += groupBy3(columnNameArgPositionPairCollection, ", ", "\n\t\t\t")
 	updateCode += "\n\t\tWHERE \n\t\t\t"
 
 	for k, column := range table.PkColumnList {
@@ -513,7 +513,7 @@ func (g *Generator) buildTableUpdateMethod(table DbTable, importList []string) (
 	}
 
 	updateCode += "`\n\n"
-	updateCode += fmt.Sprintf("_, err = %v.Exec(updateQuery,\n%v)\n", upperFirstChar(g.Config.DbModelPackageName), strings.Join(goColumnNameCollection, ",\n"))
+	updateCode += fmt.Sprintf("_, err = %v.Exec(updateQuery,\n%v,\n)\n", upperFirstChar(g.Config.DbModelPackageName), groupBy3(goColumnNameCollection, ", ", "\n\t\t\t"))
 	updateCode += "if err != nil {\n"
 	updateCode += "return fmt.Errorf(\"E#" + newUniqueLmid() + " - Could not update " + table.fullyQualifiedStructName() + " in database: %v\", err)"
 	updateCode += "}\n"
@@ -633,19 +633,19 @@ func (g *Generator) buildTableUpsertMethod(table DbTable, importList []string) (
 	}
 
 	upsertCode += "\t\t\t"
-	upsertCode += strings.Join(colNameSlice, ", \n\t\t\t")
+	upsertCode += groupBy3(colNameSlice, ", ", "\n\t\t\t")
 	upsertCode += "\n\t\t) VALUES (\n\t\t\t"
-	upsertCode += strings.Join(argPositionSlice, ", \n\t\t\t")
+	upsertCode += groupBy3(argPositionSlice, ", ", "\n\t\t\t")
 	upsertCode += "\n\t\t) "
 	upsertCode += "\n\t\tON CONFLICT ("
-	upsertCode += strings.Join(pkeyColumnNameSlice, ",")
+	upsertCode += groupBy3(pkeyColumnNameSlice, ", ", "\n\t\t\t")
 	upsertCode += ")"
 	upsertCode += "\n\t\tDO UPDATE SET \n\t\t\t"
-	upsertCode += strings.Join(actionColNamesSlice, ", \n\t\t\t")
+	upsertCode += groupBy3(actionColNamesSlice, ", ", "\n\t\t\t")
 	upsertCode += "`;\n\n"
 
 	upsertCode += fmt.Sprintf("resultRow := %v.QueryRowx(upsertQuery,\n", upperFirstChar(g.Config.DbModelPackageName))
-	upsertCode += strings.Join(goColumnNameSlice, ", \n\t\t\t")
+	upsertCode += groupBy3(goColumnNameSlice, ", ", "\n\t\t\t")
 	upsertCode += ",\n)\n\n"
 	upsertCode += "if resultRow.Err() != nil {\n"
 	upsertCode += "errMsg := fmt.Sprintf(\"E#" + newUniqueLmid() + " - Could not insert into database: %v\", resultRow.Err())\n"
