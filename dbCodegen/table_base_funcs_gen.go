@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-func (g *Generator) buildTableBaseFuncs(table DbTable, importList []string) (string, []string) {
+func (g *Generator) buildTableValidationFuncs(table DbTable, importList []string) (string, []string) {
 	tableBaseValidationFuncStr := ""
 	tableBaseValidationFuncStr, importList = g.buildTableBaseValidation(table, importList)
 	tableCommonValidationFuncStr := ""
@@ -15,6 +15,13 @@ func (g *Generator) buildTableBaseFuncs(table DbTable, importList []string) (str
 	tableInsertionValidationFuncStr, importList = g.buildTableInsertValidation(table, importList)
 	tableUpdateValidationFuncStr := ""
 	tableUpdateValidationFuncStr, importList = g.buildTableUpdateValidation(table, importList)
+
+	tableValidationStr := tableBaseValidationFuncStr + tableCommonValidationFuncStr + tableInsertionValidationFuncStr +
+		tableUpdateValidationFuncStr
+	return tableValidationStr, importList
+}
+
+func (g *Generator) buildTableBaseFuncs(table DbTable, importList []string) (string, []string) {
 	tableInsertionFuncStr := ""
 	tableInsertionFuncStr, importList = g.buildTableInsertMethod(table, importList)
 	tableUpdateFuncStr := ""
@@ -65,8 +72,7 @@ func (g *Generator) buildTableBaseFuncs(table DbTable, importList []string) (str
 	tableDaoFunctions := ""
 	tableDaoFunctions, importList = g.buildTableDaoIdxFuncCreator(table, importList)
 
-	tableBaseFuncStr := tableBaseValidationFuncStr + tableCommonValidationFuncStr + tableInsertionValidationFuncStr +
-		tableUpdateValidationFuncStr + tableInsertionFuncStr + tableUpdateFuncStr +
+	tableBaseFuncStr := tableInsertionFuncStr + tableUpdateFuncStr +
 		tableUpdateByIndexes + tableDeleteFuncStr + tableUpsertFuncStr + tabFwdForeignKeyMethods +
 		tableMethodAndDaoSeparator + tableDaoStructAndNew + tableDaoFunctions
 	return tableBaseFuncStr, importList

@@ -31,6 +31,8 @@ func init() {
 		"continue", "for", "import", "return", "var"}
 }
 
+const DefaultMagicComment = "// MAGIC COMMENT (DO NOT EDIT): Please write any custom code only below this line.\n"
+
 // DbSchema represents the schema in the database
 type DbSchema struct {
 	Name      string             // Name of the schema
@@ -237,14 +239,13 @@ type fkInfoFromDb struct {
 // EnumDefinition defines an enumeration in code which would ideally be saved in the DB
 type EnumDefinition struct {
 	Name              string           // Name of this enum
-	goName            string           // Enum name for use in go code
-	goNameSingular    string           // Enum name in singular form for go code
-	goNamePlural      string           // Enum name in Plural form for go code
 	Exported          bool             // Enum to be used outside the DB package
-	HandleUndefined   bool             // Handle undefined values in generated functions?
 	IsDbType          bool             // Is this enum supposed to be used in the DB?
 	Mappings          map[string]int16 // List of enumerations
 	DisableGeneration bool             // Disable the generation/update of this type (temporarily?)
+	goName            string           // Enum name for use in go code
+	goNameSingular    string           // Enum name in singular form for go code
+	goNamePlural      string           // Enum name in Plural form for go code
 }
 
 // CodegenConfig contains the values and rules using which the code is to be generated
@@ -266,10 +267,11 @@ type CodegenConfig struct {
 // It is supposed to contain all the information needed for performing the code generation
 type Generator struct {
 	// More fields to be decided
-	Config       CodegenConfig       // The configuration for this generator
-	Schemas      map[string]DbSchema // The schemas in the database (will in turn contain tables)
-	pluralClient *pluralize.Client   // Pluralization client
-	sync.Mutex                       // To prevent parallel runs
+	Config       CodegenConfig             // The configuration for this generator
+	Schemas      map[string]DbSchema       // The schemas in the database (will in turn contain tables)
+	Enums        map[string]EnumDefinition // The enumerations to be built
+	pluralClient *pluralize.Client         // Pluralization client
+	sync.Mutex                             // To prevent parallel runs
 }
 
 // The type to get the column info for all the tables in all the schemas
@@ -303,10 +305,11 @@ func NewCodeGenerator(config CodegenConfig) (Generator, appError.Typ) {
 		Config:       config,
 		pluralClient: pluralize.NewClient(),
 		Schemas:      map[string]DbSchema{},
+		Enums:        map[string]EnumDefinition{},
 	}
 
 	if strings.TrimSpace(config.MagicComment) == "" {
-		g.Config.MagicComment = "// MAGIC COMMENT (DO NOT EDIT): Please write any custom code only below this line.\n"
+		g.Config.MagicComment = DefaultMagicComment
 	}
 
 	return g, appError.BlankError
@@ -331,16 +334,27 @@ func (g *Generator) Generate() appError.Typ {
 	fmt.Println("I#1NPKWR - Looks like we got connected")
 	// return appError.BlankError
 	// We will first run the query which will fetch the details
+	var customCodeInFile []string
+	var fileAlreadyExists bool
+	var importList []string
+	var importsString string
+	var outputFile *os.File
+	var fileContent string
 
 	// Now let's try to generate the enumerations. Because we might need them later when generating table code
 	// Validate the enumerations first
 	for key, enum := range g.Config.Enumerations {
+		if enum.DisableGeneration {
+			continue
+		}
+		//enumCopy := enum
 		// Make sure that key name is same as the enum name
 		if key != enum.Name {
 			panic(fmt.Sprintf("E#1PM3T2 - Key name %v of the enum does not match its name %v", key, enum.Name))
 		}
 		// Make sure that integer values are all unique and non-negative
 		valSet := set.New[int16]()
+		newMapping := map[string]int16{}
 		for txtVal, intVal := range enum.Mappings {
 			if intVal < 0 {
 				panic(fmt.Sprintf("P#1PL54Y - Negative value (%v) for %v in enum %v. Enumerations cannot have negative values.", intVal, txtVal, enum.Name))
@@ -351,7 +365,131 @@ func (g *Generator) Generate() appError.Typ {
 				panic(fmt.Sprintf("P#1PL4EK - Integer value %v has already been set with %v. It is also being set against %v. Please fix.", intVal, oldTxtVal, txtVal))
 			}
 
+			if strings.TrimSpace(strings.ToLower(txtVal)) == "undefined" {
+				panic(fmt.Sprintf("E#1POGSI - Enum named %v contains a value named %v while also enabling the option to handle undefined values. This is not allowed.", enum.Name, txtVal))
+			}
+
 			valSet.Add(intVal, txtVal)
+
+			newMapping[getGoName(txtVal)] = intVal
+		}
+		enum.Mappings = newMapping
+
+		// Get the names created
+		enum.goName = getGoName(enum.Name)
+		enum.goNameSingular = g.pluralClient.Singular(enum.goName)
+		enum.goNamePlural = g.pluralClient.Plural(enum.goName)
+
+		// Now set this to the generator
+		g.Enums[enum.Name] = enum
+	}
+
+	// Validated. Now generate
+	enumImportsStr := ""
+	enumImportsList := []string{}
+	enumFileContentsStr := ""
+	enumTemplate := `
+//{{PACKAGE_NAME}}
+
+//{{IMPORT_LIST}}
+
+//{{FILE_CONTENTS}}
+
+//{{INT_CONSTANTS}}
+//{{STRING_CONSTANTS}}
+
+// {{TYP_TO_STRING_FUNC}}
+// {{TYP_FROM_STRING_FUNC}}
+// {{TYP_FROM_INT_FUNC}}
+
+// {{VALUE_AND_SCAN_FUNC}}
+`
+
+	for _, enum := range g.Enums {
+		fileAlreadyExists = true
+		enumImportsList = []string{}
+		enumImportsStr = ""
+		enumFileContentsStr, enumImportsList = g.buildEnumContentString(enum, enumImportsList)
+
+		if len(enumImportsList) > 0 {
+			enumImportsStr += "\nimport (\n"
+			for _, impo := range enumImportsList {
+				enumImportsStr += "\t\"" + impo + "\"\n"
+			}
+			enumImportsStr += ")\n"
+		} else {
+			enumImportsStr = ""
+		}
+
+		fileContent = enumTemplate
+		fileContent = strings.ReplaceAll(fileContent, "//{{PACKAGE_NAME}}", fmt.Sprintf("package %v", g.Config.DbModelPackageName))
+		fileContent = strings.ReplaceAll(fileContent, "//{{IMPORT_LIST}}", enumImportsStr)
+		fileContent = strings.ReplaceAll(fileContent, "//{{FILE_CONTENTS}}", enumFileContentsStr)
+		fileContent = strings.ReplaceAll(fileContent, "//{{MAGIC_COMMENT}}", g.Config.MagicComment)
+		fmt.Println("E#1PO4OB - Printing to make sure the variable gets used: ", enum)
+		outputFileName := "gen_enum_" + strings.ToLower(enum.Name) + ".go"
+		// Check if the file already exists
+		existingFileContentBytes, fileErr := os.ReadFile(
+			fmt.Sprintf("%s/%s", g.Config.DbModelPackagePath, outputFileName))
+		if fileErr != nil {
+			// File does not exist
+			fileAlreadyExists = false
+		}
+
+		if !fileAlreadyExists {
+			// File has to be created.
+			fileContent = strings.ReplaceAll(fileContent, "//{{FIRST_TIME_FILE_CONTENT}}",
+				"// Make sure code below is valid before running code generator else the generator will fail\n\n")
+		} else {
+			// file already exists
+			fileContent = strings.ReplaceAll(fileContent, "//{{FIRST_TIME_FILE_CONTENT}}", "")
+		}
+
+		existingFileContent := string(existingFileContentBytes)
+
+		// Look for the magic comment
+		if strings.Contains(existingFileContent, g.Config.MagicComment) {
+			allcode := strings.Split(existingFileContent, g.Config.MagicComment)
+			for i := 0; i < len(allcode); i++ {
+				if i > 0 {
+					customCodeInFile = append(customCodeInFile, allcode[i])
+				}
+			}
+		}
+
+		err = os.Mkdir(g.Config.DbModelPackagePath, 0777)
+		if err != nil {
+			//fmt.Println("E#1OBP5N -", err)
+		}
+
+		outputFile, err = os.Create(fmt.Sprintf("%s/%s", g.Config.DbModelPackagePath, outputFileName))
+		if err != nil {
+			panic(fmt.Sprintf("P#1OECMC - %v", err))
+		}
+
+		fileContentBytes, err := format.Source([]byte(fileContent))
+		if err != nil {
+			panic(err)
+		}
+
+		fileContent = string(fileContentBytes)
+
+		if fileAlreadyExists {
+			for _, val := range customCodeInFile {
+				fileContent += val + "\n"
+			}
+		}
+
+		fileContent = g.removeTrailingNewlines(fileContent) + "\n"
+
+		_, err = outputFile.WriteString(fileContent)
+		if err != nil {
+			return appError.NewError(appError.Error, "1OBPB4", err.Error())
+		}
+
+		err = outputFile.Close()
+		if err != nil {
+			return appError.NewError(appError.Error, "1PYY78", err.Error())
 		}
 	}
 
@@ -363,7 +501,7 @@ func (g *Generator) Generate() appError.Typ {
 	if err != nil {
 		panic(err)
 	}
-	var tables map[string]DbTable = map[string]DbTable{}
+	var tables = map[string]DbTable{}
 	// We need to iterate over the list of columns and create DbTable instances,
 	for _, columnDetail := range columns {
 		// If the schema is not yet built, build it.
@@ -674,15 +812,13 @@ func (g *Generator) Generate() appError.Typ {
 //{{MAGIC_COMMENT}}
 //{{FIRST_TIME_FILE_CONTENT}}
 `
-	var fileAlreadyExists bool
-	var customCodeInFile []string
 
 	var tableStructStr string
+	var tableValidationStr string
 	var tableBaseFuncsStr string
-	var importsString string
-	var importList []string
 
 	for _, schema := range g.Schemas {
+		fileAlreadyExists = true
 		importList = []string{}
 		importsString = ""
 		tableStructStr, importList = g.buildSchemaStructString(schema.Name, importList)
@@ -695,7 +831,7 @@ func (g *Generator) Generate() appError.Typ {
 		} else {
 			importsString = ""
 		}
-		fileContent := schemaFileTemplate
+		fileContent = schemaFileTemplate
 		fileContent = strings.ReplaceAll(fileContent, "//{{PACKAGE_NAME}}", fmt.Sprintf("package %v", g.Config.DbModelPackageName))
 		fileContent = strings.ReplaceAll(fileContent, "//{{IMPORT_LIST}}", importsString)
 		fileContent = strings.ReplaceAll(fileContent, "//{{SCHEMA_STRUCT}}", tableStructStr)
@@ -736,7 +872,7 @@ func (g *Generator) Generate() appError.Typ {
 			//fmt.Println("E#1OBP5N -", err)
 		}
 
-		outputFile, err := os.Create(fmt.Sprintf("%s/%s", g.Config.DbModelPackagePath, outputFileName))
+		outputFile, err = os.Create(fmt.Sprintf("%s/%s", g.Config.DbModelPackagePath, outputFileName))
 		if err != nil {
 			panic(fmt.Sprintf("P#1OECMC - %v", err))
 		}
@@ -763,8 +899,10 @@ func (g *Generator) Generate() appError.Typ {
 
 		err = outputFile.Close()
 		if err != nil {
-			return appError.NewError(appError.Error, "1OBPCE", err.Error())
+			return appError.NewError(appError.Error, "1PYY7G", err.Error())
 		}
+
+		customCodeInFile = []string{}
 	}
 
 	// Table struct file template
@@ -782,9 +920,11 @@ func (g *Generator) Generate() appError.Typ {
 `
 	for _, schema := range g.Schemas {
 		for _, table := range schema.Tables {
+			fileAlreadyExists = true
 			importList = []string{}
 			importsString = ""
 			tableStructStr, importList = g.buildTableStructString(table, importList)
+			tableValidationStr, importList = g.buildTableValidationFuncs(table, importList)
 			tableBaseFuncsStr, importList = g.buildTableBaseFuncs(table, importList)
 			if len(importList) > 0 {
 				importsString += "\nimport (\n"
@@ -796,7 +936,7 @@ func (g *Generator) Generate() appError.Typ {
 				importsString = ""
 			}
 
-			fileContent := tableStructFileTemplate
+			fileContent = tableStructFileTemplate
 			fileContent = strings.ReplaceAll(fileContent, "//{{PACKAGE_NAME}}", fmt.Sprintf("package %v", g.Config.DbModelPackageName))
 			fileContent = strings.ReplaceAll(fileContent, "//{{IMPORT_LIST}}", importsString)
 			fileContent = strings.ReplaceAll(fileContent, "//{{TABLE_STRUCT}}", tableStructStr)
@@ -815,7 +955,7 @@ func (g *Generator) Generate() appError.Typ {
 			if !fileAlreadyExists {
 				// File has to be created.
 				fileContent = strings.ReplaceAll(fileContent, "//{{FIRST_TIME_FILE_CONTENT}}",
-					"// Make sure code below is valid before running code generator else the generator will fail\n\n")
+					"// Make sure code below is valid before running code generator else the generator will fail\n\n"+tableValidationStr)
 			} else {
 				// file already exists
 				fileContent = strings.ReplaceAll(fileContent, "//{{FIRST_TIME_FILE_CONTENT}}", "")
@@ -838,7 +978,7 @@ func (g *Generator) Generate() appError.Typ {
 				//fmt.Println("E#1OFXLN -", err)
 			}
 
-			outputFile, err := os.Create(fmt.Sprintf("%s/%s", g.Config.DbModelPackagePath, outputFileName))
+			outputFile, err = os.Create(fmt.Sprintf("%s/%s", g.Config.DbModelPackagePath, outputFileName))
 			if err != nil {
 				panic(fmt.Sprintf("P#1OFXLQ - %v", err))
 			}
@@ -867,6 +1007,8 @@ func (g *Generator) Generate() appError.Typ {
 			if err != nil {
 				return appError.NewError(appError.Error, "1OBPCE", err.Error())
 			}
+
+			customCodeInFile = []string{}
 		}
 	}
 

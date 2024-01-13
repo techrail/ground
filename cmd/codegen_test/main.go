@@ -2,11 +2,16 @@ package main
 
 import (
 	"fmt"
-
 	"github.com/techrail/ground/dbCodegen"
+	"net/http"
+	_ "net/http/pprof"
 )
 
 func main() {
+	go func() {
+		http.ListenAndServe("localhost:8181", nil)
+	}()
+
 	cnf := dbCodegen.CodegenConfig{
 		DbModelPackageName: "mainDb",
 		//DbModelPackagePath: "/Users/vaibhavkaushal/code/Techrail/ground/tmp/mainDb",
@@ -15,12 +20,12 @@ func main() {
 		UpdateUpdatedAtInCode: true,
 		InsertUpdatedAtInCode: true,
 		InsertCreatedAtInCode: true,
+		ColCommentSeparator:   "(^_^)",
 		Enumerations: map[string]dbCodegen.EnumDefinition{
 			"user_type": {
-				Name:            "user_type",
-				Exported:        false,
-				HandleUndefined: false,
-				IsDbType:        true,
+				Name:     "user_type",
+				Exported: false,
+				IsDbType: true,
 				Mappings: map[string]int16{
 					"guest":         0,
 					"admin":         1,
