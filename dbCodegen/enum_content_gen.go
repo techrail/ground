@@ -1,6 +1,8 @@
 package dbCodegen
 
-import "fmt"
+import (
+	"fmt"
+)
 
 func (g *Generator) buildEnumContentString(enum EnumDefinition, importList []string) (string, []string) {
 	enumContentStr := ""
@@ -62,6 +64,22 @@ func (g *Generator) buildEnumContentString(enum EnumDefinition, importList []str
 	enumContentStr += fmt.Sprintf("return Undefined\n")
 	enumContentStr += fmt.Sprintf("}\n")
 	enumContentStr += "\n"
+
+	// DB Methods
+	if enum.IsDbType {
+		importList = g.addToImports("database/sql/driver", importList)
+
+		enumContentStr += fmt.Sprintf("func (t %v) Value() (driver.Value, error) { \n", enumTypeName)
+		enumContentStr += fmt.Sprintf("if %vFromInt16(int16(t)) != Undefined {\n", enumTypeName)
+		enumContentStr += "return int16(t), nil \n"
+		enumContentStr += "}\n"
+		enumContentStr += "return -1, errors.New(\"E#" + newUniqueLmid() + " - Invalid value supplied for enumeration " + enumTypeName + "\")\n"
+
+		importList = g.addToImports("errors", importList)
+
+		enumContentStr += fmt.Sprintf("}\n")
+		enumContentStr += "\n"
+	}
 
 	return enumContentStr, importList
 }
