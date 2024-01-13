@@ -623,11 +623,10 @@ func (g *Generator) buildTableUpsertMethod(table DbTable, importList []string) (
 			(column.GoDataType == "time.Time" || column.GoDataType == "sql.NullTime")) &&
 			!(column.Name == "updated_at" && g.Config.InsertUpdatedAtInCode == false && // Updated at timestamps might not need to be created in code
 				(column.GoDataType == "time.Time" || column.GoDataType == "sql.NullTime")) {
-			if column.HasDefaultValue && isColumnInList(column.Name, table.PkColumnList) {
-				// Column already has default value for a primary column. Do not include this column in list
+			if isColumnInList(column.Name, table.PkColumnList) {
+				// Column already is a primary column. Do not include this column in list
 				continue
 			}
-			i += 1
 			actionColNamesSlice = append(actionColNamesSlice, column.Name+` = `+"EXCLUDED."+columnName)
 		}
 	}

@@ -83,6 +83,15 @@ func (table *DbTable) commentForStruct() string {
 	return strings.ReplaceAll(table.Comment, "\n", "\n// ")
 }
 
+func (table *DbTable) isColumnPrimaryKey(input string) bool {
+	for _, col := range table.PkColumnList {
+		if col.Name == input {
+			return true
+		}
+	}
+	return false
+}
+
 func (table *DbTable) FindIndexByColumnNames(colNames []string) DbIndex {
 	slices.Sort(colNames)
 
