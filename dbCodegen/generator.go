@@ -404,14 +404,7 @@ func (g *Generator) Generate() appError.Typ {
 
 //{{FILE_CONTENTS}}
 
-//{{INT_CONSTANTS}}
-//{{STRING_CONSTANTS}}
-
-// {{TYP_TO_STRING_FUNC}}
-// {{TYP_FROM_STRING_FUNC}}
-// {{TYP_FROM_INT_FUNC}}
-
-// {{VALUE_AND_SCAN_FUNC}}
+//{{MAGIC_COMMENT}}
 `
 
 	for _, enum := range g.Enums {

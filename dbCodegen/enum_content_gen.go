@@ -67,6 +67,7 @@ func (g *Generator) buildEnumContentString(enum EnumDefinition, importList []str
 
 	// DB Methods
 	if enum.IsDbType {
+		// Value method
 		importList = g.addToImports("database/sql/driver", importList)
 
 		enumContentStr += fmt.Sprintf("func (t %v) Value() (driver.Value, error) { \n", enumTypeName)
@@ -79,6 +80,17 @@ func (g *Generator) buildEnumContentString(enum EnumDefinition, importList []str
 
 		enumContentStr += fmt.Sprintf("}\n")
 		enumContentStr += "\n"
+		enumContentStr += "\n // Scan method is not generated. Refer to NOTE 1NQKGL (search for that string) for details"
+
+		// NOTE [1NQKGL] There is no Scan method that we would generate. The reason is that Scan requires a pointer receiver.
+		// And a receiver function cannot update the receiver for null pointers to scalar values.
+		// If an enumeration is being used as a database column and it is nullable then the corresponding
+		// sql type (sql.NullInt16) would actually be a struct and structs can't be constants in go. As such
+		// it is much easier to just not let enums be null.
+		// If a null is required to be handled, then for an enumerated column, we can create a separate value which
+		// can be considered as null on the developer/application level. In addition,
+		// TODO: When building the code generator for the enumerated column in DB, make sure to check that the column
+		//   is NOT NULL!
 	}
 
 	return enumContentStr, importList

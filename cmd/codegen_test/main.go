@@ -24,7 +24,7 @@ func main() {
 		Enumerations: map[string]dbCodegen.EnumDefinition{
 			"user_type": {
 				Name:     "user_type",
-				Exported: false,
+				Exported: true,
 				IsDbType: true,
 				Mappings: map[string]int16{
 					"guest":         0,
