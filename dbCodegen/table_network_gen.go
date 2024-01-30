@@ -199,6 +199,7 @@ func (g *Generator) buildNetworkStructString(table DbTable, importList []string)
 					networkStruct += "}\n"
 				}
 				if col.GoDataType == "sql.NullTime" {
+					importList = g.addToImports("time", importList)
 					networkStruct += fmt.Sprintf("if db%v.%v.Valid {\n", table.GoNameSingular, col.GoName)
 					if col.CommentProperties.StrConversionViaEnum != "" {
 						enum, err := g.getEnumByName(col.CommentProperties.StrConversionViaEnum)
