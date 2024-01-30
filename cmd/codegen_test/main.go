@@ -13,10 +13,13 @@ func main() {
 	}()
 
 	cnf := dbCodegen.CodegenConfig{
-		DbModelPackageName: "mainDb",
+		ModelsContainerPackage: "github.com/techrail/ground/tmp",
+		DbModelPackageName:     "mainDb",
 		//DbModelPackagePath: "/Users/vaibhavkaushal/code/Techrail/ground/tmp/mainDb",
 		DbModelPackagePath:    "/Volumes/TestVM/other_data/obsidian_docker_root/ground/tmp/mainDb",
 		PgDbUrl:               "postgres://vaibhav:vaibhav@127.0.0.1:5432/ground?sslmode=disable",
+		NetworkPackageName:    "mainDbNet",
+		NetworkPackagePath:    "/Volumes/TestVM/other_data/obsidian_docker_root/ground/tmp/mainDbNet",
 		UpdateUpdatedAtInCode: true,
 		InsertUpdatedAtInCode: true,
 		InsertCreatedAtInCode: true,
