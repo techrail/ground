@@ -3,6 +3,7 @@ package ground
 import (
 	"github.com/techrail/ground/bgRoutine"
 	"github.com/techrail/ground/dbCodegen"
+	"github.com/techrail/ground/logger"
 	"github.com/techrail/ground/typs/appError"
 	"github.com/techrail/ground/webServer"
 )
@@ -17,4 +18,8 @@ func GiveMeAWebServer() *webServer.FastHttpServer {
 
 func GiveMeARoutineManager() bgRoutine.Manager {
 	return bgRoutine.NewManager()
+}
+
+func GiveMeALogger() logger.Logger {
+	return logger.NewLogger()
 }
