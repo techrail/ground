@@ -20,6 +20,15 @@ func GiveMeARoutineManager() bgRoutine.Manager {
 	return bgRoutine.NewManager()
 }
 
-func GiveMeALogger() logger.Logger {
-	return logger.NewLogger()
+func GiveMeABarkSLogger() logger.Logger {
+	return logger.NewSloggerClient()
+}
+
+func GiveMeABarkEmbeddedServerClient(dbUrl, defaultLogLvl, svcName, sessName string, enableSlog bool) logger.Logger {
+	return logger.NewEmbeddedServerBarkClient(dbUrl, defaultLogLvl, svcName, sessName, enableSlog)
+}
+
+func GiveMeABarkRemoteServerClient(remoteServerUrl, defaultLogLvl, svcName, sessName string, enableSlog bool,
+	enableBulkSend bool) logger.Logger {
+	return logger.NewBarkClient(remoteServerUrl, defaultLogLvl, svcName, sessName, enableSlog, enableBulkSend)
 }
