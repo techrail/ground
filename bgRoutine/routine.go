@@ -2,15 +2,15 @@ package bgRoutine
 
 import (
 	"fmt"
-	`strconv`
+	"strconv"
 	"time"
 
 	"github.com/robfig/cron/v3"
-	`github.com/techrail/bark/appRuntime`
+	"github.com/techrail/bark/appRuntime"
 
-	`github.com/techrail/ground/channels`
-	`github.com/techrail/ground/constants`
-	`github.com/techrail/ground/typs/appError`
+	"github.com/techrail/ground/channels"
+	"github.com/techrail/ground/constants"
+	"github.com/techrail/ground/typs/appError"
 )
 
 const (
@@ -39,23 +39,7 @@ type Typ struct {
 	monitorHook     func(typ appError.Typ) // The function which is called for each run
 }
 
-var routineMap map[string]*Typ
-
-func init() {
-	routineMap = make(map[string]*Typ)
-}
-
-func addRoutine(name string, routine *Typ) appError.Typ {
-	// Check if another routine already exists with the same name
-	if _, ok := routineMap[name]; ok {
-		// already exists
-		return appError.NewError(appError.Error, "1NCFF9", "Another routine by that name already exists")
-	}
-	routineMap[name] = routine
-	return appError.BlankError
-}
-
-func New(name string, cronExpression string, runnerFunc func() appError.Typ) (*Typ, appError.Typ) {
+func (m *Manager) AddRoutine(name string, cronExpression string, runnerFunc func() appError.Typ) appError.Typ {
 	mode := CronMode
 	tickr := time.NewTicker(87600 * time.Hour) // 10 years default duration for the routine
 	// check if we have a valid cron expression or not
@@ -65,7 +49,7 @@ func New(name string, cronExpression string, runnerFunc func() appError.Typ) (*T
 		tickerMills, convErr := strconv.Atoi(cronExpression)
 		if convErr != nil {
 			// Can't convert it to integer either. It's definitely an error
-			return nil, appError.NewError(appError.Error, "1NIV49", fmt.Sprintf("Could not parse cron expression %v for routine %v. Parser error: %v and Atoi error: %v", cronExpression, name, err, convErr))
+			return appError.NewError(appError.Error, "1NIV49", fmt.Sprintf("Could not parse cron expression %v for routine %v. Parser error: %v and Atoi error: %v", cronExpression, name, err, convErr))
 		}
 		// Looks like the expression is that of milliseconds
 		mode = TickerMode
@@ -84,11 +68,14 @@ func New(name string, cronExpression string, runnerFunc func() appError.Typ) (*T
 		instanceRunning: false,
 		monitorHook:     nil,
 	}
-	errt := addRoutine(name, &r)
-	if errt.IsNotBlank() {
-		return nil, errt
+
+	if _, ok := m.routineMap[name]; ok {
+		// already exists
+		return appError.NewError(appError.Error, "1NCFF9", "Another routine by that name already exists")
 	}
-	return &r, errt
+	m.routineMap[name] = &r
+
+	return appError.BlankError
 }
 
 func (r *Typ) AddMonitorFunc(f func(typ appError.Typ)) {
@@ -258,10 +245,4 @@ func (r *Typ) IsRunning() bool {
 
 func (r *Typ) GetCurrentState() string {
 	return r.state
-}
-
-func ShutdownAllRoutines() {
-	for _, v := range routineMap {
-		v.Stop()
-	}
 }
