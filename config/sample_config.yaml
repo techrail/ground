@@ -31,6 +31,8 @@ redis:
     idleTimeoutInSeconds: 60
     crashAppOnConnectionFailure: true
     connectRetryIntervalInSeconds: 10
+    address: '127.0.0.1:700'
+    operationmode: 'cluster'
 
 cron: # All times are expected to be un UTC
   emailNotifs:
