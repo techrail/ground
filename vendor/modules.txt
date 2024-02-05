@@ -142,18 +142,18 @@ github.com/spf13/viper/internal/encoding/yaml
 # github.com/subosito/gotenv v1.6.0
 ## explicit; go 1.18
 github.com/subosito/gotenv
-# github.com/techrail/bark v1.1.0
+# github.com/techrail/bark v1.1.1
 ## explicit; go 1.20
 github.com/techrail/bark/appRuntime
 github.com/techrail/bark/channels
 github.com/techrail/bark/client
 github.com/techrail/bark/constants
+github.com/techrail/bark/internal/jsonObject
 github.com/techrail/bark/models
 github.com/techrail/bark/resources
 github.com/techrail/bark/services/dbLogWriter
 github.com/techrail/bark/services/ingestion
 github.com/techrail/bark/typs/appError
-github.com/techrail/bark/typs/jsonObject
 github.com/techrail/bark/utils
 # github.com/valyala/bytebufferpool v1.0.0
 ## explicit

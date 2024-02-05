@@ -192,8 +192,6 @@ func hasClusterEnabled(c *CacheClient) bool {
 	return true
 }
 
-// Cluster management methods
-
 func (c *CacheClient) Info() *goredis.StringCmd {
 	return c.Connection.Info(ctx)
 }

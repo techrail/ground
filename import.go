@@ -6,6 +6,7 @@ import (
 	"github.com/techrail/ground/dbCodegen"
 	"github.com/techrail/ground/logger"
 	"github.com/techrail/ground/typs/appError"
+	"github.com/techrail/ground/typs/jsonObject"
 	"github.com/techrail/ground/webServer"
 )
 
@@ -32,6 +33,10 @@ func GiveMeABarkEmbeddedServerClient(dbUrl, defaultLogLvl, svcName, sessName str
 func GiveMeABarkRemoteServerClient(remoteServerUrl, defaultLogLvl, svcName, sessName string, enableSlog bool,
 	enableBulkSend bool) logger.Logger {
 	return logger.NewBarkClient(remoteServerUrl, defaultLogLvl, svcName, sessName, enableSlog, enableBulkSend)
+}
+
+func GiveMeABlankJsonObject() jsonObject.Typ {
+	return jsonObject.EmptyNotNullJsonObject()
 }
 
 func GiveMeACacheManager() *cache.CacheClient {

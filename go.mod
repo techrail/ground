@@ -12,7 +12,7 @@ require (
 	github.com/redis/go-redis/v9 v9.4.0
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/spf13/viper v1.17.0
-	github.com/techrail/bark v1.1.0
+	github.com/techrail/bark v1.1.1
 	github.com/valyala/fasthttp v1.50.0
 	golang.org/x/text v0.13.0
 )
