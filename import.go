@@ -2,6 +2,7 @@ package ground
 
 import (
 	"github.com/techrail/ground/bgRoutine"
+	"github.com/techrail/ground/cache"
 	"github.com/techrail/ground/dbCodegen"
 	"github.com/techrail/ground/logger"
 	"github.com/techrail/ground/typs/appError"
@@ -31,4 +32,8 @@ func GiveMeABarkEmbeddedServerClient(dbUrl, defaultLogLvl, svcName, sessName str
 func GiveMeABarkRemoteServerClient(remoteServerUrl, defaultLogLvl, svcName, sessName string, enableSlog bool,
 	enableBulkSend bool) logger.Logger {
 	return logger.NewBarkClient(remoteServerUrl, defaultLogLvl, svcName, sessName, enableSlog, enableBulkSend)
+}
+
+func GiveMeACacheManager() *cache.CacheClient {
+	return cache.CreateNewRedisClient()
 }
