@@ -2173,11 +2173,31 @@ func TestComplexNonExistingPath(t *testing.T) {
 	}
 	_, value, appErr := json.GetValueFromJsonObjectByJPath("obj.somenewObj.somearr.[3].someNewObj.anotherArr.[8].field")
 	if !appErr.IsBlank() {
-		t.Error("Failed to get value of nonexisting object", appErr)
+		t.Error("E#1RTTR8 - Failed to get value of nonexisting object", appErr)
 	}
 	result := strings.TrimSpace(fmt.Sprint(value))
-	if strings.EqualFold("put this value here", result) {
-		t.Error("Incorrect value of nonexisting object")
+	if !strings.EqualFold("hello", result) {
+		t.Error("E#1RTTQW - Incorrect value of nonexisting object")
 	}
 	// fmt.Println("After:", jsonObj.PrettyString())
+}
+
+// Scenario 6: Testing if the receiver function works
+func TestComplexNonExistingPathWithReceiver(t *testing.T) {
+	jsonObj, _ := ToJsonObject(jsonString)
+	// fmt.Println("Before:", jsonObj.PrettyString())
+	err := jsonObj.SetValueByJPath("obj.somenewObj.somearr.[3].someNewObj.anotherArr.[8].field", "hello")
+	if err != nil {
+		t.Errorf("E#1RTTL7 - Something went wrong when setting via receiver: %v", err)
+		return
+	}
+
+	_, value, appErr := jsonObj.GetValueFromJsonObjectByJPath("obj.somenewObj.somearr.[3].someNewObj.anotherArr.[8].field")
+	if !appErr.IsBlank() {
+		t.Error("E#1RTTSK - Failed to get value of nonexisting object", appErr)
+	}
+	result := strings.TrimSpace(fmt.Sprint(value))
+	if !strings.EqualFold("hello", result) {
+		t.Error("E#1RTTS6 - Incorrect value of nonexisting object")
+	}
 }

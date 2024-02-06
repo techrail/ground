@@ -445,6 +445,31 @@ func (j *Typ) GetValueFromJsonObjectByJPath(path string) (string, any, appError.
 	}
 }
 
+func (j *Typ) SetValueByJPath(path string, valueToSet any) error {
+	if !j.Valid {
+		return fmt.Errorf("E#1RTT5F - Cannot set value in invalid jsonObject")
+	}
+
+	if j.hasTopLevelArray {
+		return fmt.Errorf("E#1RTT7C - Cannot yet set value in a jsonObject with an array at top level")
+	}
+
+	jCopy := Typ{
+		Valid:            j.Valid,
+		hasTopLevelArray: j.hasTopLevelArray,
+		StringAnyMap:     j.StringAnyMap,
+	}
+
+	newJCopy, err := SetValueAndOverrideInJsonObjectByJPath(jCopy, path, valueToSet, true)
+	if err != nil {
+		return fmt.Errorf("E#1RTTDB - Setting value failed. Error: %v", err)
+	}
+
+	j.StringAnyMap = newJCopy.StringAnyMap
+
+	return nil
+}
+
 // SetValueInJsonObjectByJPath will set a value in the Typ given its JPath.
 func SetValueInJsonObjectByJPath(obj Typ, path string, valueToSet any) (Typ, error) {
 	return SetValueAndOverrideInJsonObjectByJPath(obj, path, valueToSet, false)
