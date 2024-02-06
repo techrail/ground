@@ -2,6 +2,7 @@ package ground
 
 import (
 	"github.com/techrail/ground/bgRoutine"
+	"github.com/techrail/ground/cache"
 	"github.com/techrail/ground/dbCodegen"
 	"github.com/techrail/ground/logger"
 	"github.com/techrail/ground/typs/appError"
@@ -36,4 +37,8 @@ func GiveMeABarkRemoteServerClient(remoteServerUrl, defaultLogLvl, svcName, sess
 
 func GiveMeABlankJsonObject() jsonObject.Typ {
 	return jsonObject.EmptyNotNullJsonObject()
+}
+
+func GiveMeACacheManager() *cache.CacheClient {
+	return cache.CreateNewRedisClient()
 }

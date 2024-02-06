@@ -9,7 +9,7 @@ const OpLogRequestValue = "TECHRAIL_GROUND_OPLOG_REQUEST_VALUE"
 
 const (
 	RedisDefaultPassword                    = ""
-	RedisDefaultAddr                        = "localhost:6739"
+	RedisDefaultAddr                        = "localhost:6379"
 	RedisDefaultDbNumber                    = 0
 	RedisDefaultProtocol                    = 3
 	RedisDefaultOperationMode               = "auto"
