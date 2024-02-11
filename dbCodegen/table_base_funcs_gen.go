@@ -267,7 +267,7 @@ func (g *Generator) buildTableInsertMethod(table DbTable, importList []string) (
 			i += 1
 			colNameSlice = append(colNameSlice, `"`+column.Name+`"`)
 			if column.DataType == "json" || column.DataType == "jsonb" {
-				goColumnNameSlice = append(goColumnNameSlice, fmt.Sprintf("%v.%v.String()", table.variableName(), column.GoName))
+				goColumnNameSlice = append(goColumnNameSlice, fmt.Sprintf("%v.%v.StringOrNil()", table.variableName(), column.GoName))
 			} else {
 				goColumnNameSlice = append(goColumnNameSlice, fmt.Sprintf("%v.%v", table.variableName(), column.GoName))
 			}
@@ -397,7 +397,7 @@ func (g *Generator) buildTableUpdateMethodBySingleIndex(table DbTable, index DbI
 				i += 1
 				columnNameArgPositionPairCollection = append(columnNameArgPositionPairCollection, fmt.Sprintf(`"%v" = $%v`, column.Name, i))
 				if column.DataType == "json" || column.DataType == "jsonb" {
-					goColumnNameCollection = append(goColumnNameCollection, fmt.Sprintf("%v.%v.String()", table.variableName(), column.GoName))
+					goColumnNameCollection = append(goColumnNameCollection, fmt.Sprintf("%v.%v.StringOrNil()", table.variableName(), column.GoName))
 				} else {
 					goColumnNameCollection = append(goColumnNameCollection, fmt.Sprintf("%v.%v", table.variableName(), column.GoName))
 				}
@@ -420,7 +420,7 @@ func (g *Generator) buildTableUpdateMethodBySingleIndex(table DbTable, index DbI
 		}
 
 		if column.DataType == "jsonb" {
-			goColumnNameCollection = append(goColumnNameCollection, fmt.Sprintf("%v.%v.String()", table.variableName(), column.GoName))
+			goColumnNameCollection = append(goColumnNameCollection, fmt.Sprintf("%v.%v.StringOrNil()", table.variableName(), column.GoName))
 		} else {
 			goColumnNameCollection = append(goColumnNameCollection, fmt.Sprintf("%v.%v", table.variableName(), column.GoName))
 		}
@@ -482,7 +482,7 @@ func (g *Generator) buildTableUpdateMethod(table DbTable, importList []string) (
 				i += 1
 				columnNameArgPositionPairCollection = append(columnNameArgPositionPairCollection, fmt.Sprintf(`"%v" = $%v`, column.Name, i))
 				if column.DataType == "json" || column.DataType == "jsonb" {
-					goColumnNameCollection = append(goColumnNameCollection, fmt.Sprintf("%v.%v.String()", table.variableName(), column.GoName))
+					goColumnNameCollection = append(goColumnNameCollection, fmt.Sprintf("%v.%v.StringOrNil()", table.variableName(), column.GoName))
 				} else {
 					goColumnNameCollection = append(goColumnNameCollection, fmt.Sprintf("%v.%v", table.variableName(), column.GoName))
 				}
@@ -505,7 +505,7 @@ func (g *Generator) buildTableUpdateMethod(table DbTable, importList []string) (
 		}
 
 		if column.DataType == "jsonb" {
-			goColumnNameCollection = append(goColumnNameCollection, fmt.Sprintf("%v.%v.String()", table.variableName(), column.GoName))
+			goColumnNameCollection = append(goColumnNameCollection, fmt.Sprintf("%v.%v.StringOrNil()", table.variableName(), column.GoName))
 		} else {
 			goColumnNameCollection = append(goColumnNameCollection, fmt.Sprintf("%v.%v", table.variableName(), column.GoName))
 		}
@@ -601,7 +601,7 @@ func (g *Generator) buildTableUpsertMethod(table DbTable, importList []string) (
 			i += 1
 			colNameSlice = append(colNameSlice, `"`+column.Name+`"`)
 			if column.DataType == "json" || column.DataType == "jsonb" {
-				goColumnNameSlice = append(goColumnNameSlice, fmt.Sprintf("%v.%v.String()", table.variableName(), column.GoName))
+				goColumnNameSlice = append(goColumnNameSlice, fmt.Sprintf("%v.%v.StringOrNil()", table.variableName(), column.GoName))
 			} else {
 				goColumnNameSlice = append(goColumnNameSlice, fmt.Sprintf("%v.%v", table.variableName(), column.GoName))
 			}
@@ -714,8 +714,8 @@ func (g *Generator) buildSingleTableFwdFkeyFunc(table DbTable, fkey DbFkInfo, im
 				queryVars = append(queryVars, lowerFirstChar(table.GoNameSingular)+"."+fromCol.GoName+".Bool")
 			case "sql.NullString":
 				queryVars = append(queryVars, lowerFirstChar(table.GoNameSingular)+"."+fromCol.GoName+".String")
-			case "types.JsonObject":
-				queryVars = append(queryVars, lowerFirstChar(table.GoNameSingular)+"."+fromCol.GoName+".String()")
+			case "jsonObject.Typ":
+				queryVars = append(queryVars, lowerFirstChar(table.GoNameSingular)+"."+fromCol.GoName+".StringOrNil()")
 			default:
 				queryVars = append(queryVars, lowerFirstChar(table.GoNameSingular)+"."+fromCol.GoName)
 			}
@@ -806,8 +806,8 @@ func (g *Generator) buildSingleTableRevFkeyFunc(table DbTable, rFkey DbRevFkInfo
 				queryVars = append(queryVars, lowerFirstChar(table.GoNameSingular)+"."+fromCol.GoName+".Bool")
 			case "sql.NullString":
 				queryVars = append(queryVars, lowerFirstChar(table.GoNameSingular)+"."+fromCol.GoName+".String")
-			case "types.JsonObject":
-				queryVars = append(queryVars, lowerFirstChar(table.GoNameSingular)+"."+fromCol.GoName+".String()")
+			case "jsonObject.Typ":
+				queryVars = append(queryVars, lowerFirstChar(table.GoNameSingular)+"."+fromCol.GoName+".StringOrNil()")
 			default:
 				queryVars = append(queryVars, lowerFirstChar(table.GoNameSingular)+"."+fromCol.GoName)
 			}

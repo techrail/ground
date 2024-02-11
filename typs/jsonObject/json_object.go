@@ -1458,6 +1458,14 @@ func (j *Typ) String() string {
 	return string(bytes)
 }
 
+func (j *Typ) StringOrNil() *string {
+	s := j.String()
+	if j.Valid {
+		return &s
+	}
+	return nil
+}
+
 // PrettyString will give the formatted string for this Typ
 func (j *Typ) PrettyString() string {
 	if !j.Valid {
@@ -1501,6 +1509,19 @@ func (j *Typ) Value() (driver.Value, error) {
 
 	return j.MarshalJSON()
 }
+
+//func (Typ) ConvertValue(v any) (driver.Value, error) {
+//	rv := reflect.ValueOf(v)
+//	rv := reflect.TypeOf(v)
+//	switch rv.Kind() {
+//	case reflect.Pointer:
+//		val:=rv.Elem()
+//		if
+//	case reflect.Struct:
+//
+//	default:
+//	}
+//}
 
 // Scan implements the sql.Scanner interface. This method decodes a JSON-encoded value into the struct fields.
 func (j *Typ) Scan(value interface{}) error {
