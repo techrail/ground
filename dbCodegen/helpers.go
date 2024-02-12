@@ -147,7 +147,6 @@ func columnInList(columnName string, list []DbColumn) bool {
 }
 
 func groupBy3(sliceOfStrings []string, commonSep string, newLinePrefix string) string {
-
 	var result strings.Builder
 
 	for i, s := range sliceOfStrings {

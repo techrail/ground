@@ -1458,6 +1458,14 @@ func (j *Typ) String() string {
 	return string(bytes)
 }
 
+func (j *Typ) StringOrBlankObject() string {
+	retVal := j.String()
+	if retVal == "" {
+		return "{}"
+	}
+	return retVal
+}
+
 func (j *Typ) StringOrNil() *string {
 	s := j.String()
 	if j.Valid {
