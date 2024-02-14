@@ -2,9 +2,10 @@ package main
 
 import (
 	"fmt"
-	"github.com/techrail/ground/dbCodegen"
 	"net/http"
 	_ "net/http/pprof"
+
+	"github.com/techrail/ground/dbCodegen"
 )
 
 func main() {
@@ -15,11 +16,12 @@ func main() {
 	cnf := dbCodegen.CodegenConfig{
 		ModelsContainerPackage: "github.com/techrail/ground/tmp",
 		DbModelPackageName:     "mainDb",
-		//DbModelPackagePath: "/Users/vaibhavkaushal/code/Techrail/ground/tmp/mainDb",
-		DbModelPackagePath:       "/Volumes/TestVM/other_data/obsidian_docker_root/ground/tmp/mainDb",
-		PgDbUrl:                  "postgres://vaibhav:vaibhav@127.0.0.1:5432/ground?sslmode=disable",
-		NetworkPackageName:       "mainDbNet",
-		NetworkPackagePath:       "/Volumes/TestVM/other_data/obsidian_docker_root/ground/tmp/mainDbNet",
+		DbModelPackagePath:     "/Users/vaibhavkaushal/code/Techrail/ground/tmp/mainDb",
+		// DbModelPackagePath:       "/Volumes/TestVM/other_data/obsidian_docker_root/ground/tmp/mainDb",
+		PgDbUrl:            "postgres://vaibhav:vaibhav@127.0.0.1:5432/ground?sslmode=disable",
+		NetworkPackageName: "mainDbNet",
+		// NetworkPackagePath:       "/Volumes/TestVM/other_data/obsidian_docker_root/ground/tmp/mainDbNet",
+		NetworkPackagePath:       "/Users/vaibhavkaushal/code/Techrail/ground/tmp/mainDbNet",
 		UpdateUpdatedAtInCode:    true,
 		InsertUpdatedAtInCode:    true,
 		InsertCreatedAtInCode:    true,

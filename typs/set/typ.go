@@ -47,6 +47,12 @@ func (s Typ[T]) Size() int {
 	return len(s)
 }
 
+func (s Typ[T]) Empty() {
+	for k, _ := range s {
+		delete(s, k)
+	}
+}
+
 func main() {
 	// Example usage of the Typ data type with integers.
 	intSet := New[int]()

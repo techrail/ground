@@ -1,6 +1,9 @@
 package set
 
-import "testing"
+import (
+	`fmt`
+	`testing`
+)
 
 func TestTyp_IntegersOnly(t *testing.T) {
 	intSet := New[int]()
@@ -42,5 +45,23 @@ func TestTyp_IntegersOnly(t *testing.T) {
 	count = intSet.Size()
 	if count != expectedCount {
 		t.Errorf("E#1PM3FW - Expected %v elements, found %v", expectedCount, count)
+	}
+
+	intSet.Empty()
+	expectedCount = 0
+	count = intSet.Size()
+	if count != expectedCount {
+		t.Errorf("E#1S9F7Z - Expected %v elements, found %v", expectedCount, count)
+	} else {
+		fmt.Printf("I#1S9F97 - As expected: %v\n", expectedCount)
+	}
+
+	intSet.Add(123)
+	expectedCount = 1
+	count = intSet.Size()
+	if count != expectedCount {
+		t.Errorf("E#1S9FBO - Expected %v elements, found %v", expectedCount, count)
+	} else {
+		fmt.Printf("I#1S9FBR - As expected: %v\n", expectedCount)
 	}
 }

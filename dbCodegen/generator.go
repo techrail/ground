@@ -4,13 +4,14 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"github.com/techrail/ground/typs/set"
 	"go/format"
 	"os"
 	"slices"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/techrail/ground/typs/set"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/jmoiron/sqlx"
@@ -65,7 +66,7 @@ func (table *DbTable) fullyQualifiedTableName() string {
 }
 
 func (table *DbTable) fullyQualifiedStructName() string {
-	//return getGoName(table.Schema) + "_" + table.GoNameSingular
+	// return getGoName(table.Schema) + "_" + table.GoNameSingular
 	return getGoName(table.Schema) + table.GoNameSingular
 }
 
@@ -186,7 +187,7 @@ type dbColumnProperty struct {
 	StrValidateAs        string    `json:"strValidateAs"`        // Validate String Data as what? (Email? URL? Name? Regex?)
 	HideFromNetwork      bool      `json:"hideFromNetwork"`      // Should this field be hidden in network response
 	StrConversionViaEnum string    `json:"strConversionViaEnum"` // To be used for enumerated fields that need to be represented as string in network responses. The enums must be one being generated.
-	//StrConversionViaType string    `json:"strConversionViaType"` // To be used for enumerated fields that need to be represented as string in network responses. The type must be in the
+	// StrConversionViaType string    `json:"strConversionViaType"` // To be used for enumerated fields that need to be represented as string in network responses. The type must be in the
 }
 
 // DbIndex represents an index inside a table
@@ -364,7 +365,7 @@ func (g *Generator) Generate() appError.Typ {
 		if enum.DisableGeneration {
 			continue
 		}
-		//enumCopy := enum
+		// enumCopy := enum
 		// Make sure that key name is same as the enum name
 		if key != enum.Name {
 			panic(fmt.Sprintf("E#1PM3T2 - Key name %v of the enum does not match its name %v", key, enum.Name))
@@ -473,7 +474,7 @@ func (g *Generator) Generate() appError.Typ {
 
 		err = os.Mkdir(g.Config.DbModelPackagePath, 0777)
 		if err != nil {
-			//fmt.Println("E#1OBP5N -", err)
+			// fmt.Println("E#1OBP5N -", err)
 		}
 
 		outputFile, err = os.Create(fmt.Sprintf("%s/%s", g.Config.DbModelPackagePath, outputFileName))
@@ -551,9 +552,9 @@ func (g *Generator) Generate() appError.Typ {
 				CommentProperties: dbColProp,
 			}
 			table.ColumnMap[columnDetail.ColumnName.String] = dbCol
-			//collist := table.ColumnList
-			//collist = append(collist, dbCol.Name)
-			//table.ColumnList = collist
+			// collist := table.ColumnList
+			// collist = append(collist, dbCol.Name)
+			// table.ColumnList = collist
 			table.ColumnList = append(table.ColumnList, dbCol.Name)
 			table.ColumnListA2z = append(table.ColumnListA2z, dbCol.Name)
 			tables[columnDetail.Schema.String+"."+columnDetail.TableName.String] = table
@@ -595,9 +596,9 @@ func (g *Generator) Generate() appError.Typ {
 				ColumnList:     []string{},
 				ColumnListA2z:  []string{},
 			}
-			//collist := table.ColumnList
-			//collist = append(collist, dbCol.Name)
-			//table.ColumnList = collist
+			// collist := table.ColumnList
+			// collist = append(collist, dbCol.Name)
+			// table.ColumnList = collist
 			table.ColumnList = append(table.ColumnList, dbCol.Name)
 			table.ColumnListA2z = append(table.ColumnListA2z, dbCol.Name)
 			tables[columnDetail.Schema.String+"."+columnDetail.TableName.String] = table
@@ -631,7 +632,7 @@ func (g *Generator) Generate() appError.Typ {
 			if err != nil {
 				fmt.Println("..............", err)
 			}
-			//fmt.Println("I#1O4FCO - ", schema.Name, ".", table.Name, "==>", strings.Join(pkColumnNames, ","))
+			// fmt.Println("I#1O4FCO - ", schema.Name, ".", table.Name, "==>", strings.Join(pkColumnNames, ","))
 
 			for _, colname := range pkColumnNames {
 				table.PkColumnList = append(table.PkColumnList, table.ColumnMap[colname])
@@ -660,10 +661,10 @@ func (g *Generator) Generate() appError.Typ {
 					if !colExists {
 						panic("P#1O4CSW - Expected the column to be there.")
 					}
-					//colObj, colFindErr := getColumnFromListByName(col, table.ColumnList)
-					//if colFindErr != nil {
+					// colObj, colFindErr := getColumnFromListByName(col, table.ColumnList)
+					// if colFindErr != nil {
 					//
-					//}
+					// }
 					if colObj.Name != "" {
 						colList = append(colList, colObj)
 					}
@@ -726,6 +727,18 @@ func (g *Generator) Generate() appError.Typ {
 		fkeyFromSchemaChain := g.Schemas[fkInf.FromSchema].Tables[fkInf.FromTable].FKeyMap[fkInf.ConstraintName]
 		fkeyFromSchemaChain.FromColOrder = append(fkeyFromSchemaChain.FromColOrder, fkInf.FromColumn)
 		g.Schemas[fkInf.FromSchema].Tables[fkInf.FromTable].FKeyMap[fkInf.ConstraintName] = fkeyFromSchemaChain
+	}
+
+	// Check for duplicates
+	// Important: I was here
+	dupLink := set.New[string]()
+	for _, schema := range g.Schemas {
+		for _, table := range schema.Tables {
+			dupLink.Empty()
+			for _, fkey := range table.FKeyMap {
+				dupLink.Add(fmt.Sprintf("%v.%v->%v.%v", fkey.FromSchema, fkey.FromTable, fkey.ToSchema, fkey.ToTable))
+			}
+		}
 	}
 
 	// Reverse References
@@ -894,7 +907,7 @@ func (g *Generator) Generate() appError.Typ {
 
 		err = os.Mkdir(g.Config.DbModelPackagePath, 0777)
 		if err != nil {
-			//fmt.Println("E#1OBP5N -", err)
+			// fmt.Println("E#1OBP5N -", err)
 		}
 
 		outputFile, err = os.Create(fmt.Sprintf("%s/%s", g.Config.DbModelPackagePath, outputFileName))
@@ -1000,7 +1013,7 @@ func (g *Generator) Generate() appError.Typ {
 
 			err = os.Mkdir(g.Config.DbModelPackagePath, 0777)
 			if err != nil {
-				//fmt.Println("E#1OFXLN -", err)
+				// fmt.Println("E#1OFXLN -", err)
 			}
 
 			outputFile, err = os.Create(fmt.Sprintf("%s/%s", g.Config.DbModelPackagePath, outputFileName))
@@ -1100,7 +1113,7 @@ func (g *Generator) Generate() appError.Typ {
 
 			err = os.Mkdir(g.Config.DbModelPackagePath, 0777)
 			if err != nil {
-				//fmt.Println("E#1OFXLN -", err)
+				// fmt.Println("E#1OFXLN -", err)
 			}
 
 			outputFile, err = os.Create(fmt.Sprintf("%s/%s", g.Config.NetworkPackagePath, outputFileName))
