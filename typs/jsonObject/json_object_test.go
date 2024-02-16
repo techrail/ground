@@ -2094,8 +2094,56 @@ func TestSetValueInJsonObjectByJPath(t *testing.T) {
 			fmt.Printf("~~~~~~~\nL#1PFFMW - ==> AS EXPECTED!! <==  \nErr: %v \nTyp: %v \nValue : %v\n", getErr, typ, val)
 		}
 	}
-	// =====================================
 
+	someObj := struct {
+		Key1 string `json:"key1"`
+		Key2 string `json:"key2"`
+		Key3 struct {
+			Nest1 string `json:"nest1"`
+			Nest2 int    `json:"nest2"`
+		} `json:"key3"`
+	}{
+		Key1: "Value1",
+		Key2: "Value2",
+		Key3: struct {
+			Nest1 string `json:"nest1"`
+			Nest2 int    `json:"nest2"`
+		}{
+			Nest1: "Nested1 String",
+			Nest2: 12345,
+		},
+	}
+
+	jo, setErr = SetValueAndOverrideInJsonObjectByJPath(joOrig, "obj.somenewObj.somearr.[3].someNewObj.composite", someObj, true)
+	if setErr != nil {
+		t.Errorf("~~~~~~~\nE#1PFF6O - Failed. Error: %v", setErr)
+	} else {
+		// Check what we got there
+		typ, val, getErr := jo.GetValueFromJsonObjectByJPath("obj.somenewObj.somearr.[3].someNewObj.composite")
+		if getErr.IsNotBlank() || (typ != "object") {
+			t.Errorf("~~~~~~~\nE#1SCBY2 - ==> [[ERROR]] <== Could not get UPDATED VALUE\nErr: %v \nTyp: %v \nValue : %v\n", getErr, typ, val)
+		} else {
+			fmt.Printf("~~~~~~~\nL#1SCBY5 - ==> AS EXPECTED!! <==  \nErr: %v \nTyp: %v \nValue : %v\n", getErr, typ, val)
+		}
+
+		// Check that we have the nested value also accessible
+		typ, val, getErr = jo.GetValueFromJsonObjectByJPath("obj.somenewObj.somearr.[3].someNewObj.composite.key2")
+		if getErr.IsNotBlank() || (typ != typeString) || val != "Value2" {
+			t.Errorf("~~~~~~~\nE#1SCGOI - ==> [[ERROR]] <== Could not get UPDATED VALUE\nErr: %v \nTyp: %v \nValue : %v\n", getErr, typ, val)
+		} else {
+			fmt.Printf("~~~~~~~\nL#1SCGOL - ==> AS EXPECTED!! <==  \nErr: %v \nTyp: %v \nValue : %v\n", getErr, typ, val)
+		}
+
+		// Check that we have the nested value also accessible
+		typ, val, getErr = jo.GetValueFromJsonObjectByJPath("obj.somenewObj.somearr.[3].someNewObj.composite.key3.nest2")
+		if getErr.IsNotBlank() || (typ != typeFloat64) || val != float64(12345) {
+			t.Errorf("~~~~~~~\nE#1SCGPR - ==> [[ERROR]] <== Could not get UPDATED VALUE\nErr: %v \nTyp: %v \nValue : %v\n", getErr, typ, val)
+		} else {
+			fmt.Printf("~~~~~~~\nL#1SCGPV - ==> AS EXPECTED!! <==  \nErr: %v \nTyp: %v \nValue: %v\n", getErr, typ, val)
+		}
+	}
+
+	// =====================================
 	fmt.Printf("Test ends here")
 }
 

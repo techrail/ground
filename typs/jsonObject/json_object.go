@@ -638,6 +638,23 @@ func SetValueAndOverrideInJsonObjectByJPath(obj Typ, path string, valueToSet any
 		}
 	}
 
+	val := reflect.ValueOf(valueToSet)
+	if val.Kind() == reflect.Ptr {
+		val = val.Elem()
+	}
+
+	if val.Kind() == reflect.Struct {
+		jo, err := ToJsonObject(valueToSet)
+		if err != nil {
+			return objToReturn, fmt.Errorf("E#1SCFLZ - Cannot convert value to jsonObject. Error: %v", err)
+		}
+
+		x := map[string]any(jo.StringAnyMap)
+
+		// Call with the string any map as the value to be set
+		return SetValueAndOverrideInJsonObjectByJPath(obj, path, x, override)
+	}
+
 	actionPlan := make([]jsonAction, 0)
 
 	pathSplits := strings.Split(path, ".")
