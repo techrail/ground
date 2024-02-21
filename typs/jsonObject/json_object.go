@@ -30,21 +30,21 @@ import (
 //
 //	It can handle arrays nested in a JSON object though.
 const (
-	typeAny          = "any"
-	typeInt          = "int"
-	typeInt64        = "int64"
-	typeFloat64      = "float64"
-	typeString       = "string"
-	typeBool         = "bool"
-	typeObject       = "object"
-	typeNil          = "nil"
-	typeArrayAny     = "array/any"
-	typeArrayInt     = "array/int"
-	typeArrayFloat64 = "array/float64"
-	typeArrayString  = "array/string"
-	typeArrayBool    = "array/bool"
-	typeArrayObject  = "array/object"
-	typeUnknown      = "unknown"
+	TypeAny          = "any"
+	TypeInt          = "int"
+	TypeInt64        = "int64"
+	TypeFloat64      = "float64"
+	TypeString       = "string"
+	TypeBool         = "bool"
+	TypeObject       = "object"
+	TypeNil          = "nil"
+	TypeArrayAny     = "array/any"
+	TypeArrayInt     = "array/int"
+	TypeArrayFloat64 = "array/float64"
+	TypeArrayString  = "array/string"
+	TypeArrayBool    = "array/bool"
+	TypeArrayObject  = "array/object"
+	TypeUnknown      = "unknown"
 )
 
 const topLevelArrayKey = "topLevelArrayKeyb8d8c89aea51f88b1af1144e3e0b8b74ac2a2c257d08cb80ebc99a7262e5dd8c"
@@ -171,8 +171,13 @@ func (j *Typ) GetTopLevelElement(key string) any {
 	return nil
 }
 
+// GetValueFromJsonObjectByJPath returns 3 values, in that order: dataType, value and an appError
+// If there is any error when trying to get the value, the appError value contains the error and in that case
+// the other two values should be ignored. In other cases the dataType indicates data type detected
+// and the value can then be safely casted using value.(correspondingGoDataType) expression
+// where `correspondingGoDataType` is the data type corresponding to dataType.
 func (j *Typ) GetValueFromJsonObjectByJPath(path string) (string, any, appError.Typ) {
-	vTyp := typeUnknown
+	vTyp := TypeUnknown
 	firstLetter := ""
 	lastLetter := ""
 
@@ -198,67 +203,67 @@ func (j *Typ) GetValueFromJsonObjectByJPath(path string) (string, any, appError.
 	valType := func(v any) string {
 		switch v.(type) {
 		case nil:
-			return typeNil
+			return TypeNil
 		case bool:
-			return typeBool
+			return TypeBool
 		case int:
-			return typeInt
+			return TypeInt
 		case int64:
-			return typeInt64
+			return TypeInt64
 		case float64:
-			return typeFloat64
+			return TypeFloat64
 		case string:
-			return typeString
+			return TypeString
 		case []int:
-			return typeArrayInt
+			return TypeArrayInt
 		case []float64:
-			return typeArrayFloat64
+			return TypeArrayFloat64
 		case []string:
-			return typeArrayString
+			return TypeArrayString
 		case []bool:
-			return typeArrayBool
+			return TypeArrayBool
 		case []map[string]any:
-			return typeArrayObject
+			return TypeArrayObject
 		case []any:
-			return typeArrayAny
+			return TypeArrayAny
 		case map[string]any:
-			return typeObject
+			return TypeObject
 		case any:
-			return typeAny
+			return TypeAny
 		default:
-			return typeUnknown
+			return TypeUnknown
 		}
 	}
 	setVal := func(val any) {
 		vTyp = valType(val)
 		switch vTyp {
-		case typeObject:
+		case TypeObject:
 			internalObj = val.(map[string]any)
-		case typeArrayInt:
+		case TypeArrayInt:
 			internalArrayInt = val.([]int)
-		case typeArrayFloat64:
+		case TypeArrayFloat64:
 			internalArrayFloat64 = val.([]float64)
-		case typeArrayString:
+		case TypeArrayString:
 			internalArrayString = val.([]string)
-		case typeArrayBool:
+		case TypeArrayBool:
 			internalArrayBool = val.([]bool)
-		case typeArrayObject:
+		case TypeArrayObject:
 			internalArrayObject = val.([]map[string]any)
-		case typeArrayAny:
+		case TypeArrayAny:
 			internalArrayAny = val.([]any)
-		case typeInt:
+		case TypeInt:
 			internalInt = val.(int)
-		case typeFloat64:
+		case TypeFloat64:
 			internalFloat64 = val.(float64)
-		case typeString:
+		case TypeString:
 			internalString = val.(string)
-		case typeBool:
+		case TypeBool:
 			internalBool = val.(bool)
-		case typeAny:
+		case TypeAny:
 			internalAny = val.(any)
-		case typeNil:
+		case TypeNil:
 			internalNil = true
-		case typeUnknown:
+		case TypeUnknown:
 			internalUnknown = true
 		}
 	}
@@ -308,8 +313,8 @@ func (j *Typ) GetValueFromJsonObjectByJPath(path string) (string, any, appError.
 					fmt.Sprintf("195AY9 -> Non numeric index at %v", p))
 			}
 			// Was the previous entry an array?...
-			if vTyp != typeArrayAny && vTyp != typeArrayInt && vTyp != typeArrayFloat64 &&
-				vTyp != typeArrayString && vTyp != typeArrayBool && vTyp != typeArrayObject {
+			if vTyp != TypeArrayAny && vTyp != TypeArrayInt && vTyp != TypeArrayFloat64 &&
+				vTyp != TypeArrayString && vTyp != TypeArrayBool && vTyp != TypeArrayObject {
 				// ... nope, don't think it was an array
 				return vTyp, nil, appError.NewError(
 					appError.Error,
@@ -327,7 +332,7 @@ func (j *Typ) GetValueFromJsonObjectByJPath(path string) (string, any, appError.
 
 			// Get the value.
 			switch vTyp {
-			case typeArrayInt:
+			case TypeArrayInt:
 				if (len(internalArrayInt) - 1) < expectedIndex {
 					return vTyp, nil, appError.NewError(
 						appError.Error,
@@ -336,7 +341,7 @@ func (j *Typ) GetValueFromJsonObjectByJPath(path string) (string, any, appError.
 				}
 				val := internalArrayInt[expectedIndex]
 				setVal(val)
-			case typeArrayFloat64:
+			case TypeArrayFloat64:
 				if (len(internalArrayFloat64) - 1) < expectedIndex {
 					return vTyp, nil, appError.NewError(
 						appError.Error,
@@ -345,7 +350,7 @@ func (j *Typ) GetValueFromJsonObjectByJPath(path string) (string, any, appError.
 				}
 				val := internalArrayFloat64[expectedIndex]
 				setVal(val)
-			case typeArrayString:
+			case TypeArrayString:
 				if (len(internalArrayString) - 1) < expectedIndex {
 					return vTyp, nil, appError.NewError(
 						appError.Error,
@@ -354,7 +359,7 @@ func (j *Typ) GetValueFromJsonObjectByJPath(path string) (string, any, appError.
 				}
 				val := internalArrayString[expectedIndex]
 				setVal(val)
-			case typeArrayBool:
+			case TypeArrayBool:
 				if (len(internalArrayBool) - 1) < expectedIndex {
 					return vTyp, nil, appError.NewError(
 						appError.Error,
@@ -363,7 +368,7 @@ func (j *Typ) GetValueFromJsonObjectByJPath(path string) (string, any, appError.
 				}
 				val := internalArrayBool[expectedIndex]
 				setVal(val)
-			case typeArrayObject:
+			case TypeArrayObject:
 				if (len(internalArrayObject) - 1) < expectedIndex {
 					return vTyp, nil, appError.NewError(
 						appError.Error,
@@ -391,7 +396,7 @@ func (j *Typ) GetValueFromJsonObjectByJPath(path string) (string, any, appError.
 			}
 
 			switch vTyp {
-			case typeObject:
+			case TypeObject:
 				// Get value from Object
 				val, ok := internalObj[p]
 				if !ok {
@@ -412,33 +417,33 @@ func (j *Typ) GetValueFromJsonObjectByJPath(path string) (string, any, appError.
 
 	// At this point, we should have the final value
 	switch vTyp {
-	case typeObject:
+	case TypeObject:
 		return vTyp, internalObj, appError.BlankError
-	case typeArrayAny:
+	case TypeArrayAny:
 		return vTyp, internalArrayAny, appError.BlankError
-	case typeArrayInt:
+	case TypeArrayInt:
 		return vTyp, internalArrayInt, appError.BlankError
-	case typeArrayFloat64:
+	case TypeArrayFloat64:
 		return vTyp, internalArrayFloat64, appError.BlankError
-	case typeArrayString:
+	case TypeArrayString:
 		return vTyp, internalArrayString, appError.BlankError
-	case typeArrayBool:
+	case TypeArrayBool:
 		return vTyp, internalArrayBool, appError.BlankError
-	case typeArrayObject:
+	case TypeArrayObject:
 		return vTyp, internalArrayObject, appError.BlankError
-	case typeString:
+	case TypeString:
 		return vTyp, internalString, appError.BlankError
-	case typeFloat64:
+	case TypeFloat64:
 		return vTyp, internalFloat64, appError.BlankError
-	case typeInt:
+	case TypeInt:
 		return vTyp, internalInt, appError.BlankError
-	case typeBool:
+	case TypeBool:
 		return vTyp, internalBool, appError.BlankError
-	case typeNil:
+	case TypeNil:
 		return vTyp, internalNil, appError.BlankError
-	case typeAny:
+	case TypeAny:
 		return vTyp, internalAny, appError.BlankError
-	case typeUnknown:
+	case TypeUnknown:
 		fallthrough
 	default:
 		return vTyp, internalUnknown, appError.BlankError
@@ -479,7 +484,7 @@ func SetValueInJsonObjectByJPath(obj Typ, path string, valueToSet any) (Typ, err
 // If the JPath contains non-existing keys then original object will be overridden based override parameter.
 func SetValueAndOverrideInJsonObjectByJPath(obj Typ, path string, valueToSet any, override bool) (Typ, error) {
 	objToReturn := Typ{}
-	vTyp := typeUnknown
+	vTyp := TypeUnknown
 	firstLetter := ""
 	lastLetter := ""
 	toBeCreated := false
@@ -527,33 +532,33 @@ func SetValueAndOverrideInJsonObjectByJPath(obj Typ, path string, valueToSet any
 	valType := func(v any) string {
 		switch v.(type) {
 		case nil:
-			return typeNil
+			return TypeNil
 		case bool:
-			return typeBool
+			return TypeBool
 		case int:
-			return typeInt
+			return TypeInt
 		case int64:
-			return typeInt64
+			return TypeInt64
 		case float64:
-			return typeFloat64
+			return TypeFloat64
 		case string:
-			return typeString
+			return TypeString
 		case map[string]any:
-			return typeObject
+			return TypeObject
 		case []int:
-			return typeArrayInt
+			return TypeArrayInt
 		case []float64:
-			return typeArrayFloat64
+			return TypeArrayFloat64
 		case []string:
-			return typeArrayString
+			return TypeArrayString
 		case []bool:
-			return typeArrayBool
+			return TypeArrayBool
 		case []map[string]any:
-			return typeArrayObject
+			return TypeArrayObject
 		case []any:
-			return typeArrayAny
+			return TypeArrayAny
 		default:
-			return typeUnknown
+			return TypeUnknown
 		}
 	}
 	resetInternalValues := func() {
@@ -575,63 +580,63 @@ func SetValueAndOverrideInJsonObjectByJPath(obj Typ, path string, valueToSet any
 		resetInternalValues()
 		vTyp = valType(val)
 		switch vTyp {
-		case typeArrayInt:
+		case TypeArrayInt:
 			internalArrayInt = val.([]int)
-		case typeArrayFloat64:
+		case TypeArrayFloat64:
 			internalArrayFloat64 = val.([]float64)
-		case typeArrayString:
+		case TypeArrayString:
 			internalArrayString = val.([]string)
-		case typeArrayBool:
+		case TypeArrayBool:
 			internalArrayBool = val.([]bool)
-		case typeArrayObject:
+		case TypeArrayObject:
 			internalArrayObject = val.([]map[string]any)
-		case typeArrayAny:
+		case TypeArrayAny:
 			internalArrayAny = val.([]any)
-		case typeInt:
+		case TypeInt:
 			internalInt = val.(int)
-		case typeFloat64:
+		case TypeFloat64:
 			internalFloat64 = val.(float64)
-		case typeString:
+		case TypeString:
 			internalString = val.(string)
-		case typeBool:
+		case TypeBool:
 			internalBool = val.(bool)
-		case typeObject:
+		case TypeObject:
 			internalObj = val.(map[string]any)
-		case typeNil:
+		case TypeNil:
 			internalNil = true
-		case typeAny:
+		case TypeAny:
 			internalAny = val.(any)
-		case typeUnknown:
+		case TypeUnknown:
 			internalUnknown = true
 		}
 	}
 	getAnyValueFromJsonAction := func(ja jsonAction) any {
 		switch ja.DataType {
-		case typeArrayAny:
+		case TypeArrayAny:
 			return reflect.ValueOf(ja.ArrayOfAny).Interface()
-		case typeArrayInt:
+		case TypeArrayInt:
 			return reflect.ValueOf(ja.ArrayOfInts).Interface()
-		case typeArrayFloat64:
+		case TypeArrayFloat64:
 			return reflect.ValueOf(ja.ArrayOfFloats).Interface()
-		case typeArrayString:
+		case TypeArrayString:
 			return reflect.ValueOf(ja.ArrayOfStrings).Interface()
-		case typeArrayBool:
+		case TypeArrayBool:
 			return reflect.ValueOf(ja.ArrayOfBools).Interface()
-		case typeArrayObject:
+		case TypeArrayObject:
 			return reflect.ValueOf(ja.ArrayOfObjects).Interface()
-		case typeInt:
+		case TypeInt:
 			return reflect.ValueOf(ja.IntValue).Interface()
-		case typeFloat64:
+		case TypeFloat64:
 			return reflect.ValueOf(ja.FloatValue).Interface()
-		case typeString:
+		case TypeString:
 			return reflect.ValueOf(ja.StringValue).Interface()
-		case typeBool:
+		case TypeBool:
 			return reflect.ValueOf(ja.BoolValue).Interface()
-		case typeObject:
+		case TypeObject:
 			return reflect.ValueOf(ja.ObjectValue).Interface()
-		case typeNil:
+		case TypeNil:
 			return nil
-		case typeUnknown:
+		case TypeUnknown:
 			fallthrough
 		default:
 			return reflect.ValueOf(nil).Interface()
@@ -675,7 +680,7 @@ func SetValueAndOverrideInJsonObjectByJPath(obj Typ, path string, valueToSet any
 
 	// Set the first entry in the actionPlan
 	jA := jsonAction{
-		DataType:       typeObject,
+		DataType:       TypeObject,
 		ToBeCreated:    false,
 		AtIndex:        0,
 		AtKey:          ".",
@@ -797,8 +802,8 @@ forLoop:
 			}
 
 			// Was the previous element an array?
-			if vTyp != typeArrayAny && vTyp != typeArrayInt && vTyp != typeArrayFloat64 &&
-				vTyp != typeArrayString && vTyp != typeArrayBool && vTyp != typeArrayObject {
+			if vTyp != TypeArrayAny && vTyp != TypeArrayInt && vTyp != TypeArrayFloat64 &&
+				vTyp != TypeArrayString && vTyp != TypeArrayBool && vTyp != TypeArrayObject {
 				// ... nope, don't think it was an array
 				if override {
 					actionPlan = actionPlan[:len(actionPlan)-1]
@@ -810,7 +815,7 @@ forLoop:
 
 			// Get the value.
 			switch vTyp {
-			case typeArrayInt:
+			case TypeArrayInt:
 				if (len(internalArrayInt) - 1) < expectedIndex {
 					return objToReturn, fmt.Errorf("E#1N7FJQ - Cannot update value at index %v from array of %v elements", expectedIndex, len(internalArrayInt))
 				}
@@ -827,7 +832,7 @@ forLoop:
 						setVal(valueToSet)
 					}
 				}
-			case typeArrayFloat64:
+			case TypeArrayFloat64:
 				if (len(internalArrayFloat64) - 1) < expectedIndex {
 					return objToReturn, fmt.Errorf("E#1N7RMR - Cannot update value at index %v from array of %v elements", expectedIndex, len(internalArrayFloat64))
 				}
@@ -844,7 +849,7 @@ forLoop:
 						setVal(valueToSet)
 					}
 				}
-			case typeArrayString:
+			case TypeArrayString:
 				if (len(internalArrayString) - 1) < expectedIndex {
 					return objToReturn, fmt.Errorf("E#1N7RMW - Cannot update value at index %v from array of %v elements", expectedIndex, len(internalArrayString))
 				}
@@ -861,7 +866,7 @@ forLoop:
 						setVal(valueToSet)
 					}
 				}
-			case typeArrayBool:
+			case TypeArrayBool:
 				if (len(internalArrayBool) - 1) < expectedIndex {
 					return objToReturn, fmt.Errorf("E#1N7RN3 - Cannot update value at index %v from array of %v elements", expectedIndex, len(internalArrayBool))
 				}
@@ -878,7 +883,7 @@ forLoop:
 						setVal(valueToSet)
 					}
 				}
-			case typeArrayObject:
+			case TypeArrayObject:
 				if (len(internalArrayObject) - 1) < expectedIndex {
 					return objToReturn, fmt.Errorf("E#1N7RNA - Cannot update value at index %v from array of %v elements", expectedIndex, len(internalArrayObject))
 				}
@@ -895,7 +900,7 @@ forLoop:
 						setVal(valueToSet)
 					}
 				}
-			case typeArrayAny:
+			case TypeArrayAny:
 				if (len(internalArrayAny) - 1) < expectedIndex {
 					return objToReturn, fmt.Errorf("E#1N7RNG - Cannot update value at index %v from array of %v elements", expectedIndex, len(internalArrayAny))
 				}
@@ -962,7 +967,7 @@ forLoop:
 			}
 
 			switch vTyp {
-			case typeObject:
+			case TypeObject:
 				// Get value from Object
 				val, ok := internalObj[p]
 				if !ok {
@@ -1017,12 +1022,12 @@ forLoop:
 
 	// If we are here then we should have the actionPath laid out. We need to iterate over it.
 	resetInternalValues()
-	vTyp = typeUnknown
+	vTyp = TypeUnknown
 	// finalJsonAction := jsonAction{}
 	for i := len(actionPlan) - 1; i >= 0; i-- {
 		ja := actionPlan[i]
 		switch ja.DataType {
-		case typeInt:
+		case TypeInt:
 			// A scalar can't be a container of another scalar.
 			// That means that the index of this item must be 0
 			// NOTE: Same condition for other scalar types below
@@ -1032,27 +1037,27 @@ forLoop:
 			internalInt = ja.IntValue
 			// If this value was to be created then the parent of this thing would have to create this entry
 			// We don't have to do anything here
-		case typeFloat64:
+		case TypeFloat64:
 			if i != len(actionPlan)-1 {
 				return objToReturn, fmt.Errorf("E#1N7ROR - float64 type cannot contain something else. Index: %v", i)
 			}
 			internalFloat64 = ja.FloatValue
-		case typeString:
+		case TypeString:
 			if i != len(actionPlan)-1 {
 				return objToReturn, fmt.Errorf("E#1N7ROW - string type cannot contain something else. Index: %v", i)
 			}
 			internalString = ja.StringValue
-		case typeBool:
+		case TypeBool:
 			if i != len(actionPlan)-1 {
 				return objToReturn, fmt.Errorf("E#1N7RP0 - bool type cannot contain something else. Index: %v", i)
 			}
 			internalBool = ja.BoolValue
-		case typeNil:
+		case TypeNil:
 			if i != len(actionPlan)-1 {
 				return objToReturn, fmt.Errorf("E#1N7RP5 - nil type cannot contain something else. Index: %v", i)
 			}
 			internalNil = ja.IsNil
-		case typeObject:
+		case TypeObject:
 			objectValue := ja.ObjectValue
 			// If the previous entry existed and needed to be created, then we need to create it now.
 			prevJa := jsonAction{}
@@ -1078,37 +1083,37 @@ forLoop:
 						dataTypeForSwitch := prevJa.DataType
 						// Set value in current jsonAction
 						switch dataTypeForSwitch {
-						case typeArrayAny:
+						case TypeArrayAny:
 							objectValue[prevJa.AtKey] = prevJa.ArrayOfAny
-						case typeArrayInt:
+						case TypeArrayInt:
 							objectValue[prevJa.AtKey] = prevJa.ArrayOfInts
-						case typeArrayFloat64:
+						case TypeArrayFloat64:
 							objectValue[prevJa.AtKey] = prevJa.ArrayOfFloats
-						case typeArrayString:
+						case TypeArrayString:
 							objectValue[prevJa.AtKey] = prevJa.ArrayOfStrings
-						case typeArrayBool:
+						case TypeArrayBool:
 							objectValue[prevJa.AtKey] = prevJa.ArrayOfBools
-						case typeArrayObject:
+						case TypeArrayObject:
 							objectValue[prevJa.AtKey] = prevJa.ArrayOfObjects
-						case typeInt:
+						case TypeInt:
 							objectValue[prevJa.AtKey] = prevJa.IntValue
-						case typeFloat64:
+						case TypeFloat64:
 							objectValue[prevJa.AtKey] = prevJa.FloatValue
-						case typeString:
+						case TypeString:
 							objectValue[prevJa.AtKey] = prevJa.StringValue
-						case typeBool:
+						case TypeBool:
 							objectValue[prevJa.AtKey] = prevJa.BoolValue
-						case typeObject:
+						case TypeObject:
 							objectValue[prevJa.AtKey] = prevJa.ObjectValue
-						case typeAny:
+						case TypeAny:
 							objectValue[prevJa.AtKey] = prevJa.AnyValue
-						case typeNil:
+						case TypeNil:
 							if prevJa.IsNil {
 								objectValue[prevJa.AtKey] = nil
 							} else {
 								return objToReturn, fmt.Errorf("E#1N7RPZ - This was supposed to be nil but was something else")
 							}
-						case typeUnknown:
+						case TypeUnknown:
 							objectValue[prevJa.AtKey] = nil
 						}
 					}
@@ -1122,37 +1127,37 @@ forLoop:
 						// We are supposed to create it
 						// In this case, strictness won't matter
 						switch prevJa.DataType {
-						case typeArrayAny:
+						case TypeArrayAny:
 							objectValue[prevJa.AtKey] = prevJa.ArrayOfAny
-						case typeArrayInt:
+						case TypeArrayInt:
 							objectValue[prevJa.AtKey] = prevJa.ArrayOfInts
-						case typeArrayFloat64:
+						case TypeArrayFloat64:
 							objectValue[prevJa.AtKey] = prevJa.ArrayOfFloats
-						case typeArrayString:
+						case TypeArrayString:
 							objectValue[prevJa.AtKey] = prevJa.ArrayOfStrings
-						case typeArrayBool:
+						case TypeArrayBool:
 							objectValue[prevJa.AtKey] = prevJa.ArrayOfBools
-						case typeArrayObject:
+						case TypeArrayObject:
 							objectValue[prevJa.AtKey] = prevJa.ArrayOfObjects
-						case typeInt:
+						case TypeInt:
 							objectValue[prevJa.AtKey] = prevJa.IntValue
-						case typeFloat64:
+						case TypeFloat64:
 							objectValue[prevJa.AtKey] = prevJa.FloatValue
-						case typeString:
+						case TypeString:
 							objectValue[prevJa.AtKey] = prevJa.StringValue
-						case typeBool:
+						case TypeBool:
 							objectValue[prevJa.AtKey] = prevJa.BoolValue
-						case typeObject:
+						case TypeObject:
 							objectValue[prevJa.AtKey] = prevJa.ObjectValue
-						case typeAny:
+						case TypeAny:
 							objectValue[prevJa.AtKey] = prevJa.AnyValue
-						case typeNil:
+						case TypeNil:
 							if prevJa.IsNil {
 								objectValue[prevJa.AtKey] = nil
 							} else {
 								return objToReturn, fmt.Errorf("E#1N7RQE - This was supposed to be nil but was something else")
 							}
-						case typeUnknown:
+						case TypeUnknown:
 							objectValue[prevJa.AtKey] = nil
 						}
 						actionPlan[i].ObjectValue = objectValue
@@ -1162,13 +1167,13 @@ forLoop:
 				// There was no previous entry. That means that we are at the leaf and we need not do anything.
 				// TODO: Delete this else condition from code later.
 			}
-		case typeArrayInt:
+		case TypeArrayInt:
 			// This one is an array of integers.
 			// So if this is not the last element then...
 			if i < len(actionPlan)-1 {
 
 				// Not in strict mode, not the last item and we need to update/append an integer array with a value
-				if actionPlan[i+1].DataType != typeInt {
+				if actionPlan[i+1].DataType != TypeInt {
 					// The value to be updated is a non-integer data
 					// That means that we have to convert this array into array of interfaces and then append
 					tempArrayAny := make([]any, 0)
@@ -1187,7 +1192,7 @@ forLoop:
 					}
 					// Set it into the array
 					// Set the DataType of the current type to be an array of any
-					actionPlan[i].DataType = typeArrayAny
+					actionPlan[i].DataType = TypeArrayAny
 					// And set the value
 					actionPlan[i].ArrayOfAny = tempArrayAny
 				} else {
@@ -1207,12 +1212,12 @@ forLoop:
 				// We have nothing to do. The next iteration will handle this.
 				// TODO: Delete this else condition from code later if not required
 			}
-		case typeArrayFloat64:
+		case TypeArrayFloat64:
 			// This one is an array of float64s.
 			// So if this is not the last element then...
 			if i < len(actionPlan)-1 {
 				// Not in strict mode, not the last item and we need to update/append a float array with a value
-				if actionPlan[i+1].DataType != typeFloat64 {
+				if actionPlan[i+1].DataType != TypeFloat64 {
 					// The value to be updated is a non-float64 data
 					// That means that we have to convert this array into array of interfaces and then append
 					tempArrayAny := make([]any, 0)
@@ -1231,7 +1236,7 @@ forLoop:
 					}
 					// Set it into the array
 					// Set the DataType of the current type to be an array of any
-					actionPlan[i].DataType = typeArrayAny
+					actionPlan[i].DataType = TypeArrayAny
 					// And set the value
 					actionPlan[i].ArrayOfAny = tempArrayAny
 				} else {
@@ -1251,12 +1256,12 @@ forLoop:
 				// We have nothing to do. The next iteration will handle this.
 				// TODO: Delete this else condition from code later if not required
 			}
-		case typeArrayString:
+		case TypeArrayString:
 			// This one is an array of strings.
 			// So if this is not the last element then...
 			if i < len(actionPlan)-1 {
 				// Not in strict mode, not the last item and we need to update/append a string array with a value
-				if actionPlan[i+1].DataType != typeString {
+				if actionPlan[i+1].DataType != TypeString {
 					// The value to be updated is a non-string data
 					// That means that we have to convert this array into array of interfaces and then append
 					tempArrayAny := make([]any, 0)
@@ -1275,7 +1280,7 @@ forLoop:
 					}
 					// Set it into the array
 					// Set the DataType of the current type to be an array of any
-					actionPlan[i].DataType = typeArrayAny
+					actionPlan[i].DataType = TypeArrayAny
 					// And set the value
 					actionPlan[i].ArrayOfAny = tempArrayAny
 				} else {
@@ -1295,12 +1300,12 @@ forLoop:
 				// We have nothing to do. The next iteration will handle this.
 				// TODO: Delete this else condition from code later if not required
 			}
-		case typeArrayBool:
+		case TypeArrayBool:
 			// This one is an array of bools.
 			// So if this is not the last element then...
 			if i < len(actionPlan)-1 {
 				// Not in strict mode, not the last item and we need to update/append a bool array with a value
-				if actionPlan[i+1].DataType != typeBool {
+				if actionPlan[i+1].DataType != TypeBool {
 					// The value to be updated is a non-bool data
 					// That means that we have to convert this array into array of interfaces and then append
 					tempArrayAny := make([]any, 0)
@@ -1319,7 +1324,7 @@ forLoop:
 					}
 					// Set it into the array
 					// Set the DataType of the current type to be an array of any
-					actionPlan[i].DataType = typeArrayAny
+					actionPlan[i].DataType = TypeArrayAny
 					// And set the value
 					actionPlan[i].ArrayOfAny = tempArrayAny
 				} else {
@@ -1339,12 +1344,12 @@ forLoop:
 				// We have nothing to do. The next iteration will handle this.
 				// TODO: Delete this else condition from code later if not required
 			}
-		case typeArrayObject:
+		case TypeArrayObject:
 			// This one is an array of objects.
 			// So if this is not the last element then...
 			if i < len(actionPlan)-1 {
 				// Not in strict mode, not the last item and we need to update/append an object array with a value
-				if actionPlan[i+1].DataType != typeObject {
+				if actionPlan[i+1].DataType != TypeObject {
 					// The value to be updated is a non-object data
 					// That means that we have to convert this array into array of interfaces and then append
 					tempArrayAny := make([]any, 0)
@@ -1363,7 +1368,7 @@ forLoop:
 					}
 					// Set it into the array
 					// Set the DataType of the current type to be an array of any
-					actionPlan[i].DataType = typeArrayAny
+					actionPlan[i].DataType = TypeArrayAny
 					// And set the value
 					actionPlan[i].ArrayOfAny = tempArrayAny
 				} else {
@@ -1383,7 +1388,7 @@ forLoop:
 				// We have nothing to do. The next iteration will handle this.
 				// TODO: Delete this else condition from code later if not required
 			}
-		case typeArrayAny:
+		case TypeArrayAny:
 			// This one is an array of anys.
 			// So if this is not the last element then...
 			if i < len(actionPlan)-1 {
@@ -1398,7 +1403,7 @@ forLoop:
 				}
 				// Set it into the array
 				// Set the DataType of the current type to be an array of any
-				actionPlan[i].DataType = typeArrayAny
+				actionPlan[i].DataType = TypeArrayAny
 				// And set the value
 				actionPlan[i].ArrayOfAny = ja.ArrayOfAny
 			} else {
@@ -1406,10 +1411,10 @@ forLoop:
 				// We have nothing to do. The next iteration will handle this.
 				// TODO: Delete this else condition from code later if not required
 			}
-		case typeAny:
-			// NOTE: This should not have happened! We should not have a scalar typeAny
+		case TypeAny:
+			// NOTE: This should not have happened! We should not have a scalar TypeAny
 			return objToReturn, fmt.Errorf("E#1N7RQW - Don't know what to do")
-		case typeUnknown:
+		case TypeUnknown:
 			fallthrough
 		default:
 			if i != 0 {
