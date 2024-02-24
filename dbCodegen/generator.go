@@ -1284,27 +1284,27 @@ func (g *Generator) getCommentAndPropertyFromComment(comment string) (dbColumnPr
 func (g *Generator) validateConfig() appError.Typ {
 	// DB Url validation
 	if !isDbUrlValid(g.Config.PgDbUrl) {
-		return appError.NewError(appError.Panic, "TBD", "Database url not valid. Please check.")
+		return appError.NewError(appError.Panic, "1SRSQP", "Database url not valid. Please check.")
 	}
 
 	if g.Config.ModelsContainerPackage == "" {
-		return appError.NewError(appError.Panic, "TBD", "ModelsContainerPackage not provided in config.")
+		return appError.NewError(appError.Panic, "1SRSRV", "ModelsContainerPackage not provided in config.")
 	}
 
 	if g.Config.DbModelPackageName == "" {
-		return appError.NewError(appError.Panic, "TBD", "DbModelPackageName not provided in config.")
+		return appError.NewError(appError.Panic, "1SRSRZ", "DbModelPackageName not provided in config.")
 	}
 
 	if g.Config.DbModelPackagePath == "" {
-		return appError.NewError(appError.Panic, "TBD", "DbModelPackagePath not provided in config.")
+		return appError.NewError(appError.Panic, "1SRSS4", "DbModelPackagePath not provided in config.")
 	}
 
 	if g.Config.NetworkPackageName == "" {
-		return appError.NewError(appError.Panic, "TBD", "NetworkPackageName not provided in config.")
+		return appError.NewError(appError.Panic, "1SRSS8", "NetworkPackageName not provided in config.")
 	}
 
 	if g.Config.NetworkPackagePath == "" {
-		return appError.NewError(appError.Panic, "TBD", "NetworkPackagePath not provided in config.")
+		return appError.NewError(appError.Panic, "1SRSSF", "NetworkPackagePath not provided in config.")
 	}
 
 	return appError.BlankError
