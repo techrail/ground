@@ -18,6 +18,8 @@ import (
 
 	"github.com/gertd/go-pluralize"
 
+	"regexp"
+
 	"github.com/techrail/ground/typs/appError"
 )
 
@@ -326,6 +328,12 @@ func NewCodeGenerator(config CodegenConfig) (Generator, appError.Typ) {
 		Enums:        map[string]EnumDefinition{},
 	}
 
+	err := g.validateConfig()
+
+	if err.IsNotBlank() {
+		return g, err
+	}
+
 	if strings.TrimSpace(config.MagicComment) == "" {
 		g.Config.MagicComment = DefaultMagicComment
 	}
@@ -334,6 +342,11 @@ func NewCodeGenerator(config CodegenConfig) (Generator, appError.Typ) {
 }
 
 func (g *Generator) Generate() appError.Typ {
+	validateErr := g.validateConfig()
+
+	if validateErr.IsNotBlank() {
+		return validateErr
+	}
 	// Attempt connecting
 	db, err := sqlx.Connect("pgx", g.Config.PgDbUrl)
 	if err != nil {
@@ -1266,4 +1279,44 @@ func (g *Generator) getCommentAndPropertyFromComment(comment string) (dbColumnPr
 	}
 
 	return dbColProp, colComment, appError.BlankError
+}
+
+func (g *Generator) validateConfig() appError.Typ {
+	// DB Url validation
+	if !isDbUrlValid(g.Config.PgDbUrl) {
+		return appError.NewError(appError.Panic, "TBD", "Database url not valid. Please check.")
+	}
+
+	if g.Config.ModelsContainerPackage == "" {
+		return appError.NewError(appError.Panic, "TBD", "ModelsContainerPackage not provided in config.")
+	}
+
+	if g.Config.DbModelPackageName == "" {
+		return appError.NewError(appError.Panic, "TBD", "DbModelPackageName not provided in config.")
+	}
+
+	if g.Config.DbModelPackagePath == "" {
+		return appError.NewError(appError.Panic, "TBD", "DbModelPackagePath not provided in config.")
+	}
+
+	if g.Config.NetworkPackageName == "" {
+		return appError.NewError(appError.Panic, "TBD", "NetworkPackageName not provided in config.")
+	}
+
+	if g.Config.NetworkPackagePath == "" {
+		return appError.NewError(appError.Panic, "TBD", "NetworkPackagePath not provided in config.")
+	}
+
+	return appError.BlankError
+
+}
+
+func isDbUrlValid(dbUrl string) bool {
+	pgsqlPattern := `^(?:postgres|postgresql)://(?:[^:@]+:[^:@]+@)?([^:@/]+)(?::(\d+))?/([^?]+)(?:\?.*)?$`
+
+	r, _ := regexp.Compile(pgsqlPattern)
+
+	match := r.MatchString(dbUrl)
+
+	return match
 }
