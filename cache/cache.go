@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"time"
 
 	goredis "github.com/redis/go-redis/v9"
 	"github.com/techrail/ground/config"
@@ -198,13 +199,58 @@ func (c *CacheClient) Info() *goredis.StringCmd {
 
 func (c *CacheClient) ClusterNodes() *goredis.StringCmd {
 	return c.Connection.ClusterNodes(ctx)
-
 }
 
-func (c *CacheClient) Get(key string) *goredis.StringCmd {
+func (c *CacheClient) GetString(key string) *goredis.StringCmd {
 	return c.Connection.Get(ctx, key)
 }
 
-func (c *CacheClient) Set(key, value string) *goredis.StatusCmd {
+func (c *CacheClient) SetString(key string, value interface{}) *goredis.StatusCmd {
 	return c.Connection.Set(ctx, key, value, 0)
+}
+
+// Using with versions lower than 6.2.0 to delete string after specified time
+func (c *CacheClient) SetStringWithExpiry(key string, value string, expiration time.Duration) *goredis.StatusCmd {
+	return c.Connection.SetEx(ctx, key, value, expiration)
+}
+
+func (c *CacheClient) SetListContents(key string, values interface{}) *goredis.IntCmd {
+	return c.Connection.LPush(ctx, key, values)
+}
+
+func (c *CacheClient) GetListRange(key string, start, end int64) *goredis.StringSliceCmd {
+	return c.Connection.LRange(ctx, key, start, end)
+}
+
+func (c *CacheClient) SetHash(key string, values interface{}) *goredis.IntCmd {
+	return c.Connection.HSet(ctx, key, values)
+}
+
+func (c *CacheClient) GetHashVals(key string) *goredis.StringSliceCmd {
+	return c.Connection.HVals(ctx, key)
+}
+
+func (c *CacheClient) SetAdd(key string, members interface{}) *goredis.IntCmd {
+	return c.Connection.SAdd(ctx, key, members)
+}
+
+func (c *CacheClient) GetSetMembers(key string) *goredis.StringSliceCmd {
+	return c.Connection.SMembers(ctx, key)
+}
+
+func (c *CacheClient) DeleteListElements(key string) *goredis.StringCmd {
+	return c.Connection.RPop(ctx, key)
+}
+
+// Works only with Redis >= 6.2.0, use `SetStringWithExpiry` with versions lower than 6.2
+func (c *CacheClient) DeleteString(key string) *goredis.StringCmd {
+	return c.Connection.GetDel(ctx, key)
+}
+
+func (c *CacheClient) DeleteHash(key string, fields ...string) *goredis.IntCmd {
+	return c.Connection.HDel(ctx, key, fields...)
+}
+
+func (c *CacheClient) DeleteSet(key string) *goredis.StringCmd {
+	return c.Connection.SPop(ctx, key)
 }
