@@ -50,6 +50,9 @@ func (g *Generator) buildTableBaseFuncs(table DbTable, importList []string) (str
 	// Forward references
 	for _, fkey := range table.FKeyMap {
 		tabSingleFkeyMethod, iList := g.buildSingleTableFwdFkeyFunc(table, fkey, importList)
+		if strings.Contains(tabFwdForeignKeyMethods, strings.Split(tabSingleFkeyMethod, "\n")[0]) {
+			continue
+		}
 		tabFwdForeignKeyMethods += tabSingleFkeyMethod + "\n\n"
 		importList = iList
 	}
@@ -57,6 +60,9 @@ func (g *Generator) buildTableBaseFuncs(table DbTable, importList []string) (str
 	// Reverse references
 	for _, rFkey := range table.RevFKeyMap {
 		tabSingleFkeyMethod, iList := g.buildSingleTableRevFkeyFunc(table, rFkey, importList)
+		if strings.Contains(tabFwdForeignKeyMethods, strings.Split(tabSingleFkeyMethod, "\n")[0]) {
+			continue
+		}
 		tabFwdForeignKeyMethods += tabSingleFkeyMethod + "\n\n"
 		importList = iList
 	}
