@@ -56,7 +56,7 @@ func (g *Generator) buildTableBaseFuncs(table DbTable, importList []string) (str
 
 	// Reverse references
 	for _, rFkey := range table.RevFKeyMap {
-		tabSingleFkeyMethod, iList := g.buildSingleTableRevFkeyFunc(table, rFkey, importList)
+		tabSingleFkeyMethod, iList := g.buildSingleTableRevFkeyFunc(table, rFkey, importList, len(table.RevFKeyMap) > 1)
 		tabFwdForeignKeyMethods += tabSingleFkeyMethod + "\n\n"
 		importList = iList
 	}
@@ -786,7 +786,7 @@ func (g *Generator) buildSingleTableFwdFkeyFunc(table DbTable, fkey DbFkInfo, im
 // For generating the forward foreign key function
 // e.g. If user_addresses.user_id points to users.id, then this function will generate the
 // user.GetUserAddressByUserId function for the user_addresses table
-func (g *Generator) buildSingleTableRevFkeyFunc(table DbTable, rFkey DbRevFkInfo, importList []string) (string, []string) {
+func (g *Generator) buildSingleTableRevFkeyFunc(table DbTable, rFkey DbRevFkInfo, importList []string, hasMultipleFKeys bool) (string, []string) {
 	tabFKeyMethod := ""
 
 	// The target table should be there
@@ -816,8 +816,11 @@ func (g *Generator) buildSingleTableRevFkeyFunc(table DbTable, rFkey DbRevFkInfo
 			panic(fmt.Sprintf("E#1OUHEA - Expected column %v is not prsent in table %v in schema %v",
 				fromColName, table.Name, table.Schema))
 		}
-
-		funcNamePart += getGoName(fromColName)
+		if hasMultipleFKeys {
+			funcNamePart += fromCol.GoName + "As" + getGoName(fromColName)
+		} else {
+			funcNamePart += fromCol.GoName
+		}
 		queryValPairs = append(queryValPairs, fmt.Sprintf("%v = $%v", fromColName, i))
 		i += 1
 		if fromCol.Nullable && fromCol.GoDataType != "any" {
