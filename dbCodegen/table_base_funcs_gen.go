@@ -56,7 +56,8 @@ func (g *Generator) buildTableBaseFuncs(table DbTable, importList []string) (str
 
 	// Reverse references
 	for _, rFkey := range table.RevFKeyMap {
-		tabSingleFkeyMethod, iList := g.buildSingleTableRevFkeyFunc(table, rFkey, importList, len(table.RevFKeyMap) > 1)
+
+		tabSingleFkeyMethod, iList := g.buildSingleTableRevFkeyFunc(table, rFkey, importList, hasMultipleKeys(table.RevFKeyMap, rFkey))
 		tabFwdForeignKeyMethods += tabSingleFkeyMethod + "\n\n"
 		importList = iList
 	}
@@ -76,6 +77,15 @@ func (g *Generator) buildTableBaseFuncs(table DbTable, importList []string) (str
 		tableUpdateByIndexes + tableDeleteFuncStr + tableUpsertFuncStr + tabFwdForeignKeyMethods +
 		tableMethodAndDaoSeparator + tableDaoStructAndNew + tableDaoFunctions
 	return tableBaseFuncStr, importList
+}
+
+func hasMultipleKeys(revKeyMap map[string]DbRevFkInfo, key DbRevFkInfo) bool {
+	for _, k := range revKeyMap {
+		if k.ToSchema == key.ToSchema && k.ToTable == key.ToTable && key.ConstraintName != k.ConstraintName {
+			return true
+		}
+	}
+	return false
 }
 
 func (g *Generator) buildTableBaseValidation(table DbTable, importList []string) (string, []string) {
