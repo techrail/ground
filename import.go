@@ -39,6 +39,6 @@ func GiveMeABlankJsonObject() jsonObject.Typ {
 	return jsonObject.EmptyNotNullJsonObject()
 }
 
-func GiveMeACacheManager() *cache.CacheClient {
+func GiveMeACacheManager() *cache.Client {
 	return cache.CreateNewRedisClient()
 }
