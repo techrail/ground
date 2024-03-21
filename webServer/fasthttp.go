@@ -19,6 +19,7 @@ const (
 )
 
 type FastHttpServer struct {
+	Name         string // Name of the server  (used to identify it against another one, in case it is needed)
 	Router       *router.Router
 	Server       fasthttp.Server
 	BindPort     int
@@ -161,8 +162,9 @@ func (s *FastHttpServer) Start() appError.Typ {
 	return appError.BlankError
 }
 
-// Stop will stop the server. It does so by setting the current state. The manager will notice the change
+// stop will stop the server. It does so by setting the current state. The manager will notice the change
 // and stop the server gracefully
-func (s *FastHttpServer) Stop() {
+// Important: The manager has to be adjusted to this behavior. Once done, export the function!
+func (s *FastHttpServer) stop() {
 	s.currentState = StateShutdownRequested
 }
