@@ -10,7 +10,7 @@ import (
 
 func SetRequestId(handler fasthttp.RequestHandler) fasthttp.RequestHandler {
 	return func(ctx *fasthttp.RequestCtx) {
-		logger.Println("D#1MR7SH- Hit the SetRequestId Middleware")
+		logger.Println("D#1MR7SH - Hit the SetRequestId Middleware")
 
 		// TODO: Implement the logging to the request context
 		// Check that the header is present or not.
