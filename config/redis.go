@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/techrail/ground/constants"
+	"github.com/techrail/ground/cache"
 	"github.com/techrail/ground/constants/exitCode"
 )
 
@@ -31,19 +31,19 @@ type redisConfig struct {
 func init() {
 	config.Redis = redis{
 		Main: redisConfig{
-			Enabled:                            constants.RedisEnabled,
-			Url:                                constants.RedisDefaultUrl,
-			Username:                           constants.RedisDefaultUsername,
-			Password:                           constants.RedisDefaultPassword,
-			OperationMode:                      constants.RedisDefaultOperationMode,
-			MaxActiveConnections:               constants.RedisMaxActiveConnections,
-			MaxIdleConnections:                 constants.RedisMaxIdleConnections,
-			IdleTimeoutInSeconds:               constants.RedisIdleTimeoutInSeconds,
-			CrashAppOnConnectionFailure:        constants.RedisCrashAppOnConnectionFailure,
-			ConnectRetryIntervalInSeconds:      constants.RedisConnectRetryIntervalInSeconds,
-			AutoExpireTopLevelKeysAfterSeconds: constants.RedisAutoExpireTopLevelKeysAfterSeconds,
-			AppNamespace:                       constants.RedisAppNameSpace,
-			Address:                            constants.RedisDefaultAddr,
+			Enabled:                            cache.RedisEnabled,
+			Url:                                cache.RedisDefaultUrl,
+			Username:                           cache.RedisDefaultUsername,
+			Password:                           cache.RedisDefaultPassword,
+			OperationMode:                      cache.RedisDefaultOperationMode,
+			MaxActiveConnections:               cache.RedisMaxActiveConnections,
+			MaxIdleConnections:                 cache.RedisMaxIdleConnections,
+			IdleTimeoutInSeconds:               cache.RedisIdleTimeoutInSeconds,
+			CrashAppOnConnectionFailure:        cache.RedisCrashAppOnConnectionFailure,
+			ConnectRetryIntervalInSeconds:      cache.RedisConnectRetryIntervalInSeconds,
+			AutoExpireTopLevelKeysAfterSeconds: cache.RedisAutoExpireTopLevelKeysAfterSeconds,
+			AppNamespace:                       cache.RedisAppNameSpace,
+			Address:                            cache.RedisDefaultAddr,
 		},
 	}
 }
