@@ -25,3 +25,4 @@ go.work
 
 .DS_Store
 .vscode/launch.json
+cmd/codegen_test/main_ankit.go

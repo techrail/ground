@@ -1540,19 +1540,6 @@ func (j *Typ) Value() (driver.Value, error) {
 	return j.MarshalJSON()
 }
 
-//func (Typ) ConvertValue(v any) (driver.Value, error) {
-//	rv := reflect.ValueOf(v)
-//	rv := reflect.TypeOf(v)
-//	switch rv.Kind() {
-//	case reflect.Pointer:
-//		val:=rv.Elem()
-//		if
-//	case reflect.Struct:
-//
-//	default:
-//	}
-//}
-
 // Scan implements the sql.Scanner interface. This method decodes a JSON-encoded value into the struct fields.
 func (j *Typ) Scan(value interface{}) error {
 	var arrAnys []any = make([]any, 0)
