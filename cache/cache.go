@@ -3,11 +3,9 @@ package cache
 import (
 	"context"
 	"fmt"
-	"os"
 	"time"
 
 	goredis "github.com/redis/go-redis/v9"
-	"github.com/techrail/ground/constants/exitCode"
 )
 
 type RedisConfig struct {
@@ -36,7 +34,15 @@ func CreateNewRedisClient(config RedisConfig) *Client {
 
 	if !config.Enabled {
 		fmt.Println("P#1UF5RK - Enable redis to acquire a connection object.")
-		os.Exit(exitCode.RedisConnectionFailed)
+		return nil
+	}
+
+	if config.Enabled &&
+		config.OperationMode != ModeCluster &&
+		config.OperationMode != ModeStandalone &&
+		config.OperationMode != ModeAuto {
+		fmt.Printf("P#1MQUNR - Invalid redis operation mode. Cannot proceed.")
+		return nil
 	}
 
 	if config.Url != "" {
@@ -103,8 +109,8 @@ func CreateNewRedisClient(config RedisConfig) *Client {
 		}
 
 	} else {
-		fmt.Println("P#1P87M6 - No connection url found for redis, exiting.")
-		os.Exit(exitCode.RedisConnectionFailed)
+		fmt.Println("P#1P87M6 - No connection url found for redis.")
+		return nil
 	}
 
 	return &c

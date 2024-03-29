@@ -4,7 +4,6 @@ type masterConf struct {
 	AppName  string
 	Startup  startup
 	Time     tym
-	Redis    redis
 	Database database
 	Logging  loggingConfig
 }
@@ -23,6 +22,5 @@ func InitializeConfig() {
 	initializeStartupConfig()
 	initializeTimeConfig()
 	initializeDatabaseConfig()
-	initializeRedisConfig()
 	initializeLoggingConfig()
 }
