@@ -11,7 +11,7 @@ import (
 func TestRedisConnection(t *testing.T) {
 	c := cache.RedisConfig{}
 	c.Enabled = true
-	c.Url = "redis://localhost:6379"
+	c.Url = ""
 	c.OperationMode = cache.ModeAuto
 
 	r := cache.CreateNewRedisClient(c)
