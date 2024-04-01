@@ -140,6 +140,34 @@ func ToJsonObject(v interface{}) (Typ, error) {
 	return jsonObj, nil
 }
 
+// FillFromJsonObject will take a jsonObject Typ and fill the pointerToStruct with the value extracted
+// from the jsonObject
+func FillFromJsonObject(j Typ, pointerToStruct any) error {
+	if reflect.TypeOf(pointerToStruct).Kind() != reflect.Ptr {
+		return fmt.Errorf("E#1UNYJ3 - operation allowed only on a pointer to struct")
+	}
+
+	if reflect.ValueOf(pointerToStruct).IsNil() {
+		return fmt.Errorf("E#1UO0A8 - operation not allowed on nil pointers")
+	}
+
+	if reflect.TypeOf(reflect.ValueOf(pointerToStruct).Elem()).Kind() != reflect.Struct {
+		return fmt.Errorf("E#1UO9T9 - Value must be pointer to a struct")
+	}
+
+	jsonBytes, err := json.Marshal(j)
+	if err != nil {
+		return fmt.Errorf("E#1UO9VA - Marshalling error: %v", err)
+	}
+
+	err = json.Unmarshal(jsonBytes, pointerToStruct)
+	if err != nil {
+		return fmt.Errorf("E#1UO9XC - Could not unmarshal. Error: %v", err)
+	}
+
+	return nil
+}
+
 func (j *Typ) IsNotEmpty() bool {
 	return !j.IsEmpty()
 }
