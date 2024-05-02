@@ -10,7 +10,9 @@ probably habituated to. So you might ask yourself what is Ground, after all! Her
 2. All sub-modules of Ground will be as independent as possible. 
 3. However, they must have the capability to work across different modules (e.g. The database code generator would be able to use the caching system). 
 4. Ground will not rediscover wheels. If there is a good library that already does a work, Ground will provide a thin wrapper around it to get the work done. There is already some great code out there waiting to be reused.
-5. Ground will provide some functionality on its own where the said functionality exists.
+5. Ground will provide some functionality on its own where the said functionality does not exist.
+
+
 
 
 
