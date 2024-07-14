@@ -268,6 +268,7 @@ type EnumDefinition struct {
 // CodegenConfig contains the values and rules using which the code is to be generated
 type CodegenConfig struct {
 	PgDbUrl                  string // DB URL string for PostgreSQL database to which we have to connect
+	PgReaderDbUrl            string // DB URL string for PostgreSQL reader database to which we have to connect (empty if we don't want reader configured)
 	ModelsContainerPackage   string // Full package name under which the DB and Network packages will fall
 	DbModelPackageName       string // Name of the package under which the db related code will be placed
 	DbModelPackagePath       string // Full path of the directory where the generated code for db will be placed
@@ -1163,6 +1164,37 @@ func (g *Generator) Generate() appError.Typ {
 		}
 	}
 
+	// Create the init file with the variable
+
+	initFileTemplate := `
+//{{PACKAGE_NAME}}
+
+import (
+  "fmt"
+  "sync"
+  "github.com/jmoiron/sqlx"
+)
+
+type db struct {
+  *sqlx.DB
+  sync.Mutex
+}
+
+//{{INIT_CODE}}
+
+//{{MAGIC_COMMENT}}
+
+`
+
+	fileContent = initFileTemplate
+	fileContent = strings.ReplaceAll(fileContent, "//{{PACKAGE_NAME}}", fmt.Sprintf("package %v", g.Config.DbModelPackageName))
+	fileContent = strings.ReplaceAll(fileContent, "//{{INIT_CODE}}", networkStructStr)
+	fileContent = strings.ReplaceAll(fileContent, "//{{MAGIC_COMMENT}}", g.Config.MagicComment)
+
+	// TODO: Complete the code below to write the file to disk
+	// IMPORTANT: I was here
+	// outputFileName := "gen__init"
+
 	return appError.BlankError
 }
 
@@ -1319,4 +1351,11 @@ func isDbUrlValid(dbUrl string) bool {
 	match := r.MatchString(dbUrl)
 
 	return match
+}
+
+func (g *Generator) readerEnabled() bool {
+	if isDbUrlValid(g.Config.PgReaderDbUrl) {
+		return true
+	}
+	return false
 }

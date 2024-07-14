@@ -38,7 +38,7 @@ func (e Typ) Error() string {
 func (e Typ) String() string {
 	retVal := fmt.Sprintf("%s#%s - %s", e.Level.ShortStr(), e.Code, e.Message)
 	if e.WrappedError != nil {
-		retVal = retVal + "\n[Wraps error ==>]\n" + e.WrappedError.String()
+		retVal = retVal + "\n  [Wraps error ==>]\n" + e.WrappedError.String()
 	}
 	return retVal
 }
