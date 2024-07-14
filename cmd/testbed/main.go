@@ -2,9 +2,10 @@ package main
 
 import (
 	"fmt"
-	"github.com/oklog/ulid/v2"
 	"math/rand"
 	"time"
+
+	"github.com/oklog/ulid/v2"
 )
 
 func main() {
