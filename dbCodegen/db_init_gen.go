@@ -2,7 +2,7 @@ package dbCodegen
 
 import "fmt"
 
-func (g *Generator) buildInitCode(table DbTable, importList []string) (string, []string) {
+func (g *Generator) buildInitCode(importList []string) (string, []string) {
 	initCode := ""
 	initCode += "\n"
 	initCode += fmt.Sprintf("var %v db\n", upperFirstChar(g.Config.DbModelPackageName))
@@ -31,5 +31,5 @@ func (g *Generator) buildInitCode(table DbTable, importList []string) (string, [
 
 	initCode += "}\n"
 
-	return initCode, []string{}
+	return initCode, importList
 }

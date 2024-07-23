@@ -1,9 +1,5 @@
 package set
 
-import (
-	"fmt"
-)
-
 // Typ is a generic type for a set data structure.
 // It can only be used on comparable data types though
 type Typ[T comparable] map[T]string
@@ -53,15 +49,32 @@ func (s Typ[T]) Empty() {
 	}
 }
 
-func main() {
-	// Example usage of the Typ data type with integers.
-	intSet := New[int]()
-	intSet.Add(1)
-	intSet.Add(2)
-	intSet.Add(3)
+func (s Typ[T]) AsSlice() []T {
+	retVal := []T{}
+	for k, _ := range s {
+		retVal = append(retVal, k)
+	}
+	return retVal
+}
 
-	fmt.Println("Typ:", intSet)
-	fmt.Println("Contains 2:", intSet.Contains(2))
-	fmt.Println("Contains 4:", intSet.Contains(4))
-	fmt.Println("Size:", intSet.Size())
+func (s Typ[T]) Union(with Typ[T]) Typ[T] {
+	retVal := s
+	for k, v := range with {
+		_, ok := s[k]
+		if !ok {
+			retVal[k] = v
+		}
+	}
+	return retVal
+}
+
+func (s Typ[T]) Subtract(another Typ[T]) Typ[T] {
+	retVal := New[T]()
+	for k, v := range s {
+		_, ok := another[k]
+		if !ok {
+			retVal.Add(k, v)
+		}
+	}
+	return retVal
 }

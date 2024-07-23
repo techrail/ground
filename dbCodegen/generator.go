@@ -1186,14 +1186,15 @@ type db struct {
 
 `
 
+	initCode, _ := g.buildInitCode([]string{})
 	fileContent = initFileTemplate
 	fileContent = strings.ReplaceAll(fileContent, "//{{PACKAGE_NAME}}", fmt.Sprintf("package %v", g.Config.DbModelPackageName))
-	fileContent = strings.ReplaceAll(fileContent, "//{{INIT_CODE}}", networkStructStr)
+	fileContent = strings.ReplaceAll(fileContent, "//{{INIT_CODE}}", initCode)
 	fileContent = strings.ReplaceAll(fileContent, "//{{MAGIC_COMMENT}}", g.Config.MagicComment)
 
 	// TODO: Complete the code below to write the file to disk
 	// IMPORTANT: I was here
-	// outputFileName := "gen__init"
+	//outputFileName := "gen__init.go"
 
 	return appError.BlankError
 }
