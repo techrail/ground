@@ -13,6 +13,17 @@ func New[T comparable]() Typ[T] {
 	return make(map[T]string)
 }
 
+// NewFromSlice creates a new set from provided slice.
+func NewFromSlice[T comparable](s []T) Typ[T] {
+	set := New[T]()
+
+	for _, v := range s {
+		set.Add(v)
+	}
+
+	return set
+}
+
 // Add adds an element to the set.
 func (s Typ[T]) Add(element T, withVal ...string) {
 	if len(withVal) > 0 {
