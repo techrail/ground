@@ -13,10 +13,9 @@ import (
 
 	"github.com/techrail/ground/typs/set"
 
+	pluralize "github.com/gertd/go-pluralize"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/jmoiron/sqlx"
-
-	"github.com/gertd/go-pluralize"
 
 	"regexp"
 
@@ -1125,7 +1124,7 @@ func (g *Generator) Generate() appError.Typ {
 				}
 			}
 
-			err = os.Mkdir(g.Config.DbModelPackagePath, 0777)
+			err = os.Mkdir(g.Config.NetworkPackagePath, 0777)
 			if err != nil {
 				// fmt.Println("E#1OFXLN -", err)
 			}
@@ -1194,7 +1193,35 @@ type db struct {
 
 	// TODO: Complete the code below to write the file to disk
 	// IMPORTANT: I was here
-	//outputFileName := "gen__init.go"
+	outputFileName := "gen__init.go"
+
+	err = os.Mkdir(g.Config.DbModelPackagePath, 0777)
+	if err != nil {
+		// The flow usually gets here with "directory already exists" error. Remove comment to print the error.
+		//fmt.Printf("E#20QABN - Could not make the directory. Error: %v\n", err)
+	}
+
+	outputFile, err = os.Create(fmt.Sprintf("%s/%s", g.Config.DbModelPackagePath, outputFileName))
+	if err != nil {
+		panic(fmt.Sprintf("P#20QAM4 - %v", err))
+	}
+
+	fileContentBytes, err := format.Source([]byte(fileContent))
+	if err != nil {
+		panic(fmt.Sprintf("P#20QANZ - %v", err))
+	}
+
+	fileContent = string(fileContentBytes)
+
+	_, err = outputFile.WriteString(fileContent)
+	if err != nil {
+		return appError.NewError(appError.Error, "20QATG", err.Error())
+	}
+
+	err = outputFile.Close()
+	if err != nil {
+		return appError.NewError(appError.Error, "20QATS", err.Error())
+	}
 
 	return appError.BlankError
 }

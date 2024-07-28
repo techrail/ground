@@ -25,3 +25,6 @@ go.work
 
 .DS_Store
 .vscode/launch.json
+
+# Ignore vendor
+vendor
