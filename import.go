@@ -26,8 +26,12 @@ func GiveMeABarkSLogger() logger.Logger {
 	return logger.NewSloggerClient()
 }
 
-func GiveMeABarkEmbeddedServerClient(dbUrl, defaultLogLvl, svcName, sessName string, enableSlog bool) logger.Logger {
-	return logger.NewEmbeddedServerBarkClient(dbUrl, defaultLogLvl, svcName, sessName, enableSlog)
+func GiveMeADirectToDbBarkClient(dbUrl, defaultLogLvl, svcName, sessName string, enableSlog bool) logger.Logger {
+	return logger.NewDirectToDbBarkClient(dbUrl, defaultLogLvl, svcName, sessName, enableSlog)
+}
+
+func GiveMeANewDirectToDbBarkClientCustomSchemaTable(dbUrl, schemaName, tableName, defaultLogLvl, svcName, sessName string, enableSlog bool) logger.Logger {
+	return logger.NewDirectToDbBarkClientCustomSchemaTable(dbUrl, schemaName, tableName, defaultLogLvl, svcName, sessName, enableSlog)
 }
 
 func GiveMeABarkRemoteServerClient(remoteServerUrl, defaultLogLvl, svcName, sessName string, enableSlog bool,

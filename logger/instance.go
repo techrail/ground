@@ -10,6 +10,10 @@ func NewBarkClient(remoteServerUrl, defaultLogLvl, svcName, sessName string, ena
 	return client.NewClient(remoteServerUrl, defaultLogLvl, svcName, sessName, enableSlog, enableBulkSend)
 }
 
-func NewEmbeddedServerBarkClient(dbUrl, defaultLogLvl, svcName, sessName string, enableSlog bool) Logger {
-	return client.NewClientWithServer(dbUrl, defaultLogLvl, svcName, sessName, enableSlog)
+func NewDirectToDbBarkClient(dbUrl, defaultLogLvl, svcName, sessName string, enableSlog bool) Logger {
+	return client.NewDirectToDbClient(dbUrl, defaultLogLvl, svcName, sessName, enableSlog)
+}
+
+func NewDirectToDbBarkClientCustomSchemaTable(dbUrl, schemaName, tableName, defaultLogLvl, svcName, sessName string, enableSlog bool) Logger {
+	return client.NewDirectToDbClientCustomSchemaTable(dbUrl, schemaName, tableName, defaultLogLvl, svcName, sessName, enableSlog)
 }
