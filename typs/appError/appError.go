@@ -57,6 +57,17 @@ func (e Typ) IsNotBlank() bool {
 	return !e.IsBlank()
 }
 
+func (e Typ) WrapsErrorCode(errCode string) bool {
+	if e.WrappedError != nil {
+		return e.WrapsErrorCode(errCode)
+	}
+	
+	if e.Code == errCode {
+		return true
+	}
+	return false
+} 
+
 func (e Typ) IsBlankNetworkError() bool {
 	if e.IsBlank() && e.HttpResponseCode == constants.EmptyInt {
 		return true
