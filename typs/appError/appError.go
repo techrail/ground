@@ -59,7 +59,7 @@ func (e Typ) IsNotBlank() bool {
 
 func (e Typ) WrapsErrorCode(errCode string) bool {
 	if e.WrappedError != nil {
-		return e.WrapsErrorCode(errCode)
+		return e.WrappedError.WrapsErrorCode(errCode)
 	}
 	
 	if e.Code == errCode {
