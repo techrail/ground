@@ -101,8 +101,8 @@ func (e Typ) WrapsErrorLevel(errLvl Level, checkCurrErr bool) bool {
 func NewError(errLevel Level, code string, msg string, wrappedError ...Typ) Typ {
 	var wErr *Typ
 
-	if len(wrappedError) > 0 {
-		wErr = &wrappedError[0]
+	if len(wrappedError) > 0 && wrappedError[0].IsNotBlank() {
+		wErr = wrappedError[0]
 	}
 
 	return Typ{
