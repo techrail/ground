@@ -58,6 +58,7 @@ func initializeDatabaseConfig() {
 	config.Database.Main.MigrationFullPath = envOrViperOrDefaultString(
 		"database.main.migrationFullPath", config.Database.Main.MigrationFullPath)
 
+	// DATABASE_READER_URL
 	config.Database.Reader.Url = envOrViperOrDefaultString("database.reader.url", config.Database.Reader.Url)
 	config.Database.Reader.MaxOpenConnections = int(envOrViperOrDefaultInt64("database.reader.maxOpenConnections",
 		int64(config.Database.Reader.MaxOpenConnections)))
