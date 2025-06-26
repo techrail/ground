@@ -2,6 +2,7 @@ package appError
 
 import (
 	"fmt"
+
 	"github.com/techrail/ground/constants"
 	"github.com/techrail/ground/constants/errCode"
 )
@@ -61,12 +62,12 @@ func (e Typ) WrapsErrorCode(errCode string) bool {
 	if e.WrappedError != nil {
 		return e.WrappedError.WrapsErrorCode(errCode)
 	}
-	
+
 	if e.Code == errCode {
 		return true
 	}
 	return false
-} 
+}
 
 func (e Typ) IsBlankNetworkError() bool {
 	if e.IsBlank() && e.HttpResponseCode == constants.EmptyInt {
@@ -102,7 +103,7 @@ func NewError(errLevel Level, code string, msg string, wrappedError ...Typ) Typ 
 	var wErr *Typ
 
 	if len(wrappedError) > 0 && wrappedError[0].IsNotBlank() {
-		wErr = wrappedError[0]
+		wErr = &wrappedError[0]
 	}
 
 	return Typ{
