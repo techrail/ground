@@ -124,7 +124,7 @@ func TestGetValueFromJsonObjectByJPath(t *testing.T) {
 		log.Printf("[error] %s:%d %v", filename, line, err)
 		t.Errorf("~~~~~~~\nToJsonObject Conversion failed in file %v at line %v | Error: %v", filename, line, err)
 	}
-	typ, val, err := jo.GetValueFromJsonObjectByJPath("nosuchkey")
+	typ, val, err := jo.GetValueByJPath("nosuchkey")
 	if err == nil {
 		getTestsSuccessful = false
 		t.Errorf("~~~~~~~\nE#145EKW - ==> [[ERROR]] <== Should have errored!")
@@ -138,7 +138,7 @@ func TestGetValueFromJsonObjectByJPath(t *testing.T) {
 		log.Printf("[error] %s:%d %v", filename, line, err)
 		t.Errorf("~~~~~~~\nToJsonObject Conversion failed in file %v at line %v | Error: %v", filename, line, err)
 	}
-	typ, val, errTy = jo.GetValueFromJsonObjectByJPath("str")
+	typ, val, errTy = jo.GetValueByJPath("str")
 	if errTy.IsNotBlank() || val != "stringValue" {
 		getTestsSuccessful = false
 		t.Errorf("~~~~~~~\nE#145EZ9 - ==> [[ERROR]] <== \nErr: %v \nTyp: %v \nValue : %v\n", err, typ, val)
@@ -152,7 +152,7 @@ func TestGetValueFromJsonObjectByJPath(t *testing.T) {
 		log.Printf("[error] %s:%d %v", filename, line, err)
 		t.Errorf("~~~~~~~\nToJsonObject Conversion failed in file %v at line %v | Error: %v", filename, line, err)
 	}
-	typ, val, errTy = jo.GetValueFromJsonObjectByJPath("bool1")
+	typ, val, errTy = jo.GetValueByJPath("bool1")
 	if errTy.IsNotBlank() || val != true {
 		getTestsSuccessful = false
 		t.Errorf("~~~~~~~\nE#145F21 -  ==> [[ERROR]] <== \nErr: %v \nTyp: %v \nValue : %v\n", err, typ, val)
@@ -166,7 +166,7 @@ func TestGetValueFromJsonObjectByJPath(t *testing.T) {
 		log.Printf("[error] %s:%d %v", filename, line, err)
 		t.Errorf("~~~~~~~\nToJsonObject Conversion failed in file %v at line %v | Error: %v", filename, line, err)
 	}
-	typ, val, errTy = jo.GetValueFromJsonObjectByJPath("bool2")
+	typ, val, errTy = jo.GetValueByJPath("bool2")
 	if errTy.IsNotBlank() || val != false {
 		getTestsSuccessful = false
 		t.Errorf("~~~~~~~\nE#145F5T - ==> [[ERROR]] <== \nErr: %v \nTyp: %v \nValue : %v\n", err, typ, val)
@@ -180,7 +180,7 @@ func TestGetValueFromJsonObjectByJPath(t *testing.T) {
 		log.Printf("[error] %s:%d %v", filename, line, err)
 		t.Errorf("~~~~~~~\nToJsonObject Conversion failed in file %v at line %v | Error: %v", filename, line, err)
 	}
-	typ, val, errTy = jo.GetValueFromJsonObjectByJPath("int")
+	typ, val, errTy = jo.GetValueByJPath("int")
 	if errTy.IsNotBlank() || (val != int(9741) && val != float64(9741)) {
 		getTestsSuccessful = false
 		t.Errorf("~~~~~~~\nE#145F74 - ==> [[ERROR]] <== \nErr: %v \nTyp: %v \nValue : %v\n", err, typ, val)
@@ -194,7 +194,7 @@ func TestGetValueFromJsonObjectByJPath(t *testing.T) {
 		log.Printf("[error] %s:%d %v", filename, line, err)
 		t.Errorf("~~~~~~~\nToJsonObject Conversion failed in file %v at line %v | Error: %v", filename, line, err)
 	}
-	typ, val, errTy = jo.GetValueFromJsonObjectByJPath("float")
+	typ, val, errTy = jo.GetValueByJPath("float")
 	if errTy.IsNotBlank() || val != float64(12.34) {
 		getTestsSuccessful = false
 		t.Errorf("~~~~~~~\nE#145FAP - ==> [[ERROR]] <== \nErr: %v \nTyp: %v \nValue : %v\n", err, typ, val)
@@ -208,7 +208,7 @@ func TestGetValueFromJsonObjectByJPath(t *testing.T) {
 		log.Printf("[error] %s:%d %v", filename, line, err)
 		t.Errorf("~~~~~~~\nToJsonObject Conversion failed in file %v at line %v | Error: %v", filename, line, err)
 	}
-	typ, val, errTy = jo.GetValueFromJsonObjectByJPath("arrInts")
+	typ, val, errTy = jo.GetValueByJPath("arrInts")
 	if errTy.IsNotBlank() || (typ != "array/int" && typ != "array/float64" && typ != "array/any") {
 		getTestsSuccessful = false
 		t.Errorf("~~~~~~~\nE#145FDJ - ==> [[ERROR]] <== \nErr: %v \nTyp: %v \nValue : %v\n", err, typ, val)
@@ -222,7 +222,7 @@ func TestGetValueFromJsonObjectByJPath(t *testing.T) {
 		log.Printf("[error] %s:%d %v", filename, line, err)
 		t.Errorf("~~~~~~~\nToJsonObject Conversion failed in file %v at line %v | Error: %v", filename, line, err)
 	}
-	typ, val, errTy = jo.GetValueFromJsonObjectByJPath("arrFloats")
+	typ, val, errTy = jo.GetValueByJPath("arrFloats")
 	if errTy.IsNotBlank() {
 		getTestsSuccessful = false
 		t.Errorf("~~~~~~~\nE#145FE2 - ==> [[ERROR]] <== \nErr: %v \nTyp: %v \nValue : %v\n", err, typ, val)
@@ -236,7 +236,7 @@ func TestGetValueFromJsonObjectByJPath(t *testing.T) {
 		log.Printf("[error] %s:%d %v", filename, line, err)
 		t.Errorf("~~~~~~~\nToJsonObject Conversion failed in file %v at line %v | Error: %v", filename, line, err)
 	}
-	typ, val, errTy = jo.GetValueFromJsonObjectByJPath("arrStrings")
+	typ, val, errTy = jo.GetValueByJPath("arrStrings")
 	if errTy.IsNotBlank() {
 		getTestsSuccessful = false
 		t.Errorf("~~~~~~~\nE#145FK0 - ==> [[ERROR]] <== \nErr: %v \nTyp: %v \nValue : %v\n", err, typ, val)
@@ -250,7 +250,7 @@ func TestGetValueFromJsonObjectByJPath(t *testing.T) {
 		log.Printf("[error] %s:%d %v", filename, line, err)
 		t.Errorf("~~~~~~~\nToJsonObject Conversion failed in file %v at line %v | Error: %v", filename, line, err)
 	}
-	typ, val, errTy = jo.GetValueFromJsonObjectByJPath("arrBools")
+	typ, val, errTy = jo.GetValueByJPath("arrBools")
 	if errTy.IsNotBlank() {
 		getTestsSuccessful = false
 		t.Errorf("~~~~~~~\nE#146PMX - ==> [[ERROR]] <== \nErr: %v \nTyp: %v \nValue : %v\n", err, typ, val)
@@ -264,7 +264,7 @@ func TestGetValueFromJsonObjectByJPath(t *testing.T) {
 		log.Printf("[error] %s:%d %v", filename, line, err)
 		t.Errorf("~~~~~~~\nToJsonObject Conversion failed in file %v at line %v | Error: %v", filename, line, err)
 	}
-	typ, val, errTy = jo.GetValueFromJsonObjectByJPath("arrObjs")
+	typ, val, errTy = jo.GetValueByJPath("arrObjs")
 	if errTy.IsNotBlank() {
 		getTestsSuccessful = false
 		t.Errorf("~~~~~~~\nE#146PNL - ==> [[ERROR]] <== \nErr: %v \nTyp: %v \nValue : %v\n", err, typ, val)
@@ -278,7 +278,7 @@ func TestGetValueFromJsonObjectByJPath(t *testing.T) {
 		log.Printf("[error] %s:%d %v", filename, line, err)
 		t.Errorf("~~~~~~~\nToJsonObject Conversion failed in file %v at line %v | Error: %v", filename, line, err)
 	}
-	typ, val, errTy = jo.GetValueFromJsonObjectByJPath("obj")
+	typ, val, errTy = jo.GetValueByJPath("obj")
 	if errTy.IsNotBlank() {
 		getTestsSuccessful = false
 		t.Errorf("~~~~~~~\nE#146PST - ==> [[ERROR]] <== \nErr: %v \nTyp: %v \nValue : %v\n", err, typ, val)
@@ -292,7 +292,7 @@ func TestGetValueFromJsonObjectByJPath(t *testing.T) {
 		log.Printf("[error] %s:%d %v", filename, line, err)
 		t.Errorf("~~~~~~~\nToJsonObject Conversion failed in file %v at line %v | Error: %v", filename, line, err)
 	}
-	typ, val, errTy = jo.GetValueFromJsonObjectByJPath("obj")
+	typ, val, errTy = jo.GetValueByJPath("obj")
 	if errTy.IsNotBlank() {
 		getTestsSuccessful = false
 		t.Errorf("~~~~~~~\nE#146PST -  ==> [[ERROR]] <== \nErr: %v \nTyp: %v \nValue : %v\n", err, typ, val)
@@ -310,7 +310,7 @@ func TestGetValueFromJsonObjectByJPath(t *testing.T) {
 		log.Printf("[error] %s:%d %v", filename, line, err)
 		t.Errorf("~~~~~~~\nToJsonObject Conversion failed in file %v at line %v | Error: %v", filename, line, err)
 	}
-	typ, val, errTy = jo.GetValueFromJsonObjectByJPath("arrObjs.[]")
+	typ, val, errTy = jo.GetValueByJPath("arrObjs.[]")
 	if errTy.IsBlank() {
 		getTestsSuccessful = false
 		t.Errorf("~~~~~~~\nE#146PST -  ==> [[ERROR]] <== \nErr: %v \nTyp: %v \nValue : %v\n", err, typ, val)
@@ -324,7 +324,7 @@ func TestGetValueFromJsonObjectByJPath(t *testing.T) {
 		log.Printf("[error] %s:%d %v", filename, line, err)
 		t.Errorf("~~~~~~~\nToJsonObject Conversion failed in file %v at line %v | Error: %v", filename, line, err)
 	}
-	typ, val, errTy = jo.GetValueFromJsonObjectByJPath("arrObjs.[0]")
+	typ, val, errTy = jo.GetValueByJPath("arrObjs.[0]")
 	if errTy.IsNotBlank() {
 		getTestsSuccessful = false
 		t.Errorf("~~~~~~~\nE#146Q14 -  ==> [[ERROR]] <== \nErr: %v \nTyp: %v \nValue : %v\n", err, typ, val)
@@ -338,7 +338,7 @@ func TestGetValueFromJsonObjectByJPath(t *testing.T) {
 		log.Printf("[error] %s:%d %v", filename, line, err)
 		t.Errorf("~~~~~~~\nToJsonObject Conversion failed in file %v at line %v | Error: %v", filename, line, err)
 	}
-	typ, val, errTy = jo.GetValueFromJsonObjectByJPath("arrObjs.[1]")
+	typ, val, errTy = jo.GetValueByJPath("arrObjs.[1]")
 	if errTy.IsNotBlank() {
 		getTestsSuccessful = false
 		t.Errorf("~~~~~~~\nE#146Q57 -  ==> [[ERROR]] <== \nErr: %v \nTyp: %v \nValue : %v\n", err, typ, val)
@@ -352,7 +352,7 @@ func TestGetValueFromJsonObjectByJPath(t *testing.T) {
 		log.Printf("[error] %s:%d %v", filename, line, err)
 		t.Errorf("~~~~~~~\nToJsonObject Conversion failed in file %v at line %v | Error: %v", filename, line, err)
 	}
-	typ, val, errTy = jo.GetValueFromJsonObjectByJPath("arrObjs.[abcd]")
+	typ, val, errTy = jo.GetValueByJPath("arrObjs.[abcd]")
 	if errTy.IsBlank() {
 		getTestsSuccessful = false
 		t.Errorf("~~~~~~~\nE#146Q8T -  ==> [[ERROR]] <== \nErr: %v \nTyp: %v \nValue : %v\n", err, typ, val)
@@ -366,7 +366,7 @@ func TestGetValueFromJsonObjectByJPath(t *testing.T) {
 		log.Printf("[error] %s:%d %v", filename, line, err)
 		t.Errorf("~~~~~~~\nToJsonObject Conversion failed in file %v at line %v | Error: %v", filename, line, err)
 	}
-	typ, val, errTy = jo.GetValueFromJsonObjectByJPath("arrObjs.[-1]")
+	typ, val, errTy = jo.GetValueByJPath("arrObjs.[-1]")
 	if errTy.IsBlank() {
 		getTestsSuccessful = false
 		t.Errorf("~~~~~~~\nE#146QA0 -  ==> [[ERROR]] <== \nErr: %v \nTyp: %v \nValue : %v\n", err, typ, val)
@@ -380,7 +380,7 @@ func TestGetValueFromJsonObjectByJPath(t *testing.T) {
 		log.Printf("[error] %s:%d %v", filename, line, err)
 		t.Errorf("~~~~~~~\nToJsonObject Conversion failed in file %v at line %v | Error: %v", filename, line, err)
 	}
-	typ, val, errTy = jo.GetValueFromJsonObjectByJPath("arrObjs.[2]")
+	typ, val, errTy = jo.GetValueByJPath("arrObjs.[2]")
 	if errTy.IsBlank() {
 		getTestsSuccessful = false
 		t.Errorf("~~~~~~~\nE#146QA6 -  ==> [[ERROR]] <== \nErr: %v \nTyp: %v \nValue : %v\n", err, typ, val)
@@ -394,7 +394,7 @@ func TestGetValueFromJsonObjectByJPath(t *testing.T) {
 		log.Printf("[error] %s:%d %v", filename, line, err)
 		t.Errorf("~~~~~~~\nToJsonObject Conversion failed in file %v at line %v | Error: %v", filename, line, err)
 	}
-	typ, val, errTy = jo.GetValueFromJsonObjectByJPath("arrObjs.[1].")
+	typ, val, errTy = jo.GetValueByJPath("arrObjs.[1].")
 	if errTy.IsBlank() {
 		getTestsSuccessful = false
 		t.Errorf("~~~~~~~\nE#146QNN - ==> [[ERROR]] <== \nErr: %v \nTyp: %v \nValue : %v\n", err, typ, val)
@@ -408,7 +408,7 @@ func TestGetValueFromJsonObjectByJPath(t *testing.T) {
 		log.Printf("[error] %s:%d %v", filename, line, err)
 		t.Errorf("~~~~~~~\nToJsonObject Conversion failed in file %v at line %v | Error: %v", filename, line, err)
 	}
-	typ, val, errTy = jo.GetValueFromJsonObjectByJPath("arrObjs.[1].objName")
+	typ, val, errTy = jo.GetValueByJPath("arrObjs.[1].objName")
 	if errTy.IsNotBlank() {
 		getTestsSuccessful = false
 		t.Errorf("~~~~~~~\nE#146QNW - ==> [[ERROR]] <== \nErr: %v \nTyp: %v \nValue : %v\n", err, typ, val)
@@ -422,7 +422,7 @@ func TestGetValueFromJsonObjectByJPath(t *testing.T) {
 		log.Printf("[error] %s:%d %v", filename, line, err)
 		t.Errorf("~~~~~~~\nToJsonObject Conversion failed in file %v at line %v | Error: %v", filename, line, err)
 	}
-	typ, val, errTy = jo.GetValueFromJsonObjectByJPath("arrObjs.[1].intVal")
+	typ, val, errTy = jo.GetValueByJPath("arrObjs.[1].intVal")
 	if errTy.IsNotBlank() {
 		getTestsSuccessful = false
 		t.Errorf("~~~~~~~\nE#146QP1 -  ==> [[ERROR]] <== \nErr: %v \nTyp: %v \nValue : %v\n", err, typ, val)
@@ -436,7 +436,7 @@ func TestGetValueFromJsonObjectByJPath(t *testing.T) {
 		log.Printf("[error] %s:%d %v", filename, line, err)
 		t.Errorf("~~~~~~~\nToJsonObject Conversion failed in file %v at line %v | Error: %v", filename, line, err)
 	}
-	typ, val, errTy = jo.GetValueFromJsonObjectByJPath("arrObjs.[1].fltVal")
+	typ, val, errTy = jo.GetValueByJPath("arrObjs.[1].fltVal")
 	if errTy.IsNotBlank() {
 		getTestsSuccessful = false
 		t.Errorf("~~~~~~~\nE#146QPN -  ==> [[ERROR]] <== \nErr: %v \nTyp: %v \nValue : %v\n", err, typ, val)
@@ -450,7 +450,7 @@ func TestGetValueFromJsonObjectByJPath(t *testing.T) {
 		log.Printf("[error] %s:%d %v", filename, line, err)
 		t.Errorf("~~~~~~~\nToJsonObject Conversion failed in file %v at line %v | Error: %v", filename, line, err)
 	}
-	typ, val, errTy = jo.GetValueFromJsonObjectByJPath("arrObjs.[1].fltVal2")
+	typ, val, errTy = jo.GetValueByJPath("arrObjs.[1].fltVal2")
 	if errTy.IsBlank() {
 		getTestsSuccessful = false
 		t.Errorf("~~~~~~~\nE#146QQ5 -  ==> [[ERROR]] <== \nErr: %v \nTyp: %v \nValue : %v\n", err, typ, val)
@@ -464,7 +464,7 @@ func TestGetValueFromJsonObjectByJPath(t *testing.T) {
 		log.Printf("[error] %s:%d %v", filename, line, err)
 		t.Errorf("~~~~~~~\nToJsonObject Conversion failed in file %v at line %v | Error: %v", filename, line, err)
 	}
-	typ, val, errTy = jo.GetValueFromJsonObjectByJPath("arrObjs.[1].moreArrays")
+	typ, val, errTy = jo.GetValueByJPath("arrObjs.[1].moreArrays")
 	if errTy.IsNotBlank() {
 		getTestsSuccessful = false
 		t.Errorf("~~~~~~~\nE#146QR2 -  ==> [[ERROR]] <== \nErr: %v \nTyp: %v \nValue : %v\n", err, typ, val)
@@ -478,7 +478,7 @@ func TestGetValueFromJsonObjectByJPath(t *testing.T) {
 		log.Printf("[error] %s:%d %v", filename, line, err)
 		t.Errorf("~~~~~~~\nToJsonObject Conversion failed in file %v at line %v | Error: %v", filename, line, err)
 	}
-	typ, val, errTy = jo.GetValueFromJsonObjectByJPath("arrObjs.[1].moreArrays.[0]")
+	typ, val, errTy = jo.GetValueByJPath("arrObjs.[1].moreArrays.[0]")
 	if errTy.IsNotBlank() {
 		getTestsSuccessful = false
 		t.Errorf("~~~~~~~\nE#146QS4 -  ==> [[ERROR]] <== \nErr: %v \nTyp: %v \nValue : %v\n", err, typ, val)
@@ -492,7 +492,7 @@ func TestGetValueFromJsonObjectByJPath(t *testing.T) {
 		log.Printf("[error] %s:%d %v", filename, line, err)
 		t.Errorf("~~~~~~~\nToJsonObject Conversion failed in file %v at line %v | Error: %v", filename, line, err)
 	}
-	typ, val, errTy = jo.GetValueFromJsonObjectByJPath("arrObjs.[1].moreArrays.[0].k")
+	typ, val, errTy = jo.GetValueByJPath("arrObjs.[1].moreArrays.[0].k")
 	if errTy.IsNotBlank() {
 		getTestsSuccessful = false
 		t.Errorf("~~~~~~~\nE#146QSO -  ==> [[ERROR]] <== \nErr: %v \nTyp: %v \nValue : %v\n", err, typ, val)
@@ -506,7 +506,7 @@ func TestGetValueFromJsonObjectByJPath(t *testing.T) {
 		log.Printf("[error] %s:%d %v", filename, line, err)
 		t.Errorf("~~~~~~~\nToJsonObject Conversion failed in file %v at line %v | Error: %v", filename, line, err)
 	}
-	typ, val, errTy = jo.GetValueFromJsonObjectByJPath("arrObjs.[1].moreArrays.[1].k")
+	typ, val, errTy = jo.GetValueByJPath("arrObjs.[1].moreArrays.[1].k")
 	if errTy.IsBlank() {
 		getTestsSuccessful = false
 		t.Errorf("~~~~~~~\nE#146QTH -  ==> [[ERROR]] <== \nErr: %v \nTyp: %v \nValue : %v\n", err, typ, val)
@@ -520,7 +520,7 @@ func TestGetValueFromJsonObjectByJPath(t *testing.T) {
 		log.Printf("[error] %s:%d %v", filename, line, err)
 		t.Errorf("~~~~~~~\nToJsonObject Conversion failed in file %v at line %v | Error: %v", filename, line, err)
 	}
-	typ, val, errTy = jo.GetValueFromJsonObjectByJPath("arrObjs.[1].moreArrays.[1].k2")
+	typ, val, errTy = jo.GetValueByJPath("arrObjs.[1].moreArrays.[1].k2")
 	if errTy.IsNotBlank() {
 		getTestsSuccessful = false
 		t.Errorf("~~~~~~~\nE#146QU0 -  ==> [[ERROR]] <== \nErr: %v \nTyp: %v \nValue : %v\n", err, typ, val)
@@ -534,7 +534,7 @@ func TestGetValueFromJsonObjectByJPath(t *testing.T) {
 		log.Printf("[error] %s:%d %v", filename, line, err)
 		t.Errorf("~~~~~~~\nToJsonObject Conversion failed in file %v at line %v | Error: %v", filename, line, err)
 	}
-	typ, val, errTy = jo.GetValueFromJsonObjectByJPath("arrObjs.[0].contents")
+	typ, val, errTy = jo.GetValueByJPath("arrObjs.[0].contents")
 	if errTy.IsNotBlank() {
 		getTestsSuccessful = false
 		t.Errorf("~~~~~~~\nE#146QV5 -  ==> [[ERROR]] <== \nErr: %v \nTyp: %v \nValue : %v\n", err, typ, val)
@@ -548,7 +548,7 @@ func TestGetValueFromJsonObjectByJPath(t *testing.T) {
 		log.Printf("[error] %s:%d %v", filename, line, err)
 		t.Errorf("~~~~~~~\nToJsonObject Conversion failed in file %v at line %v | Error: %v", filename, line, err)
 	}
-	typ, val, errTy = jo.GetValueFromJsonObjectByJPath("arrObjs.[0].contents.[0]")
+	typ, val, errTy = jo.GetValueByJPath("arrObjs.[0].contents.[0]")
 	if errTy.IsNotBlank() {
 		getTestsSuccessful = false
 		t.Errorf("~~~~~~~\nE#146QWA -  ==> [[ERROR]] <== \nErr: %v \nTyp: %v \nValue : %v\n", err, typ, val)
@@ -562,7 +562,7 @@ func TestGetValueFromJsonObjectByJPath(t *testing.T) {
 		log.Printf("[error] %s:%d %v", filename, line, err)
 		t.Errorf("~~~~~~~\nToJsonObject Conversion failed in file %v at line %v | Error: %v", filename, line, err)
 	}
-	typ, val, errTy = jo.GetValueFromJsonObjectByJPath("arrObjs.[0].contents.[0].[0]")
+	typ, val, errTy = jo.GetValueByJPath("arrObjs.[0].contents.[0].[0]")
 	if errTy.IsNotBlank() {
 		getTestsSuccessful = false
 		t.Errorf("~~~~~~~\nE#146QWT -  ==> [[ERROR]] <== \nErr: %v \nTyp: %v \nValue : %v\n", err, typ, val)
@@ -576,7 +576,7 @@ func TestGetValueFromJsonObjectByJPath(t *testing.T) {
 		log.Printf("[error] %s:%d %v", filename, line, err)
 		t.Errorf("~~~~~~~\nToJsonObject Conversion failed in file %v at line %v | Error: %v", filename, line, err)
 	}
-	typ, val, errTy = jo.GetValueFromJsonObjectByJPath("arrObjs.[0].contents.[0].[4]")
+	typ, val, errTy = jo.GetValueByJPath("arrObjs.[0].contents.[0].[4]")
 	if errTy.IsNotBlank() {
 		getTestsSuccessful = false
 		t.Errorf("~~~~~~~\nE#146QX5 -  ==> [[ERROR]] <== \nErr: %v \nTyp: %v \nValue : %v\n", err, typ, val)
@@ -590,7 +590,7 @@ func TestGetValueFromJsonObjectByJPath(t *testing.T) {
 		log.Printf("[error] %s:%d %v", filename, line, err)
 		t.Errorf("~~~~~~~\nToJsonObject Conversion failed in file %v at line %v | Error: %v", filename, line, err)
 	}
-	typ, val, errTy = jo.GetValueFromJsonObjectByJPath("arrObjs.[0].contents.[0].[5]")
+	typ, val, errTy = jo.GetValueByJPath("arrObjs.[0].contents.[0].[5]")
 	if errTy.IsBlank() {
 		getTestsSuccessful = false
 		t.Errorf("~~~~~~~\nE#146QXT -  ==> [[ERROR]] <== \nErr: %v \nTyp: %v \nValue : %v\n", err, typ, val)
@@ -604,7 +604,7 @@ func TestGetValueFromJsonObjectByJPath(t *testing.T) {
 		log.Printf("[error] %s:%d %v", filename, line, err)
 		t.Errorf("~~~~~~~\nToJsonObject Conversion failed in file %v at line %v | Error: %v", filename, line, err)
 	}
-	typ, val, errTy = jo.GetValueFromJsonObjectByJPath("arrObjs.[0].contents.[1].[4]")
+	typ, val, errTy = jo.GetValueByJPath("arrObjs.[0].contents.[1].[4]")
 	if errTy.IsNotBlank() {
 		getTestsSuccessful = false
 		t.Errorf("~~~~~~~\nE#146QY5 -  ==> [[ERROR]] <== \nErr: %v \nTyp: %v \nValue : %v\n", err, typ, val)
@@ -618,7 +618,7 @@ func TestGetValueFromJsonObjectByJPath(t *testing.T) {
 		log.Printf("[error] %s:%d %v", filename, line, err)
 		t.Errorf("~~~~~~~\nToJsonObject Conversion failed in file %v at line %v | Error: %v", filename, line, err)
 	}
-	typ, val, errTy = jo.GetValueFromJsonObjectByJPath("arrObjs.[0].contents.[2].[0]")
+	typ, val, errTy = jo.GetValueByJPath("arrObjs.[0].contents.[2].[0]")
 	if errTy.IsNotBlank() {
 		getTestsSuccessful = false
 		t.Errorf("~~~~~~~\nE#146R1F -  ==> [[ERROR]] <== \nErr: %v \nTyp: %v \nValue : %v\n", err, typ, val)
@@ -632,7 +632,7 @@ func TestGetValueFromJsonObjectByJPath(t *testing.T) {
 		log.Printf("[error] %s:%d %v", filename, line, err)
 		t.Errorf("~~~~~~~\nToJsonObject Conversion failed in file %v at line %v | Error: %v", filename, line, err)
 	}
-	typ, val, errTy = jo.GetValueFromJsonObjectByJPath("arrObjs.[0].contents.[2].[3]")
+	typ, val, errTy = jo.GetValueByJPath("arrObjs.[0].contents.[2].[3]")
 	if errTy.IsNotBlank() {
 		getTestsSuccessful = false
 		t.Errorf("~~~~~~~\nE#146R4Y -  ==> [[ERROR]] <== \nErr: %v \nTyp: %v \nValue : %v\n", err, typ, val)
@@ -646,7 +646,7 @@ func TestGetValueFromJsonObjectByJPath(t *testing.T) {
 		log.Printf("[error] %s:%d %v", filename, line, err)
 		t.Errorf("~~~~~~~\nToJsonObject Conversion failed in file %v at line %v | Error: %v", filename, line, err)
 	}
-	typ, val, errTy = jo.GetValueFromJsonObjectByJPath("arrObjs.[0].contents.[2].[3].[1]")
+	typ, val, errTy = jo.GetValueByJPath("arrObjs.[0].contents.[2].[3].[1]")
 	if errTy.IsNotBlank() {
 		getTestsSuccessful = false
 		t.Errorf("~~~~~~~\nE#146R5W -  ==> [[ERROR]] <== \nErr: %v \nTyp: %v \nValue : %v\n", err, typ, val)
@@ -660,7 +660,7 @@ func TestGetValueFromJsonObjectByJPath(t *testing.T) {
 		log.Printf("[error] %s:%d %v", filename, line, err)
 		t.Errorf("~~~~~~~\nToJsonObject Conversion failed in file %v at line %v | Error: %v", filename, line, err)
 	}
-	typ, val, errTy = jo.GetValueFromJsonObjectByJPath("arrObjs.[0].contents.[2].[3].[1].[1]")
+	typ, val, errTy = jo.GetValueByJPath("arrObjs.[0].contents.[2].[3].[1].[1]")
 	if errTy.IsNotBlank() {
 		getTestsSuccessful = false
 		t.Errorf("~~~~~~~\nE#146R5W -  ==> [[ERROR]] <== \nErr: %v \nTyp: %v \nValue : %v\n", err, typ, val)
@@ -676,7 +676,7 @@ func TestGetValueFromJsonObjectByJPath(t *testing.T) {
 		log.Printf("[error] %s:%d %v", filename, line, err)
 		t.Errorf("~~~~~~~\nToJsonObject Conversion failed in file %v at line %v | Error: %v", filename, line, err)
 	}
-	typ, val, errTy = jo.GetValueFromJsonObjectByJPath("obj.k")
+	typ, val, errTy = jo.GetValueByJPath("obj.k")
 	if errTy.IsBlank() {
 		getTestsSuccessful = false
 		t.Errorf("~~~~~~~\nE#146R87 -  ==> [[ERROR]] <== \nErr: %v \nTyp: %v \nValue : %v\n", err, typ, val)
@@ -690,7 +690,7 @@ func TestGetValueFromJsonObjectByJPath(t *testing.T) {
 		log.Printf("[error] %s:%d %v", filename, line, err)
 		t.Errorf("~~~~~~~\nToJsonObject Conversion failed in file %v at line %v | Error: %v", filename, line, err)
 	}
-	typ, val, errTy = jo.GetValueFromJsonObjectByJPath("obj.key")
+	typ, val, errTy = jo.GetValueByJPath("obj.key")
 	if errTy.IsNotBlank() {
 		getTestsSuccessful = false
 		t.Errorf("~~~~~~~\nE#146R8T -  ==> [[ERROR]] <== \nErr: %v \nTyp: %v \nValue : %v\n", err, typ, val)
@@ -704,7 +704,7 @@ func TestGetValueFromJsonObjectByJPath(t *testing.T) {
 		log.Printf("[error] %s:%d %v", filename, line, err)
 		t.Errorf("~~~~~~~\nToJsonObject Conversion failed in file %v at line %v | Error: %v", filename, line, err)
 	}
-	typ, val, errTy = jo.GetValueFromJsonObjectByJPath("obj.key2")
+	typ, val, errTy = jo.GetValueByJPath("obj.key2")
 	if errTy.IsNotBlank() {
 		getTestsSuccessful = false
 		t.Errorf("~~~~~~~\nE#146R9H -  ==> [[ERROR]] <== \nErr: %v \nTyp: %v \nValue : %v\n", err, typ, val)
@@ -718,7 +718,7 @@ func TestGetValueFromJsonObjectByJPath(t *testing.T) {
 		log.Printf("[error] %s:%d %v", filename, line, err)
 		t.Errorf("~~~~~~~\nToJsonObject Conversion failed in file %v at line %v | Error: %v", filename, line, err)
 	}
-	typ, val, errTy = jo.GetValueFromJsonObjectByJPath("obj.intVal")
+	typ, val, errTy = jo.GetValueByJPath("obj.intVal")
 	if errTy.IsNotBlank() {
 		getTestsSuccessful = false
 		t.Errorf("~~~~~~~\nE#146RA2 -  ==> [[ERROR]] <== \nErr: %v \nTyp: %v \nValue : %v\n", err, typ, val)
@@ -732,7 +732,7 @@ func TestGetValueFromJsonObjectByJPath(t *testing.T) {
 		log.Printf("[error] %s:%d %v", filename, line, err)
 		t.Errorf("~~~~~~~\nToJsonObject Conversion failed in file %v at line %v | Error: %v", filename, line, err)
 	}
-	typ, val, errTy = jo.GetValueFromJsonObjectByJPath("obj.arrInts")
+	typ, val, errTy = jo.GetValueByJPath("obj.arrInts")
 	if errTy.IsNotBlank() {
 		getTestsSuccessful = false
 		t.Errorf("~~~~~~~\nE#146RAX -  ==> [[ERROR]] <== \nErr: %v \nTyp: %v \nValue : %v\n", err, typ, val)
@@ -746,7 +746,7 @@ func TestGetValueFromJsonObjectByJPath(t *testing.T) {
 		log.Printf("[error] %s:%d %v", filename, line, err)
 		t.Errorf("~~~~~~~\nToJsonObject Conversion failed in file %v at line %v | Error: %v", filename, line, err)
 	}
-	typ, val, errTy = jo.GetValueFromJsonObjectByJPath("obj.arrInts.[0]")
+	typ, val, errTy = jo.GetValueByJPath("obj.arrInts.[0]")
 	if errTy.IsNotBlank() {
 		getTestsSuccessful = false
 		t.Errorf("~~~~~~~\nE#146RDK -  ==> [[ERROR]] <== \nErr: %v \nTyp: %v \nValue : %v\n", err, typ, val)
@@ -760,7 +760,7 @@ func TestGetValueFromJsonObjectByJPath(t *testing.T) {
 		log.Printf("[error] %s:%d %v", filename, line, err)
 		t.Errorf("~~~~~~~\nToJsonObject Conversion failed in file %v at line %v | Error: %v", filename, line, err)
 	}
-	typ, val, errTy = jo.GetValueFromJsonObjectByJPath("obj.arrInts.[4]")
+	typ, val, errTy = jo.GetValueByJPath("obj.arrInts.[4]")
 	if errTy.IsNotBlank() {
 		getTestsSuccessful = false
 		t.Errorf("~~~~~~~\nE#146RDB -  ==> [[ERROR]] <== \nErr: %v \nTyp: %v \nValue : %v\n", err, typ, val)
@@ -774,7 +774,7 @@ func TestGetValueFromJsonObjectByJPath(t *testing.T) {
 		log.Printf("[error] %s:%d %v", filename, line, err)
 		t.Errorf("~~~~~~~\nToJsonObject Conversion failed in file %v at line %v | Error: %v", filename, line, err)
 	}
-	typ, val, errTy = jo.GetValueFromJsonObjectByJPath("obj.arrInts.[5]")
+	typ, val, errTy = jo.GetValueByJPath("obj.arrInts.[5]")
 	if errTy.IsBlank() {
 		getTestsSuccessful = false
 		t.Errorf("~~~~~~~\nE#146RG7 -  ==> [[ERROR]] <== \nErr: %v \nTyp: %v \nValue : %v\n", err, typ, val)
@@ -788,7 +788,7 @@ func TestGetValueFromJsonObjectByJPath(t *testing.T) {
 		log.Printf("[error] %s:%d %v", filename, line, err)
 		t.Errorf("~~~~~~~\nToJsonObject Conversion failed in file %v at line %v | Error: %v", filename, line, err)
 	}
-	typ, val, errTy = jo.GetValueFromJsonObjectByJPath("obj.arrFloats.[3]")
+	typ, val, errTy = jo.GetValueByJPath("obj.arrFloats.[3]")
 	if errTy.IsNotBlank() {
 		getTestsSuccessful = false
 		t.Errorf("~~~~~~~\nE#146RGX -  ==> [[ERROR]] <== \nErr: %v \nTyp: %v \nValue : %v\n", err, typ, val)
@@ -802,7 +802,7 @@ func TestGetValueFromJsonObjectByJPath(t *testing.T) {
 		log.Printf("[error] %s:%d %v", filename, line, err)
 		t.Errorf("~~~~~~~\nToJsonObject Conversion failed in file %v at line %v | Error: %v", filename, line, err)
 	}
-	typ, val, errTy = jo.GetValueFromJsonObjectByJPath("obj.arrStrings.[3]")
+	typ, val, errTy = jo.GetValueByJPath("obj.arrStrings.[3]")
 	if errTy.IsNotBlank() {
 		getTestsSuccessful = false
 		t.Errorf("~~~~~~~\nE#146RJ1 -  ==> [[ERROR]] <== \nErr: %v \nTyp: %v \nValue : %v\n", err, typ, val)
@@ -816,7 +816,7 @@ func TestGetValueFromJsonObjectByJPath(t *testing.T) {
 		log.Printf("[error] %s:%d %v", filename, line, err)
 		t.Errorf("~~~~~~~\nToJsonObject Conversion failed in file %v at line %v | Error: %v", filename, line, err)
 	}
-	typ, val, errTy = jo.GetValueFromJsonObjectByJPath("obj.arr2")
+	typ, val, errTy = jo.GetValueByJPath("obj.arr2")
 	if errTy.IsNotBlank() {
 		getTestsSuccessful = false
 		t.Errorf("~~~~~~~\nE#146SSH -  ==> [[ERROR]] <== \nErr: %v \nTyp: %v \nValue : %v\n", err, typ, val)
@@ -830,7 +830,7 @@ func TestGetValueFromJsonObjectByJPath(t *testing.T) {
 		log.Printf("[error] %s:%d %v", filename, line, err)
 		t.Errorf("~~~~~~~\nToJsonObject Conversion failed in file %v at line %v | Error: %v", filename, line, err)
 	}
-	typ, val, errTy = jo.GetValueFromJsonObjectByJPath("obj.arr2.[1]")
+	typ, val, errTy = jo.GetValueByJPath("obj.arr2.[1]")
 	if errTy.IsNotBlank() {
 		getTestsSuccessful = false
 		t.Errorf("~~~~~~~\nE#146SU8 -  ==> [[ERROR]] <== \nErr: %v \nTyp: %v \nValue : %v\n", err, typ, val)
@@ -844,7 +844,7 @@ func TestGetValueFromJsonObjectByJPath(t *testing.T) {
 		log.Printf("[error] %s:%d %v", filename, line, err)
 		t.Errorf("~~~~~~~\nToJsonObject Conversion failed in file %v at line %v | Error: %v", filename, line, err)
 	}
-	typ, val, errTy = jo.GetValueFromJsonObjectByJPath("obj.arr2.[1].ki")
+	typ, val, errTy = jo.GetValueByJPath("obj.arr2.[1].ki")
 	if errTy.IsNotBlank() {
 		getTestsSuccessful = false
 		t.Errorf("~~~~~~~\nE#146SUN -  ==> [[ERROR]] <== \nErr: %v \nTyp: %v \nValue : %v\n", err, typ, val)
@@ -858,7 +858,7 @@ func TestGetValueFromJsonObjectByJPath(t *testing.T) {
 		log.Printf("[error] %s:%d %v", filename, line, err)
 		t.Errorf("~~~~~~~\nToJsonObject Conversion failed in file %v at line %v | Error: %v", filename, line, err)
 	}
-	typ, val, errTy = jo.GetValueFromJsonObjectByJPath("obj.arr2.[1].nested")
+	typ, val, errTy = jo.GetValueByJPath("obj.arr2.[1].nested")
 	if errTy.IsNotBlank() {
 		getTestsSuccessful = false
 		t.Errorf("~~~~~~~\nE#146SVM -  ==> [[ERROR]] <== \nErr: %v \nTyp: %v \nValue : %v\n", err, typ, val)
@@ -872,7 +872,7 @@ func TestGetValueFromJsonObjectByJPath(t *testing.T) {
 		log.Printf("[error] %s:%d %v", filename, line, err)
 		t.Errorf("~~~~~~~\nToJsonObject Conversion failed in file %v at line %v | Error: %v", filename, line, err)
 	}
-	typ, val, errTy = jo.GetValueFromJsonObjectByJPath("obj.arr2.[1].nested.[2]")
+	typ, val, errTy = jo.GetValueByJPath("obj.arr2.[1].nested.[2]")
 	if errTy.IsNotBlank() {
 		getTestsSuccessful = false
 		t.Errorf("~~~~~~~\nE#146SYX -  ==> [[ERROR]] <== \nErr: %v \nTyp: %v \nValue : %v\n", err, typ, val)
@@ -886,7 +886,7 @@ func TestGetValueFromJsonObjectByJPath(t *testing.T) {
 		log.Printf("[error] %s:%d %v", filename, line, err)
 		t.Errorf("~~~~~~~\nToJsonObject Conversion failed in file %v at line %v | Error: %v", filename, line, err)
 	}
-	typ, val, errTy = jo.GetValueFromJsonObjectByJPath("obj.arr2.[1].nested.[3]")
+	typ, val, errTy = jo.GetValueByJPath("obj.arr2.[1].nested.[3]")
 	if errTy.IsNotBlank() {
 		getTestsSuccessful = false
 		t.Errorf("~~~~~~~\nE#146SW9 -  ==> [[ERROR]] <== \nErr: %v \nTyp: %v \nValue : %v\n", err, typ, val)
@@ -900,7 +900,7 @@ func TestGetValueFromJsonObjectByJPath(t *testing.T) {
 		log.Printf("[error] %s:%d %v", filename, line, err)
 		t.Errorf("~~~~~~~\nToJsonObject Conversion failed in file %v at line %v | Error: %v", filename, line, err)
 	}
-	typ, val, errTy = jo.GetValueFromJsonObjectByJPath("obj.arr2.[1].nested.[3].[1]")
+	typ, val, errTy = jo.GetValueByJPath("obj.arr2.[1].nested.[3].[1]")
 	if errTy.IsNotBlank() {
 		getTestsSuccessful = false
 		t.Errorf("~~~~~~~\nE#146SX7 -  ==> [[ERROR]] <== \nErr: %v \nTyp: %v \nValue : %v\n", err, typ, val)
@@ -914,7 +914,7 @@ func TestGetValueFromJsonObjectByJPath(t *testing.T) {
 		log.Printf("[error] %s:%d %v", filename, line, err)
 		t.Errorf("~~~~~~~\nToJsonObject Conversion failed in file %v at line %v | Error: %v", filename, line, err)
 	}
-	typ, val, errTy = jo.GetValueFromJsonObjectByJPath("obj.arr2.[1].nested.[3].[1].[4]")
+	typ, val, errTy = jo.GetValueByJPath("obj.arr2.[1].nested.[3].[1].[4]")
 	if errTy.IsNotBlank() {
 		getTestsSuccessful = false
 		t.Errorf("~~~~~~~\nE#146SXP -  ==> [[ERROR]] <== \nErr: %v \nTyp: %v \nValue : %v\n", err, typ, val)
@@ -928,7 +928,7 @@ func TestGetValueFromJsonObjectByJPath(t *testing.T) {
 		log.Printf("[error] %s:%d %v", filename, line, err)
 		t.Errorf("~~~~~~~\nToJsonObject Conversion failed in file %v at line %v | Error: %v", filename, line, err)
 	}
-	typ, val, errTy = jo.GetValueFromJsonObjectByJPath("obj.arr2.[1].nested.[3].[1].[4]")
+	typ, val, errTy = jo.GetValueByJPath("obj.arr2.[1].nested.[3].[1].[4]")
 	if errTy.IsNotBlank() {
 		getTestsSuccessful = false
 		t.Errorf("~~~~~~~\nE#146SZW -  ==> [[ERROR]] <== \nErr: %v \nTyp: %v \nValue : %v\n", err, typ, val)
@@ -942,7 +942,7 @@ func TestGetValueFromJsonObjectByJPath(t *testing.T) {
 		log.Printf("[error] %s:%d %v", filename, line, err)
 		t.Errorf("~~~~~~~\nToJsonObject Conversion failed in file %v at line %v | Error: %v", filename, line, err)
 	}
-	typ, val, errTy = jo.GetValueFromJsonObjectByJPath("obj.arr2.[1].nested.[3].[3].[4]")
+	typ, val, errTy = jo.GetValueByJPath("obj.arr2.[1].nested.[3].[3].[4]")
 	if errTy.IsNotBlank() {
 		getTestsSuccessful = false
 		t.Errorf("~~~~~~~\nE#146T04 - ==> [[ERROR]] <== \nErr: %v \nTyp: %v \nValue : %v\n", err, typ, val)
@@ -956,7 +956,7 @@ func TestGetValueFromJsonObjectByJPath(t *testing.T) {
 		log.Printf("[error] %s:%d %v", filename, line, err)
 		t.Errorf("~~~~~~~\nToJsonObject Conversion failed in file %v at line %v | Error: %v", filename, line, err)
 	}
-	typ, val, errTy = jo.GetValueFromJsonObjectByJPath("obj.nestedObj.child0.child1.child2.finalChild.k7")
+	typ, val, errTy = jo.GetValueByJPath("obj.nestedObj.child0.child1.child2.finalChild.k7")
 	if errTy.IsNotBlank() || (typ != "float64") || val.(float64) != 10.01 {
 		getTestsSuccessful = false
 		t.Errorf("~~~~~~~\nE#148MG5 - ==> [[ERROR]] <== \nErr: %v \nTyp: %v \nValue : %v\n", err, typ, val)
@@ -989,7 +989,7 @@ func TestSetValueInJsonObjectByJPath(t *testing.T) {
 		t.Errorf("~~~~~~~\nE#147CJB - Failed. Error: %v", setErr)
 	} else {
 		// Check what we got there
-		typ, val, getErr := jo.GetValueFromJsonObjectByJPath("str")
+		typ, val, getErr := jo.GetValueByJPath("str")
 		if getErr.IsNotBlank() || val != "newStringValue" {
 			t.Errorf("~~~~~~~\nE#147CMI - ==> [[ERROR]] <== Could not get UPDATED VALUE\nErr: %v \nTyp: %v \nValue : %v\n", getErr, typ, val)
 		} else {
@@ -1007,7 +1007,7 @@ func TestSetValueInJsonObjectByJPath(t *testing.T) {
 		t.Errorf("~~~~~~~\nE#147CXR - Failed. Error: %v", setErr)
 	} else {
 		// Check what we got there
-		typ, val, getErr := jo.GetValueFromJsonObjectByJPath("bool1")
+		typ, val, getErr := jo.GetValueByJPath("bool1")
 		if getErr.IsNotBlank() || val != "someStringValue Because type strictness is not there" {
 			t.Errorf("~~~~~~~\nE#147CXT - ==> [[ERROR]] <== Could not get UPDATED VALUE\nErr: %v \nTyp: %v \nValue : %v\n", getErr, typ, val)
 		} else {
@@ -1025,7 +1025,7 @@ func TestSetValueInJsonObjectByJPath(t *testing.T) {
 		t.Errorf("~~~~~~~\nE#147D19 - Failed. Error: %v", setErr)
 	} else {
 		// Check what we got there
-		typ, val, getErr := jo.GetValueFromJsonObjectByJPath("bool1")
+		typ, val, getErr := jo.GetValueByJPath("bool1")
 		if getErr.IsNotBlank() || val != false {
 			t.Errorf("~~~~~~~\nE#147D1L - ==> [[ERROR]] <== Could not get UPDATED VALUE\nErr: %v \nTyp: %v \nValue : %v\n", getErr, typ, val)
 		} else {
@@ -1043,7 +1043,7 @@ func TestSetValueInJsonObjectByJPath(t *testing.T) {
 		t.Errorf("~~~~~~~\nE#147D46 - Failed. Error: %v", setErr)
 	} else {
 		// Check what we got there
-		typ, val, getErr := jo.GetValueFromJsonObjectByJPath("int")
+		typ, val, getErr := jo.GetValueByJPath("int")
 		if getErr.IsNotBlank() || val != "someString_because_no_strictness_on_data_type" {
 			t.Errorf("~~~~~~~\nE#147D4G - ==> [[ERROR]] <== Could not get UPDATED VALUE\nErr: %v \nTyp: %v \nValue : %v\n", getErr, typ, val)
 		} else {
@@ -1061,7 +1061,7 @@ func TestSetValueInJsonObjectByJPath(t *testing.T) {
 		t.Errorf("~~~~~~~\nE#147D5G - Failed. Error: %v", setErr)
 	} else {
 		// Check what we got there
-		typ, val, getErr := jo.GetValueFromJsonObjectByJPath("int")
+		typ, val, getErr := jo.GetValueByJPath("int")
 		if getErr.IsNotBlank() || val != 987654 {
 			t.Errorf("~~~~~~~\nE#147D5O - ==> [[ERROR]] <== Could not get UPDATED VALUE\nErr: %v \nTyp: %v \nValue : %v\n", getErr, typ, val)
 		} else {
@@ -1079,7 +1079,7 @@ func TestSetValueInJsonObjectByJPath(t *testing.T) {
 		t.Errorf("~~~~~~~\nE#147D7J - Failed. Error: %v", setErr)
 	} else {
 		// Check what we got there
-		typ, val, getErr := jo.GetValueFromJsonObjectByJPath("float")
+		typ, val, getErr := jo.GetValueByJPath("float")
 		if getErr.IsNotBlank() || val != 9876.54 {
 			t.Errorf("~~~~~~~\nE#147D7L - ==> [[ERROR]] <== Could not get UPDATED VALUE\nErr: %v \nTyp: %v \nValue : %v\n", getErr, typ, val)
 		} else {
@@ -1097,7 +1097,7 @@ func TestSetValueInJsonObjectByJPath(t *testing.T) {
 		t.Errorf("~~~~~~~\nE#147D8K - Failed. Error: %v", setErr)
 	} else {
 		// Check what we got there
-		typ, val, getErr := jo.GetValueFromJsonObjectByJPath("float")
+		typ, val, getErr := jo.GetValueByJPath("float")
 		if getErr.IsNotBlank() || val != "someString_no_strictness_on_data_type" {
 			t.Errorf("~~~~~~~\nE#147D8N - ==> [[ERROR]] <== Could not get UPDATED VALUE\nErr: %v \nTyp: %v \nValue : %v\n", getErr, typ, val)
 		} else {
@@ -1115,7 +1115,7 @@ func TestSetValueInJsonObjectByJPath(t *testing.T) {
 		t.Errorf("~~~~~~~\nE#147DBY - Failed. Error: %v", setErr)
 	} else {
 		// Check what we got there
-		typ, val, getErr := jo.GetValueFromJsonObjectByJPath("arrInts")
+		typ, val, getErr := jo.GetValueByJPath("arrInts")
 		if getErr.IsNotBlank() || val != "someString_no_strictness_on_data_type" {
 			t.Errorf("~~~~~~~\nE#147DCF - ==> [[ERROR]] <== Could not get UPDATED VALUE\nErr: %v \nTyp: %v \nValue : %v\n", getErr, typ, val)
 		} else {
@@ -1133,7 +1133,7 @@ func TestSetValueInJsonObjectByJPath(t *testing.T) {
 		t.Errorf("~~~~~~~\nE#147DGC - Failed. Error: %v", setErr)
 	} else {
 		// Check what we got there
-		typ, val, getErr := jo.GetValueFromJsonObjectByJPath("arrInts")
+		typ, val, getErr := jo.GetValueByJPath("arrInts")
 		if getErr.IsNotBlank() || (typ != "array/int" && typ != "array/float64" && typ != "array/any") {
 			t.Errorf("~~~~~~~\nE#147DGJ - ==> [[ERROR]] <== Could not get UPDATED VALUE\nErr: %v \nTyp: %v \nValue : %v\n", getErr, typ, val)
 		} else {
@@ -1151,7 +1151,7 @@ func TestSetValueInJsonObjectByJPath(t *testing.T) {
 		t.Errorf("~~~~~~~\nE#147DMV - Failed. Error: %v", setErr)
 	} else {
 		// Check what we got there
-		typ, val, getErr := jo.GetValueFromJsonObjectByJPath("arrFloats")
+		typ, val, getErr := jo.GetValueByJPath("arrFloats")
 		if getErr.IsNotBlank() || val != "someString_no_strictness_on_data_type" {
 			t.Errorf("~~~~~~~\nE#147DMT - ==> [[ERROR]] <== Could not get UPDATED VALUE\nErr: %v \nTyp: %v \nValue : %v\n", getErr, typ, val)
 		} else {
@@ -1169,7 +1169,7 @@ func TestSetValueInJsonObjectByJPath(t *testing.T) {
 		t.Errorf("~~~~~~~\nE#147DMM - Failed. Error: %v", setErr)
 	} else {
 		// Check what we got there
-		typ, val, getErr := jo.GetValueFromJsonObjectByJPath("arrFloats")
+		typ, val, getErr := jo.GetValueByJPath("arrFloats")
 		if getErr.IsNotBlank() || (typ != "array/float64" && typ != "array/any") {
 			t.Errorf("~~~~~~~\nE#147DMJ - ==> [[ERROR]] <== Could not get UPDATED VALUE\nErr: %v \nTyp: %v \nValue : %v\n", getErr, typ, val)
 		} else {
@@ -1187,7 +1187,7 @@ func TestSetValueInJsonObjectByJPath(t *testing.T) {
 		t.Errorf("~~~~~~~\nE#147E0Z - Failed. Error: %v", setErr)
 	} else {
 		// Check what we got there
-		typ, val, getErr := jo.GetValueFromJsonObjectByJPath("arrStrings")
+		typ, val, getErr := jo.GetValueByJPath("arrStrings")
 		if getErr.IsNotBlank() || (typ != "array/float64" && typ != "array/any") {
 			t.Errorf("~~~~~~~\nE#147E12 - ==> [[ERROR]] <== Could not get UPDATED VALUE\nErr: %v \nTyp: %v \nValue : %v\n", getErr, typ, val)
 		} else {
@@ -1205,7 +1205,7 @@ func TestSetValueInJsonObjectByJPath(t *testing.T) {
 		t.Errorf("~~~~~~~\nE#147E0Z - Failed. Error: %v", setErr)
 	} else {
 		// Check what we got there
-		typ, val, getErr := jo.GetValueFromJsonObjectByJPath("arrStrings")
+		typ, val, getErr := jo.GetValueByJPath("arrStrings")
 		if getErr.IsNotBlank() || typ != "array/string" {
 			t.Errorf("~~~~~~~\nE#147E12 - ==> [[ERROR]] <== Could not get UPDATED VALUE\nErr: %v \nTyp: %v \nValue : %v\n", getErr, typ, val)
 		} else {
@@ -1223,7 +1223,7 @@ func TestSetValueInJsonObjectByJPath(t *testing.T) {
 		t.Errorf("~~~~~~~\nE#147EM1 - Failed. Error: %v", setErr)
 	} else {
 		// Check what we got there
-		typ, val, getErr := jo.GetValueFromJsonObjectByJPath("arrBools")
+		typ, val, getErr := jo.GetValueByJPath("arrBools")
 		if getErr.IsNotBlank() || typ != TypeString {
 			t.Errorf("~~~~~~~\nE#147EM4 - ==> [[ERROR]] <== Could not get UPDATED VALUE\nErr: %v \nTyp: %v \nValue : %v\n", getErr, typ, val)
 		} else {
@@ -1241,7 +1241,7 @@ func TestSetValueInJsonObjectByJPath(t *testing.T) {
 		t.Errorf("~~~~~~~\nE#147EIP - Failed. Error: %v", setErr)
 	} else {
 		// Check what we got there
-		typ, val, getErr := jo.GetValueFromJsonObjectByJPath("arrBools")
+		typ, val, getErr := jo.GetValueByJPath("arrBools")
 		if getErr.IsNotBlank() || typ != "array/string" {
 			t.Errorf("~~~~~~~\nE#147EIU - ==> [[ERROR]] <== Could not get UPDATED VALUE\nErr: %v \nTyp: %v \nValue : %v\n", getErr, typ, val)
 		} else {
@@ -1259,7 +1259,7 @@ func TestSetValueInJsonObjectByJPath(t *testing.T) {
 		t.Errorf("~~~~~~~\nE#147EKP - Failed. Error: %v", setErr)
 	} else {
 		// Check what we got there
-		typ, val, getErr := jo.GetValueFromJsonObjectByJPath("arrBools")
+		typ, val, getErr := jo.GetValueByJPath("arrBools")
 		if getErr.IsNotBlank() || typ != "array/bool" {
 			t.Errorf("~~~~~~~\nE#147EKS - ==> [[ERROR]] <== Could not get UPDATED VALUE\nErr: %v \nTyp: %v \nValue : %v\n", getErr, typ, val)
 		} else {
@@ -1277,7 +1277,7 @@ func TestSetValueInJsonObjectByJPath(t *testing.T) {
 		t.Errorf("~~~~~~~\nE#147EX1 - Failed. Error: %v", setErr)
 	} else {
 		// Check what we got there
-		typ, val, getErr := jo.GetValueFromJsonObjectByJPath("arrObjs")
+		typ, val, getErr := jo.GetValueByJPath("arrObjs")
 		if getErr.IsNotBlank() || typ != "array/bool" {
 			t.Errorf("~~~~~~~\nE#147EX4 - ==> [[ERROR]] <== Could not get UPDATED VALUE\nErr: %v \nTyp: %v \nValue : %v\n", getErr, typ, val)
 		} else {
@@ -1295,7 +1295,7 @@ func TestSetValueInJsonObjectByJPath(t *testing.T) {
 		t.Errorf("~~~~~~~\nE#147EYH - Failed. Error: %v", setErr)
 	} else {
 		// Check what we got there
-		typ, val, getErr := jo.GetValueFromJsonObjectByJPath("arrObjs")
+		typ, val, getErr := jo.GetValueByJPath("arrObjs")
 		if getErr.IsNotBlank() || typ != TypeString {
 			t.Errorf("~~~~~~~\nE#147EYL - ==> [[ERROR]] <== Could not get UPDATED VALUE\nErr: %v \nTyp: %v \nValue : %v\n", getErr, typ, val)
 		} else {
@@ -1313,7 +1313,7 @@ func TestSetValueInJsonObjectByJPath(t *testing.T) {
 		t.Errorf("~~~~~~~\nE#147F06 - Failed. Error: %v", setErr)
 	} else {
 		// Check what we got there
-		typ, val, getErr := jo.GetValueFromJsonObjectByJPath("arrObjs")
+		typ, val, getErr := jo.GetValueByJPath("arrObjs")
 		if getErr.IsNotBlank() || typ != "array/object" {
 			t.Errorf("~~~~~~~\nE#147F0F - ==> [[ERROR]] <== Could not get UPDATED VALUE\nErr: %v \nTyp: %v \nValue : %v\n", getErr, typ, val)
 		} else {
@@ -1331,7 +1331,7 @@ func TestSetValueInJsonObjectByJPath(t *testing.T) {
 		t.Errorf("~~~~~~~\nE#147K6I - Failed. Error: %v", setErr)
 	} else {
 		// Check what we got there
-		typ, val, getErr := jo.GetValueFromJsonObjectByJPath("obj")
+		typ, val, getErr := jo.GetValueByJPath("obj")
 		if getErr.IsNotBlank() || typ != "object" {
 			t.Errorf("~~~~~~~\nE#147K6S - ==> [[ERROR]] <== Could not get UPDATED VALUE\nErr: %v \nTyp: %v \nValue : %v\n", getErr, typ, val)
 		} else {
@@ -1349,7 +1349,7 @@ func TestSetValueInJsonObjectByJPath(t *testing.T) {
 		t.Errorf("~~~~~~~\nE#147K7X - Failed. Error: %v", setErr)
 	} else {
 		// Check what we got there
-		typ, val, getErr := jo.GetValueFromJsonObjectByJPath("obj")
+		typ, val, getErr := jo.GetValueByJPath("obj")
 		if getErr.IsNotBlank() || typ != TypeString {
 			t.Errorf("~~~~~~~\nE#147K7Z - ==> [[ERROR]] <== Could not get UPDATED VALUE\nErr: %v \nTyp: %v \nValue : %v\n", getErr, typ, val)
 		} else {
@@ -1371,7 +1371,7 @@ func TestSetValueInJsonObjectByJPath(t *testing.T) {
 		t.Errorf("~~~~~~~\nE#147LVW - Failed. Error: %v", setErr)
 	} else {
 		// Check what we got there
-		typ, val, getErr := jo.GetValueFromJsonObjectByJPath("arrObjs.[0].objName")
+		typ, val, getErr := jo.GetValueByJPath("arrObjs.[0].objName")
 		if getErr.IsNotBlank() || (typ != "float64" && typ != "int") {
 			t.Errorf("~~~~~~~\nE#147LW3 - ==> [[ERROR]] <== Could not get UPDATED VALUE\nErr: %v \nTyp: %v \nValue : %v\n", getErr, typ, val)
 		} else {
@@ -1389,7 +1389,7 @@ func TestSetValueInJsonObjectByJPath(t *testing.T) {
 		t.Errorf("~~~~~~~\nE#147M5K - Failed. Error: %v", setErr)
 	} else {
 		// Check what we got there
-		typ, val, getErr := jo.GetValueFromJsonObjectByJPath("arrObjs.[0].contents.[1]")
+		typ, val, getErr := jo.GetValueByJPath("arrObjs.[0].contents.[1]")
 		if getErr.IsNotBlank() || (typ != "float64" && typ != "int") {
 			t.Errorf("~~~~~~~\nE#147M5N - ==> [[ERROR]] <== Could not get UPDATED VALUE\nErr: %v \nTyp: %v \nValue : %v\n", getErr, typ, val)
 		} else {
@@ -1407,7 +1407,7 @@ func TestSetValueInJsonObjectByJPath(t *testing.T) {
 		t.Errorf("~~~~~~~\nE#147MO9 - Failed. Error: %v", setErr)
 	} else {
 		// Check what we got there
-		typ, val, getErr := jo.GetValueFromJsonObjectByJPath("arrObjs.[0].contents.[1].[2]")
+		typ, val, getErr := jo.GetValueByJPath("arrObjs.[0].contents.[1].[2]")
 		if getErr.IsNotBlank() || (typ != "float64" && typ != "int") {
 			t.Errorf("~~~~~~~\nE#147MOB - ==> [[ERROR]] <== Could not get UPDATED VALUE\nErr: %v \nTyp: %v \nValue : %v\n", getErr, typ, val)
 		} else {
@@ -1425,7 +1425,7 @@ func TestSetValueInJsonObjectByJPath(t *testing.T) {
 		t.Errorf("~~~~~~~\nE#147MYM - Failed. Error: %v", setErr)
 	} else {
 		// Check what we got there
-		typ, val, getErr := jo.GetValueFromJsonObjectByJPath("arrObjs.[0].contents.[2].[3].[1]")
+		typ, val, getErr := jo.GetValueByJPath("arrObjs.[0].contents.[2].[3].[1]")
 		if getErr.IsNotBlank() || (typ != "float64" && typ != "int") {
 			t.Errorf("~~~~~~~\nE#147MYV - ==> [[ERROR]] <== Could not get UPDATED VALUE\nErr: %v \nTyp: %v \nValue : %v\n", getErr, typ, val)
 		} else {
@@ -1443,7 +1443,7 @@ func TestSetValueInJsonObjectByJPath(t *testing.T) {
 		t.Errorf("~~~~~~~\nE#147N3H - Failed. Error: %v", setErr)
 	} else {
 		// Check what we got there
-		typ, val, getErr := jo.GetValueFromJsonObjectByJPath("arrObjs.[0].contents.[2].[3].[1].[1]")
+		typ, val, getErr := jo.GetValueByJPath("arrObjs.[0].contents.[2].[3].[1].[1]")
 		if getErr.IsNotBlank() || (typ != "float64" && typ != "int") {
 			t.Errorf("~~~~~~~\nE#147N3J - ==> [[ERROR]] <== Could not get UPDATED VALUE\nErr: %v \nTyp: %v \nValue : %v\n", getErr, typ, val)
 		} else {
@@ -1461,7 +1461,7 @@ func TestSetValueInJsonObjectByJPath(t *testing.T) {
 		t.Errorf("~~~~~~~\nE#147N5Q - Failed. Error: %v", setErr)
 	} else {
 		// Check what we got there
-		typ, val, getErr := jo.GetValueFromJsonObjectByJPath("arrObjs.[0].contents.[2].[3].[1].[1]")
+		typ, val, getErr := jo.GetValueByJPath("arrObjs.[0].contents.[2].[3].[1].[1]")
 		if getErr.IsNotBlank() || (typ != TypeString) {
 			t.Errorf("~~~~~~~\nE#147N60 - ==> [[ERROR]] <== Could not get UPDATED VALUE\nErr: %v \nTyp: %v \nValue : %v\n", getErr, typ, val)
 		} else {
@@ -1479,7 +1479,7 @@ func TestSetValueInJsonObjectByJPath(t *testing.T) {
 		t.Errorf("~~~~~~~\nE#1481KT - Failed. Error: %v", setErr)
 	} else {
 		// Check what we got there
-		typ, val, getErr := jo.GetValueFromJsonObjectByJPath("arrObjs.[0].contents.[2].[3].[1].[1]")
+		typ, val, getErr := jo.GetValueByJPath("arrObjs.[0].contents.[2].[3].[1].[1]")
 		if getErr.IsNotBlank() || (typ != "nil") {
 			t.Errorf("~~~~~~~\nE#1481KX - ==> [[ERROR]] <== Could not get UPDATED VALUE\nErr: %v \nTyp: %v \nValue : %v\n", getErr, typ, val)
 		} else {
@@ -1497,7 +1497,7 @@ func TestSetValueInJsonObjectByJPath(t *testing.T) {
 		t.Errorf("~~~~~~~\nE#147NCG - Failed. Error: %v", setErr)
 	} else {
 		// Check what we got there
-		typ, val, getErr := jo.GetValueFromJsonObjectByJPath("arrObjs.[1].moreArrays.[1].k2")
+		typ, val, getErr := jo.GetValueByJPath("arrObjs.[1].moreArrays.[1].k2")
 		if getErr.IsNotBlank() || (typ != TypeString) {
 			t.Errorf("~~~~~~~\nE#147NCI - ==> [[ERROR]] <== Could not get UPDATED VALUE\nErr: %v \nTyp: %v \nValue : %v\n", getErr, typ, val)
 		} else {
@@ -1515,7 +1515,7 @@ func TestSetValueInJsonObjectByJPath(t *testing.T) {
 		t.Errorf("~~~~~~~\nE#148190 - Failed. Error: %v", setErr)
 	} else {
 		// Check what we got there
-		typ, val, getErr := jo.GetValueFromJsonObjectByJPath("arrObjs.[1].moreArrays.[1].k2")
+		typ, val, getErr := jo.GetValueByJPath("arrObjs.[1].moreArrays.[1].k2")
 		if getErr.IsNotBlank() || (typ != "nil") {
 			t.Errorf("~~~~~~~\nE#148196 - ==> [[ERROR]] <== Could not get UPDATED VALUE\nErr: %v \nTyp: %v \nValue : %v\n", getErr, typ, val)
 		} else {
@@ -1543,7 +1543,7 @@ func TestSetValueInJsonObjectByJPath(t *testing.T) {
 		t.Errorf("~~~~~~~\nE#1489AP - Failed. Error: %v", setErr)
 	} else {
 		// Check what we got there
-		typ, val, getErr := jo.GetValueFromJsonObjectByJPath("obj.arrInts")
+		typ, val, getErr := jo.GetValueByJPath("obj.arrInts")
 		if getErr.IsNotBlank() || (typ != TypeString) {
 			t.Errorf("~~~~~~~\nE#1489AZ - ==> [[ERROR]] <== Could not get UPDATED VALUE\nErr: %v \nTyp: %v \nValue : %v\n", getErr, typ, val)
 		} else {
@@ -1561,7 +1561,7 @@ func TestSetValueInJsonObjectByJPath(t *testing.T) {
 		t.Errorf("~~~~~~~\nE#1489HX - Failed. Error: %v", setErr)
 	} else {
 		// Check what we got there
-		typ, val, getErr := jo.GetValueFromJsonObjectByJPath("obj.arrInts.[2]")
+		typ, val, getErr := jo.GetValueByJPath("obj.arrInts.[2]")
 		if getErr.IsNotBlank() || (typ != TypeString) {
 			t.Errorf("~~~~~~~\nE#1489I6 - ==> [[ERROR]] <== Could not get UPDATED VALUE\nErr: %v \nTyp: %v \nValue : %v\n", getErr, typ, val)
 		} else {
@@ -1579,7 +1579,7 @@ func TestSetValueInJsonObjectByJPath(t *testing.T) {
 		t.Errorf("~~~~~~~\nE#1489MO - Failed. Error: %v", setErr)
 	} else {
 		// Check what we got there
-		typ, val, getErr := jo.GetValueFromJsonObjectByJPath("obj.arrInts.[2]")
+		typ, val, getErr := jo.GetValueByJPath("obj.arrInts.[2]")
 		if getErr.IsNotBlank() || (typ != "int" && typ != "float64") {
 			t.Errorf("~~~~~~~\nE#1489N9 - ==> [[ERROR]] <== Could not get UPDATED VALUE\nErr: %v \nTyp: %v \nValue : %v\n", getErr, typ, val)
 		} else {
@@ -1607,7 +1607,7 @@ func TestSetValueInJsonObjectByJPath(t *testing.T) {
 		t.Errorf("~~~~~~~\nE#1489QU - Failed. Error: %v", setErr)
 	} else {
 		// Check what we got there
-		typ, val, getErr := jo.GetValueFromJsonObjectByJPath("obj.arr2.[1]")
+		typ, val, getErr := jo.GetValueByJPath("obj.arr2.[1]")
 		if getErr.IsNotBlank() || (typ != "int" && typ != "float64") {
 			t.Errorf("~~~~~~~\nE#1489QX - ==> [[ERROR]] <== Could not get UPDATED VALUE\nErr: %v \nTyp: %v \nValue : %v\n", getErr, typ, val)
 		} else {
@@ -1625,7 +1625,7 @@ func TestSetValueInJsonObjectByJPath(t *testing.T) {
 		t.Errorf("~~~~~~~\nE#148A09 - Failed. Error: %v", setErr)
 	} else {
 		// Check what we got there
-		typ, val, getErr := jo.GetValueFromJsonObjectByJPath("obj.arr2.[1]")
+		typ, val, getErr := jo.GetValueByJPath("obj.arr2.[1]")
 		if getErr.IsNotBlank() || (typ != "int" && typ != "float64") || val.(int) != 999 {
 			t.Errorf("~~~~~~~\nE#148A0D - ==> [[ERROR]] <== Could not get UPDATED VALUE\nErr: %v \nTyp: %v \nValue : %v\n", getErr, typ, val)
 		} else {
@@ -1643,7 +1643,7 @@ func TestSetValueInJsonObjectByJPath(t *testing.T) {
 		t.Errorf("~~~~~~~\nE#148A0I - Failed. Error: %v", setErr)
 	} else {
 		// Check what we got there
-		typ, val, getErr := jo.GetValueFromJsonObjectByJPath("obj.arr2.[0].list")
+		typ, val, getErr := jo.GetValueByJPath("obj.arr2.[0].list")
 		if getErr.IsNotBlank() || (typ != "int" && typ != "float64") || val.(int) != 999 {
 			t.Errorf("~~~~~~~\nE#148A0L - ==> [[ERROR]] <== Could not get UPDATED VALUE\nErr: %v \nTyp: %v \nValue : %v\n", getErr, typ, val)
 		} else {
@@ -1661,7 +1661,7 @@ func TestSetValueInJsonObjectByJPath(t *testing.T) {
 		t.Errorf("~~~~~~~\nE#148A1M - Failed. Error: %v", setErr)
 	} else {
 		// Check what we got there
-		typ, val, getErr := jo.GetValueFromJsonObjectByJPath("obj.arr2.[0].list.[2]")
+		typ, val, getErr := jo.GetValueByJPath("obj.arr2.[0].list.[2]")
 		if getErr.IsNotBlank() || (typ != "int" && typ != "float64") || val.(int) != 999 {
 			t.Errorf("~~~~~~~\nE#148A1O - ==> [[ERROR]] <== Could not get UPDATED VALUE\nErr: %v \nTyp: %v \nValue : %v\n", getErr, typ, val)
 		} else {
@@ -1679,7 +1679,7 @@ func TestSetValueInJsonObjectByJPath(t *testing.T) {
 		t.Errorf("~~~~~~~\nE#148A3N - Failed. Error: %v", setErr)
 	} else {
 		// Check what we got there
-		typ, val, getErr := jo.GetValueFromJsonObjectByJPath("obj.arr2.[0].list.[2]")
+		typ, val, getErr := jo.GetValueByJPath("obj.arr2.[0].list.[2]")
 		if getErr.IsNotBlank() || (typ != TypeString) || val.(string) != "someString_no_strictness_on_data_type" {
 			t.Errorf("~~~~~~~\nE#148A3P - ==> [[ERROR]] <== Could not get UPDATED VALUE\nErr: %v \nTyp: %v \nValue : %v\n", getErr, typ, val)
 		} else {
@@ -1697,7 +1697,7 @@ func TestSetValueInJsonObjectByJPath(t *testing.T) {
 		t.Errorf("~~~~~~~\nE#148A8W - Failed. Error: %v", setErr)
 	} else {
 		// Check what we got there
-		typ, val, getErr := jo.GetValueFromJsonObjectByJPath("obj.arr2.[1].nested.[2]")
+		typ, val, getErr := jo.GetValueByJPath("obj.arr2.[1].nested.[2]")
 		if getErr.IsNotBlank() || (typ != TypeString) || val.(string) != "someString_no_strictness_on_data_type" {
 			t.Errorf("~~~~~~~\nE#148A8Z - ==> [[ERROR]] <== Could not get UPDATED VALUE\nErr: %v \nTyp: %v \nValue : %v\n", getErr, typ, val)
 		} else {
@@ -1715,7 +1715,7 @@ func TestSetValueInJsonObjectByJPath(t *testing.T) {
 		t.Errorf("~~~~~~~\nE#148LYP - Failed. Error: %v", setErr)
 	} else {
 		// Check what we got there
-		typ, val, getErr := jo.GetValueFromJsonObjectByJPath("obj.arr2.[1].nested.[2].[3]")
+		typ, val, getErr := jo.GetValueByJPath("obj.arr2.[1].nested.[2].[3]")
 		if getErr.IsNotBlank() || (typ != TypeString) || val.(string) != "someString_no_strictness_on_data_type" {
 			t.Errorf("~~~~~~~\nE#148LYT - ==> [[ERROR]] <== Could not get UPDATED VALUE\nErr: %v \nTyp: %v \nValue : %v\n", getErr, typ, val)
 		} else {
@@ -1733,7 +1733,7 @@ func TestSetValueInJsonObjectByJPath(t *testing.T) {
 		t.Errorf("~~~~~~~\nE#148M18 - Failed. Error: %v", setErr)
 	} else {
 		// Check what we got there
-		typ, val, getErr := jo.GetValueFromJsonObjectByJPath("obj.arr2.[1].nested.[2].[3]")
+		typ, val, getErr := jo.GetValueByJPath("obj.arr2.[1].nested.[2].[3]")
 		if getErr.IsNotBlank() || (typ != "int" && typ != "float64") || val.(int) != 555 {
 			t.Errorf("~~~~~~~\nE#148M1A - ==> [[ERROR]] <== Could not get UPDATED VALUE\nErr: %v \nTyp: %v \nValue : %v\n", getErr, typ, val)
 		} else {
@@ -1751,7 +1751,7 @@ func TestSetValueInJsonObjectByJPath(t *testing.T) {
 		t.Errorf("~~~~~~~\nE#148M36 - Failed. Error: %v", setErr)
 	} else {
 		// Check what we got there
-		typ, val, getErr := jo.GetValueFromJsonObjectByJPath("obj.arr2.[1].nested.[3].[1].[4]")
+		typ, val, getErr := jo.GetValueByJPath("obj.arr2.[1].nested.[3].[1].[4]")
 		if getErr.IsNotBlank() || (typ != "int" && typ != "float64") || val.(int) != 666 {
 			t.Errorf("~~~~~~~\nE#148M39 - ==> [[ERROR]] <== Could not get UPDATED VALUE\nErr: %v \nTyp: %v \nValue : %v\n", getErr, typ, val)
 		} else {
@@ -1769,7 +1769,7 @@ func TestSetValueInJsonObjectByJPath(t *testing.T) {
 		t.Errorf("~~~~~~~\nE#148M61 - Failed. Error: %v", setErr)
 	} else {
 		// Check what we got there
-		typ, val, getErr := jo.GetValueFromJsonObjectByJPath("obj.arr2.[1].nested.[3].[1].[4]")
+		typ, val, getErr := jo.GetValueByJPath("obj.arr2.[1].nested.[3].[1].[4]")
 		if getErr.IsNotBlank() || (typ != "object") || val.(map[string]any)["k8"] != "v8" {
 			t.Errorf("~~~~~~~\nE#148M64 - ==> [[ERROR]] <== Could not get UPDATED VALUE\nErr: %v \nTyp: %v \nValue : %v\n", getErr, typ, val)
 		} else {
@@ -1787,7 +1787,7 @@ func TestSetValueInJsonObjectByJPath(t *testing.T) {
 		t.Errorf("~~~~~~~\nE#148MJ8 - Failed. Error: %v", setErr)
 	} else {
 		// Check what we got there
-		typ, val, getErr := jo.GetValueFromJsonObjectByJPath("obj.nestedObj.child0.child1.child2.finalChild.k7")
+		typ, val, getErr := jo.GetValueByJPath("obj.nestedObj.child0.child1.child2.finalChild.k7")
 		if getErr.IsNotBlank() || (typ != TypeString) || val.(string) != "someString_no_strictness_on_data_type" {
 			t.Errorf("~~~~~~~\nE#148MJC - ==> [[ERROR]] <== Could not get UPDATED VALUE\nErr: %v \nTyp: %v \nValue : %v\n", getErr, typ, val)
 		} else {
@@ -1806,7 +1806,7 @@ func TestSetValueInJsonObjectByJPath(t *testing.T) {
 		t.Errorf("~~~~~~~\nE#147N5Q - Failed. Error: %v", setErr)
 	} else {
 		// Check what we got there
-		typ, val, getErr := jo.GetValueFromJsonObjectByJPath("arrObjs.[0].contents.[2].[3].[1].[3]")
+		typ, val, getErr := jo.GetValueByJPath("arrObjs.[0].contents.[2].[3].[1].[3]")
 		if getErr.IsNotBlank() || (typ != TypeString) || val != "appendString_no_strictness_on_data_type" {
 			t.Errorf("~~~~~~~\nE#147N60 - ==> [[ERROR]] <== Could not get UPDATED VALUE\nErr: %v \nTyp: %v \nValue : %v\n", getErr, typ, val)
 		} else {
@@ -1824,7 +1824,7 @@ func TestSetValueInJsonObjectByJPath(t *testing.T) {
 		t.Errorf("~~~~~~~\nE#148MXM - Failed. Error: %v", setErr)
 	} else {
 		// Check what we got there
-		typ, val, getErr := jo.GetValueFromJsonObjectByJPath("obj.arr2.[1].nested.[4]")
+		typ, val, getErr := jo.GetValueByJPath("obj.arr2.[1].nested.[4]")
 		if getErr.IsNotBlank() || (typ != TypeString) || val != "appendStringToArrayOfArrays_no_strictness_on_data_type" {
 			t.Errorf("~~~~~~~\nE#148MXP - ==> [[ERROR]] <== Could not get UPDATED VALUE\nErr: %v \nTyp: %v \nValue : %v\n", getErr, typ, val)
 		} else {
@@ -1842,7 +1842,7 @@ func TestSetValueInJsonObjectByJPath(t *testing.T) {
 		t.Errorf("~~~~~~~\nE#148N0N - Failed. Error: %v", setErr)
 	} else {
 		// Check what we got there
-		typ, val, getErr := jo.GetValueFromJsonObjectByJPath("obj.arr2.[1].nested.[3].[4]")
+		typ, val, getErr := jo.GetValueByJPath("obj.arr2.[1].nested.[3].[4]")
 		if getErr.IsNotBlank() || (typ != TypeString) || val != "appendStringToArrayOfArrays_no_strictness_on_data_type" {
 			t.Errorf("~~~~~~~\nE#148N0P - ==> [[ERROR]] <== Could not get UPDATED VALUE\nErr: %v \nTyp: %v \nValue : %v\n", getErr, typ, val)
 		} else {
@@ -1860,7 +1860,7 @@ func TestSetValueInJsonObjectByJPath(t *testing.T) {
 		t.Errorf("~~~~~~~\nE#148N2I - Failed. Error: %v", setErr)
 	} else {
 		// Check what we got there
-		typ, val, getErr := jo.GetValueFromJsonObjectByJPath("obj.arr2.[1].nested.[3].[2].[4]")
+		typ, val, getErr := jo.GetValueByJPath("obj.arr2.[1].nested.[3].[2].[4]")
 		if getErr.IsNotBlank() || (typ != "float64") || val != 12.21 {
 			t.Errorf("~~~~~~~\nE#148N2K - ==> [[ERROR]] <== Could not get UPDATED VALUE\nErr: %v \nTyp: %v \nValue : %v\n", getErr, typ, val)
 		} else {
@@ -1878,7 +1878,7 @@ func TestSetValueInJsonObjectByJPath(t *testing.T) {
 		t.Errorf("~~~~~~~\nE#148N6Z - Failed. Error: %v", setErr)
 	} else {
 		// Check what we got there
-		typ, val, getErr := jo.GetValueFromJsonObjectByJPath("obj.arr2.[1].nested.[3].[2].[4]")
+		typ, val, getErr := jo.GetValueByJPath("obj.arr2.[1].nested.[3].[2].[4]")
 		if getErr.IsNotBlank() || (typ != TypeString) || val != "with 5 elements " {
 			t.Errorf("~~~~~~~\nE#148N72 - ==> [[ERROR]] <== Could not get UPDATED VALUE\nErr: %v \nTyp: %v \nValue : %v\n", getErr, typ, val)
 		} else {
@@ -1897,7 +1897,7 @@ func TestSetValueInJsonObjectByJPath(t *testing.T) {
 		t.Errorf("~~~~~~~\nE#14BK3Q - Failed. Error: %v", setErr)
 	} else {
 		// Check what we got there
-		typ, val, getErr := jo.GetValueFromJsonObjectByJPath("newTopLevelKey")
+		typ, val, getErr := jo.GetValueByJPath("newTopLevelKey")
 		if getErr.IsNotBlank() || (typ != TypeString) || val != "newTopLevelValue" {
 			t.Errorf("~~~~~~~\nE#14BK4B - ==> [[ERROR]] <== Could not get UPDATED VALUE\nErr: %v \nTyp: %v \nValue : %v\n", getErr, typ, val)
 		} else {
@@ -1915,7 +1915,7 @@ func TestSetValueInJsonObjectByJPath(t *testing.T) {
 		t.Errorf("~~~~~~~\nE#14BK8C - Failed. Error: %v", setErr)
 	} else {
 		// Check what we got there
-		typ, val, getErr := jo.GetValueFromJsonObjectByJPath("arrObjs.[0].newKey")
+		typ, val, getErr := jo.GetValueByJPath("arrObjs.[0].newKey")
 		if getErr.IsNotBlank() || (typ != TypeString) || val != "newValue" {
 			t.Errorf("~~~~~~~\nE#14BK8E - ==> [[ERROR]] <== Could not get UPDATED VALUE\nErr: %v \nTyp: %v \nValue : %v\n", getErr, typ, val)
 		} else {
@@ -1933,7 +1933,7 @@ func TestSetValueInJsonObjectByJPath(t *testing.T) {
 		t.Errorf("~~~~~~~\nE#14BKB4 - Failed. Error: %v", setErr)
 	} else {
 		// Check what we got there
-		typ, val, getErr := jo.GetValueFromJsonObjectByJPath("arrObjs.[1].moreArrays.[1].newName")
+		typ, val, getErr := jo.GetValueByJPath("arrObjs.[1].moreArrays.[1].newName")
 		if getErr.IsNotBlank() || (typ != TypeString) || val != "Vaibhav" {
 			t.Errorf("~~~~~~~\nE#14BKB7 - ==> [[ERROR]] <== Could not get UPDATED VALUE\nErr: %v \nTyp: %v \nValue : %v\n", getErr, typ, val)
 		} else {
@@ -1951,7 +1951,7 @@ func TestSetValueInJsonObjectByJPath(t *testing.T) {
 		t.Errorf("~~~~~~~\nE#14BKEQ - Failed. Error: %v", setErr)
 	} else {
 		// Check what we got there
-		typ, val, getErr := jo.GetValueFromJsonObjectByJPath("obj.newEmail")
+		typ, val, getErr := jo.GetValueByJPath("obj.newEmail")
 		if getErr.IsNotBlank() || (typ != TypeString) || val != "hi@vaibhavkaushal.com" {
 			t.Errorf("~~~~~~~\nE#14BKES - ==> [[ERROR]] <== Could not get UPDATED VALUE\nErr: %v \nTyp: %v \nValue : %v\n", getErr, typ, val)
 		} else {
@@ -1969,7 +1969,7 @@ func TestSetValueInJsonObjectByJPath(t *testing.T) {
 		t.Errorf("~~~~~~~\nE#14BKGY - Failed. Error: %v", setErr)
 	} else {
 		// Check what we got there
-		typ, val, getErr := jo.GetValueFromJsonObjectByJPath("obj.newFloat")
+		typ, val, getErr := jo.GetValueByJPath("obj.newFloat")
 		if getErr.IsNotBlank() || (typ != "float64") || val != 909.808 {
 			t.Errorf("~~~~~~~\nE#14BKH0 - ==> [[ERROR]] <== Could not get UPDATED VALUE\nErr: %v \nTyp: %v \nValue : %v\n", getErr, typ, val)
 		} else {
@@ -1987,7 +1987,7 @@ func TestSetValueInJsonObjectByJPath(t *testing.T) {
 		t.Errorf("~~~~~~~\nE#14BKOJ - Failed. Error: %v", setErr)
 	} else {
 		// Check what we got there
-		typ, val, getErr := jo.GetValueFromJsonObjectByJPath("obj.arr2.[1].newNumericString")
+		typ, val, getErr := jo.GetValueByJPath("obj.arr2.[1].newNumericString")
 		if getErr.IsNotBlank() || (typ != TypeString) || val != "909.808" {
 			t.Errorf("~~~~~~~\nE#14BKOL - ==> [[ERROR]] <== Could not get UPDATED VALUE\nErr: %v \nTyp: %v \nValue : %v\n", getErr, typ, val)
 		} else {
@@ -2005,7 +2005,7 @@ func TestSetValueInJsonObjectByJPath(t *testing.T) {
 		t.Errorf("~~~~~~~\nE#14BKRQ - Failed. Error: %v", setErr)
 	} else {
 		// Check what we got there
-		typ, val, getErr := jo.GetValueFromJsonObjectByJPath("obj.nestedObj.child0.child1.child2.finalChild.creator")
+		typ, val, getErr := jo.GetValueByJPath("obj.nestedObj.child0.child1.child2.finalChild.creator")
 		if getErr.IsNotBlank() || (typ != TypeString) || val != "Vaibhav Kaushal" {
 			t.Errorf("~~~~~~~\nE#14BKRS - ==> [[ERROR]] <== Could not get UPDATED VALUE\nErr: %v \nTyp: %v \nValue : %v\n", getErr, typ, val)
 		} else {
@@ -2025,7 +2025,7 @@ func TestSetValueInJsonObjectByJPath(t *testing.T) {
 		t.Errorf("~~~~~~~\nE#1PFF6O - Failed. Error: %v", setErr)
 	} else {
 		// Check what we got there
-		typ, val, getErr := jo.GetValueFromJsonObjectByJPath("obj.somenewObj.somearr.[3].someNewObj.anotherArr.[8].field")
+		typ, val, getErr := jo.GetValueByJPath("obj.somenewObj.somearr.[3].someNewObj.anotherArr.[8].field")
 		if getErr.IsNotBlank() || (typ != TypeString) || val != "hello" {
 			t.Errorf("~~~~~~~\nE#1PFF7E - ==> [[ERROR]] <== Could not get UPDATED VALUE\nErr: %v \nTyp: %v \nValue : %v\n", getErr, typ, val)
 		} else {
@@ -2044,7 +2044,7 @@ func TestSetValueInJsonObjectByJPath(t *testing.T) {
 		t.Errorf("~~~~~~~\nE#1PFFB4 - Failed. Error: %v", setErr)
 	} else {
 		// Check what we got there
-		typ, val, getErr := jo.GetValueFromJsonObjectByJPath("obj.somenewObj.somearr.[3].someNewObj.anotherArr.[7]")
+		typ, val, getErr := jo.GetValueByJPath("obj.somenewObj.somearr.[3].someNewObj.anotherArr.[7]")
 		if getErr.IsNotBlank() || (typ != TypeString) || val != "hello_again" {
 			t.Errorf("~~~~~~~\nE#1PFFB8 - ==> [[ERROR]] <== Could not get UPDATED VALUE\nErr: %v \nTyp: %v \nValue : %v\n", getErr, typ, val)
 		} else {
@@ -2052,7 +2052,7 @@ func TestSetValueInJsonObjectByJPath(t *testing.T) {
 		}
 
 		// Check if the previous value exists as well
-		typ, val, getErr = jo.GetValueFromJsonObjectByJPath("obj.somenewObj.somearr.[3].someNewObj.anotherArr.[8].field")
+		typ, val, getErr = jo.GetValueByJPath("obj.somenewObj.somearr.[3].someNewObj.anotherArr.[8].field")
 		if getErr.IsNotBlank() || (typ != TypeString) || val != "hello" {
 			t.Errorf("~~~~~~~\nE#1PFFD3 - ==> [[ERROR]] <== Could not get UPDATED VALUE\nErr: %v \nTyp: %v \nValue : %v\n", getErr, typ, val)
 		} else {
@@ -2071,7 +2071,7 @@ func TestSetValueInJsonObjectByJPath(t *testing.T) {
 		t.Errorf("~~~~~~~\nE#1PFFMF - Failed. Error: %v", setErr)
 	} else {
 		// Check what we got there
-		typ, val, getErr := jo.GetValueFromJsonObjectByJPath("obj.somenewObj.somearr.[3].someNewObj.anotherNestedObj")
+		typ, val, getErr := jo.GetValueByJPath("obj.somenewObj.somearr.[3].someNewObj.anotherNestedObj")
 		if getErr.IsNotBlank() || (typ != TypeFloat64) || val != 87.2 {
 			t.Errorf("~~~~~~~\nE#1PFFRW - ==> [[ERROR]] <== Could not get UPDATED VALUE\nErr: %v \nTyp: %v \nValue : %v\n", getErr, typ, val)
 		} else {
@@ -2079,7 +2079,7 @@ func TestSetValueInJsonObjectByJPath(t *testing.T) {
 		}
 
 		// Check if previous values are still there
-		typ, val, getErr = jo.GetValueFromJsonObjectByJPath("obj.somenewObj.somearr.[3].someNewObj.anotherArr.[7]")
+		typ, val, getErr = jo.GetValueByJPath("obj.somenewObj.somearr.[3].someNewObj.anotherArr.[7]")
 		if getErr.IsNotBlank() || (typ != TypeString) || val != "hello_again" {
 			t.Errorf("~~~~~~~\nE#1PFFB8 - ==> [[ERROR]] <== Could not get UPDATED VALUE\nErr: %v \nTyp: %v \nValue : %v\n", getErr, typ, val)
 		} else {
@@ -2087,7 +2087,7 @@ func TestSetValueInJsonObjectByJPath(t *testing.T) {
 		}
 
 		// Check if the previous value exists as well
-		typ, val, getErr = jo.GetValueFromJsonObjectByJPath("obj.somenewObj.somearr.[3].someNewObj.anotherArr.[8].field")
+		typ, val, getErr = jo.GetValueByJPath("obj.somenewObj.somearr.[3].someNewObj.anotherArr.[8].field")
 		if getErr.IsNotBlank() || (typ != TypeString) || val != "hello" {
 			t.Errorf("~~~~~~~\nE#1PFFMR - ==> [[ERROR]] <== Could not get UPDATED VALUE\nErr: %v \nTyp: %v \nValue : %v\n", getErr, typ, val)
 		} else {
@@ -2119,7 +2119,7 @@ func TestSetValueInJsonObjectByJPath(t *testing.T) {
 		t.Errorf("~~~~~~~\nE#1PFF6O - Failed. Error: %v", setErr)
 	} else {
 		// Check what we got there
-		typ, val, getErr := jo.GetValueFromJsonObjectByJPath("obj.somenewObj.somearr.[3].someNewObj.composite")
+		typ, val, getErr := jo.GetValueByJPath("obj.somenewObj.somearr.[3].someNewObj.composite")
 		if getErr.IsNotBlank() || (typ != "object") {
 			t.Errorf("~~~~~~~\nE#1SCBY2 - ==> [[ERROR]] <== Could not get UPDATED VALUE\nErr: %v \nTyp: %v \nValue : %v\n", getErr, typ, val)
 		} else {
@@ -2127,7 +2127,7 @@ func TestSetValueInJsonObjectByJPath(t *testing.T) {
 		}
 
 		// Check that we have the nested value also accessible
-		typ, val, getErr = jo.GetValueFromJsonObjectByJPath("obj.somenewObj.somearr.[3].someNewObj.composite.key2")
+		typ, val, getErr = jo.GetValueByJPath("obj.somenewObj.somearr.[3].someNewObj.composite.key2")
 		if getErr.IsNotBlank() || (typ != TypeString) || val != "Value2" {
 			t.Errorf("~~~~~~~\nE#1SCGOI - ==> [[ERROR]] <== Could not get UPDATED VALUE\nErr: %v \nTyp: %v \nValue : %v\n", getErr, typ, val)
 		} else {
@@ -2135,7 +2135,7 @@ func TestSetValueInJsonObjectByJPath(t *testing.T) {
 		}
 
 		// Check that we have the nested value also accessible
-		typ, val, getErr = jo.GetValueFromJsonObjectByJPath("obj.somenewObj.somearr.[3].someNewObj.composite.key3.nest2")
+		typ, val, getErr = jo.GetValueByJPath("obj.somenewObj.somearr.[3].someNewObj.composite.key3.nest2")
 		if getErr.IsNotBlank() || (typ != TypeFloat64) || val != float64(12345) {
 			t.Errorf("~~~~~~~\nE#1SCGPR - ==> [[ERROR]] <== Could not get UPDATED VALUE\nErr: %v \nTyp: %v \nValue : %v\n", getErr, typ, val)
 		} else {
@@ -2154,7 +2154,7 @@ func TestCreateNonExistingObject(t *testing.T) {
 	if err != nil {
 		t.Error("E#1P9WMG - Failed to set value of nonexisting object", err)
 	}
-	_, value, appErr := json.GetValueFromJsonObjectByJPath("obj.noneixistent.key1.key2.kye3.key4.key5")
+	_, value, appErr := json.GetValueByJPath("obj.noneixistent.key1.key2.kye3.key4.key5")
 	if !appErr.IsBlank() {
 		t.Error("E#1P9WMO - Failed to get value of nonexisting object", err)
 	}
@@ -2170,7 +2170,7 @@ func TestCreateNonExistingObjectWithArray(t *testing.T) {
 	if err != nil {
 		t.Error("E#1P9WN7 - Failed to set value of nonexisting object", err)
 	}
-	_, value, appErr := json.GetValueFromJsonObjectByJPath("obj.noneixistent.key1.[1]")
+	_, value, appErr := json.GetValueByJPath("obj.noneixistent.key1.[1]")
 	if !appErr.IsBlank() {
 		t.Error("E#1P9WNC - Failed to get value of nonexisting object", appErr)
 	}
@@ -2186,7 +2186,7 @@ func TestOverrideObjectWithArray(t *testing.T) {
 	if err != nil {
 		t.Error("E#1P9WNX - Failed to set value of nonexisting object", err)
 	}
-	_, value, appErr := json.GetValueFromJsonObjectByJPath("obj.nestedObj.[1]")
+	_, value, appErr := json.GetValueByJPath("obj.nestedObj.[1]")
 	if !appErr.IsBlank() {
 		t.Error("E#1P9WO3 - Failed to get value of nonexisting object", appErr)
 	}
@@ -2202,7 +2202,7 @@ func TestCreateNonExistingContinuosArray(t *testing.T) {
 	if err != nil {
 		t.Error("Failed to set value of nonexisting object", err)
 	}
-	_, value, appErr := json.GetValueFromJsonObjectByJPath("obj.nestedObj.[3].[3].[3]")
+	_, value, appErr := json.GetValueByJPath("obj.nestedObj.[3].[3].[3]")
 	if !appErr.IsBlank() {
 		t.Error("Failed to get value of nonexisting object", appErr)
 	}
@@ -2219,7 +2219,7 @@ func TestComplexNonExistingPath(t *testing.T) {
 	if err != nil {
 		t.Error("Failed to set value of nonexisting object", err)
 	}
-	_, value, appErr := json.GetValueFromJsonObjectByJPath("obj.somenewObj.somearr.[3].someNewObj.anotherArr.[8].field")
+	_, value, appErr := json.GetValueByJPath("obj.somenewObj.somearr.[3].someNewObj.anotherArr.[8].field")
 	if !appErr.IsBlank() {
 		t.Error("E#1RTTR8 - Failed to get value of nonexisting object", appErr)
 	}
@@ -2240,7 +2240,7 @@ func TestComplexNonExistingPathWithReceiver(t *testing.T) {
 		return
 	}
 
-	_, value, appErr := jsonObj.GetValueFromJsonObjectByJPath("obj.somenewObj.somearr.[3].someNewObj.anotherArr.[8].field")
+	_, value, appErr := jsonObj.GetValueByJPath("obj.somenewObj.somearr.[3].someNewObj.anotherArr.[8].field")
 	if !appErr.IsBlank() {
 		t.Error("E#1RTTSK - Failed to get value of nonexisting object", appErr)
 	}

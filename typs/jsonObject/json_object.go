@@ -199,12 +199,12 @@ func (j *Typ) GetTopLevelElement(key string) any {
 	return nil
 }
 
-// GetValueFromJsonObjectByJPath returns 3 values, in that order: dataType, value and an appError
+// GetValueByJPath returns 3 values, in that order: dataType, value and an appError
 // If there is any error when trying to get the value, the appError value contains the error and in that case
 // the other two values should be ignored. In other cases the dataType indicates data type detected
 // and the value can then be safely casted using value.(correspondingGoDataType) expression
 // where `correspondingGoDataType` is the data type corresponding to dataType.
-func (j *Typ) GetValueFromJsonObjectByJPath(path string) (string, any, appError.Typ) {
+func (j *Typ) GetValueByJPath(path string) (string, any, appError.Typ) {
 	vTyp := TypeUnknown
 	firstLetter := ""
 	lastLetter := ""
