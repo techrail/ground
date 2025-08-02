@@ -32,7 +32,6 @@ import (
 const (
 	TypeAny          = "any"
 	TypeInt          = "int"
-	TypeInt64        = "int64"
 	TypeFloat64      = "float64"
 	TypeString       = "string"
 	TypeBool         = "bool"
@@ -236,8 +235,6 @@ func (j *Typ) GetValueByJPath(path string) (string, any, appError.Typ) {
 			return TypeBool
 		case int:
 			return TypeInt
-		case int64:
-			return TypeInt64
 		case float64:
 			return TypeFloat64
 		case string:
@@ -565,8 +562,6 @@ func SetValueAndOverrideInJsonObjectByJPath(obj Typ, path string, valueToSet any
 			return TypeBool
 		case int:
 			return TypeInt
-		case int64:
-			return TypeInt64
 		case float64:
 			return TypeFloat64
 		case string:
