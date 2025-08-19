@@ -1,12 +1,13 @@
 package typs
 
 import (
-	"math/rand"
+	// "math/rand"
+	"crypto/rand"
+	`math/big`
 	"net/mail"
 	"regexp"
 	"strconv"
 	"strings"
-	"time"
 )
 
 // The following constants are to be used only by this package and are thus not exported
@@ -18,11 +19,12 @@ const specialCharBytes = "/}%,]'?!<_~@;{`&:^+|.*#$()-=[>\""
 
 // GetRandomAlphaString will get a n character long random alphabetic string
 func GetRandomAlphaString(n int) string {
+	// SECURE: uses crypto/rand
 	letterBytes := smallLetterBytes + capitalLetterBytes
 	b := make([]byte, n)
 	for i := range b {
-		r := rand.New(rand.NewSource(time.Now().UTC().UnixNano()))
-		b[i] = letterBytes[r.Intn(len(letterBytes))]
+		num, _ := rand.Int(rand.Reader, big.NewInt(int64(len(letterBytes))))
+		b[i] = letterBytes[num.Int64()]
 	}
 	return string(b)
 }
@@ -31,8 +33,8 @@ func GetRandomAlphaString(n int) string {
 func GetRandomNumericString(n int) string {
 	b := make([]byte, n)
 	for i := range b {
-		r := rand.New(rand.NewSource(time.Now().UTC().UnixNano()))
-		b[i] = digitBytes[r.Intn(len(digitBytes))]
+		num, _ := rand.Int(rand.Reader, big.NewInt(int64(len(digitBytes))))
+		b[i] = digitBytes[num.Int64()]
 	}
 	return string(b)
 }
@@ -41,8 +43,8 @@ func GetRandomNumericString(n int) string {
 func GetRandomSpecialCharacterString(n int) string {
 	b := make([]byte, n)
 	for i := range b {
-		r := rand.New(rand.NewSource(time.Now().UTC().UnixNano()))
-		b[i] = specialCharBytes[r.Intn(len(specialCharBytes))]
+		num, _ := rand.Int(rand.Reader, big.NewInt(int64(len(specialCharBytes))))
+		b[i] = specialCharBytes[num.Int64()]
 	}
 	return string(b)
 }
@@ -52,8 +54,8 @@ func GetRandomString(n int) string {
 	s := capitalLetterBytes + smallLetterBytes + digitBytes + specialCharBytes
 	b := make([]byte, n)
 	for i := range b {
-		r := rand.New(rand.NewSource(time.Now().UTC().UnixNano()))
-		b[i] = s[r.Intn(len(s))]
+		num, _ := rand.Int(rand.Reader, big.NewInt(int64(len(s))))
+		b[i] = s[num.Int64()]
 	}
 	return string(b)
 }
