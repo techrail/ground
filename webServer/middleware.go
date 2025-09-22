@@ -12,5 +12,5 @@ func chain(h fasthttp.RequestHandler, m ...Middleware) fasthttp.RequestHandler {
 		return h
 	}
 	// otherwise nest the handler functions
-	return m[0](chain(h, m[1:len(m)]...))
+	return m[0](chain(h, m[1:]...))
 }

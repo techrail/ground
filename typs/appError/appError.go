@@ -12,7 +12,7 @@ type Typ struct {
 	Code             string // LMID
 	Message          string // The actual error message
 	HttpResponseCode int    // In case we are trying to use this type for returning a network error
-	DevMsg           string // In case we are trying to use this type for returning a network error
+	DevMsg           string // Message meant for developers only (usually makes sense against a network error)
 	WrappedError     *Typ   // Any wrapped errors that we want to embed in this error
 	ExtraData        string // When we need to pass more values (errors are values (as said by Rob Pike))
 }
@@ -37,7 +37,7 @@ func (e Typ) Error() string {
 }
 
 func (e Typ) String() string {
-	retVal := fmt.Sprintf("%s#%s - %s", e.Level.ShortStr(), e.Code, e.Message)
+	retVal := fmt.Sprintf("%s#%s: %s", e.Level.ShortStr(), e.Code, e.Message)
 	if e.WrappedError != nil {
 		retVal = retVal + "\n  [Wraps error ==>]\n" + e.WrappedError.String()
 	}

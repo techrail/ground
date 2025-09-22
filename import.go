@@ -10,7 +10,7 @@ import (
 	"github.com/techrail/ground/webServer"
 )
 
-func GiveMeACodeGenerator(config dbCodegen.CodegenConfig) (dbCodegen.Generator, appError.Typ) {
+func GiveMeACodeGenerator(config dbCodegen.CodegenConfig) (*dbCodegen.Generator, appError.Typ) {
 	return dbCodegen.NewCodeGenerator(config)
 }
 
@@ -35,7 +35,8 @@ func GiveMeANewDirectToDbBarkClientCustomSchemaTable(dbUrl, schemaName, tableNam
 }
 
 func GiveMeABarkRemoteServerClient(remoteServerUrl, defaultLogLvl, svcName, sessName string, enableSlog bool,
-	enableBulkSend bool) logger.Logger {
+	enableBulkSend bool,
+) logger.Logger {
 	return logger.NewBarkClient(remoteServerUrl, defaultLogLvl, svcName, sessName, enableSlog, enableBulkSend)
 }
 
