@@ -1,4 +1,4 @@
-package dbCodegen
+package dbcodegen
 
 import (
 	"fmt"
@@ -369,7 +369,7 @@ func (g *Generator) buildTableInsertMethod(table DbTable, importList []string) (
 	insertCode += "return nil"
 	insertCode += "}\n\n"
 
-	//importList = g.addToImports(g.Config.DbModelPackageName+"/resources", importList)
+	// importList = g.addToImports(g.Config.DbModelPackageName+"/resources", importList)
 	importList = g.addToImports("fmt", importList)
 	importList = g.addToImports("errors", importList)
 	return insertCode, importList
@@ -460,7 +460,7 @@ func (g *Generator) buildTableUpdateMethodBySingleIndex(table DbTable, index DbI
 	updateCode += "\nreturn nil\n"
 	updateCode += "}\n\n"
 
-	//importList = g.addToImports(baseGoModuleName+"/resources", importList)
+	// importList = g.addToImports(baseGoModuleName+"/resources", importList)
 
 	return updateCode, importList
 }
@@ -553,7 +553,7 @@ func (g *Generator) buildTableUpdateMethod(table DbTable, importList []string) (
 	updateCode += "\nreturn nil\n"
 	updateCode += "}\n\n"
 
-	//importList = g.addToImports(baseGoModuleName+"/resources", importList)
+	// importList = g.addToImports(baseGoModuleName+"/resources", importList)
 
 	return updateCode, importList
 }
@@ -590,7 +590,7 @@ func (g *Generator) buildTableDeleteMethod(table DbTable, importList []string) (
 	deleteCode += "\nreturn nil\n"
 	deleteCode += "}\n\n"
 
-	//importList = addToImports(baseGoModuleName+"/resources", importList)
+	// importList = addToImports(baseGoModuleName+"/resources", importList)
 
 	return deleteCode, importList
 }
@@ -761,7 +761,7 @@ func (g *Generator) buildSingleTableFwdFkeyFunc(table DbTable, fkey DbFkInfo, im
 			}
 		}
 	}
-	//fmt.Println("E#1C7C24 -", funcNamePart)
+	// fmt.Println("E#1C7C24 -", funcNamePart)
 
 	tabFKeyMethod += fmt.Sprintf("func (%v *%v) Get%vFromDbBy%v(getFromMainDb ...bool) (%v, error) {\n",
 		table.variableName(), table.fullyQualifiedStructName(), targetTable.GoNameSingular, funcNamePart, targetTable.fullyQualifiedStructName())
@@ -860,10 +860,10 @@ func (g *Generator) buildSingleTableRevFkeyFunc(table DbTable, rFkey DbRevFkInfo
 			}
 		}
 	}
-	//fmt.Println("E#1PAJS9 -", funcNamePart)
+	// fmt.Println("E#1PAJS9 -", funcNamePart)
 
-	//tabFKeyMethod += "/*\n"
-	//tabFKeyMethod += fmt.Sprintf("// TargetTable %v Columns %v are unique or not: %v\n", targetTable.Name, funcNamePart, rFkey.UniqueIndex)
+	// tabFKeyMethod += "/*\n"
+	// tabFKeyMethod += fmt.Sprintf("// TargetTable %v Columns %v are unique or not: %v\n", targetTable.Name, funcNamePart, rFkey.UniqueIndex)
 	if rFkey.UniqueIndex {
 		tabFKeyMethod += fmt.Sprintf("func (%v *%v) GetConnected%vFromDbBy%v(getFromMainDb ...bool) (%v, error) {\n",
 			table.variableName(), table.fullyQualifiedStructName(), targetTable.GoNameSingular, funcNamePart, targetTable.fullyQualifiedStructName())
@@ -920,7 +920,7 @@ func (g *Generator) buildSingleTableRevFkeyFunc(table DbTable, rFkey DbRevFkInfo
 		tabFKeyMethod += fmt.Sprintf("return connected%v, nil\n", targetTable.GoNamePlural)
 		tabFKeyMethod += "}\n"
 	}
-	//tabFKeyMethod += "*/\n"
+	// tabFKeyMethod += "*/\n"
 
 	return tabFKeyMethod, importList
 }

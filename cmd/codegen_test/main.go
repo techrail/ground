@@ -5,7 +5,7 @@ import (
 	"net/http"
 	_ "net/http/pprof"
 
-	"github.com/techrail/ground/dbCodegen"
+	"github.com/techrail/ground/dbcodegen"
 )
 
 func main() {
@@ -13,7 +13,7 @@ func main() {
 		http.ListenAndServe("localhost:8181", nil)
 	}()
 
-	cnf := dbCodegen.CodegenConfig{
+	cnf := dbcodegen.CodegenConfig{
 		ModelsContainerPackage: "github.com/techrail/ground/tmp",
 		DbModelPackageName:     "mainDb",
 		DbModelPackagePath:     "/Users/vaibhavkaushal/code/Techrail/ground/tmp/mainDb",
@@ -27,7 +27,7 @@ func main() {
 		InsertCreatedAtInCode:    true,
 		BuildUpdateByUniqueIndex: true,
 		ColCommentSeparator:      "(^_^)",
-		Enumerations: map[string]dbCodegen.EnumDefinition{
+		Enumerations: map[string]dbcodegen.EnumDefinition{
 			"user_type": {
 				Name:     "user_type",
 				Exported: true,
@@ -41,7 +41,7 @@ func main() {
 			},
 		},
 	}
-	g, e := dbCodegen.NewCodeGenerator(cnf)
+	g, e := dbcodegen.NewCodeGenerator(cnf)
 	if e.IsNotBlank() {
 		fmt.Printf("I#1NPKZR - Some error when creating new codegenerator: %v\n", e)
 	}

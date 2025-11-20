@@ -3,15 +3,15 @@ package ground
 import (
 	"github.com/techrail/ground/bgRoutine"
 	"github.com/techrail/ground/cache"
-	"github.com/techrail/ground/dbCodegen"
+	"github.com/techrail/ground/dbcodegen"
 	"github.com/techrail/ground/logger"
 	"github.com/techrail/ground/typs/appError"
 	"github.com/techrail/ground/typs/jsonObject"
 	"github.com/techrail/ground/webServer"
 )
 
-func GiveMeACodeGenerator(config dbCodegen.CodegenConfig) (dbCodegen.Generator, appError.Typ) {
-	return dbCodegen.NewCodeGenerator(config)
+func GiveMeACodeGenerator(config dbcodegen.CodegenConfig) (dbcodegen.Generator, appError.Typ) {
+	return dbcodegen.NewCodeGenerator(config)
 }
 
 func GiveMeAWebServer() *webServer.FastHttpServer {
@@ -35,7 +35,8 @@ func GiveMeANewDirectToDbBarkClientCustomSchemaTable(dbUrl, schemaName, tableNam
 }
 
 func GiveMeABarkRemoteServerClient(remoteServerUrl, defaultLogLvl, svcName, sessName string, enableSlog bool,
-	enableBulkSend bool) logger.Logger {
+	enableBulkSend bool,
+) logger.Logger {
 	return logger.NewBarkClient(remoteServerUrl, defaultLogLvl, svcName, sessName, enableSlog, enableBulkSend)
 }
 

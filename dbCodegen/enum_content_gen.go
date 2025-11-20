@@ -1,4 +1,4 @@
-package dbCodegen
+package dbcodegen
 
 import (
 	"fmt"
@@ -25,7 +25,7 @@ func (g *Generator) buildEnumContentString(enum EnumDefinition, importList []str
 	// Type to string
 	enumContentStr += fmt.Sprintf("func (t %v) String() string {\n", enumTypeName)
 	enumContentStr += fmt.Sprintf("switch(t) {\n")
-	for name, _ := range enum.Mappings {
+	for name := range enum.Mappings {
 		enumContentStr += fmt.Sprintf("case %v: \n return \"%v\"\n", name, name)
 	}
 	enumContentStr += fmt.Sprintf("case Undefined: \n fallthrough \n")
@@ -43,7 +43,7 @@ func (g *Generator) buildEnumContentString(enum EnumDefinition, importList []str
 	}
 
 	enumContentStr += fmt.Sprintf("switch(input) {\n")
-	for name, _ := range enum.Mappings {
+	for name := range enum.Mappings {
 		enumContentStr += fmt.Sprintf("case \"%v\": \n return %v\n", name, name)
 	}
 	enumContentStr += fmt.Sprintf("case \"Undefined\": \n fallthrough \n")

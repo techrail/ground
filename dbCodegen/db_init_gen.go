@@ -1,4 +1,4 @@
-package dbCodegen
+package dbcodegen
 
 import "fmt"
 
@@ -29,6 +29,11 @@ func (g *Generator) buildInitCode(importList []string) (string, []string) {
 		initCode += "}\n"
 	}
 
+	// Let us make the structure which will hold the enumaerations
+
+	initCode += "type enums struct { \n"
+	for k, v := range g.Enums {
+	}
 	initCode += "}\n"
 
 	return initCode, importList

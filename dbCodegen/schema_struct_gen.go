@@ -1,4 +1,4 @@
-package dbCodegen
+package dbcodegen
 
 import (
 	"fmt"
@@ -21,7 +21,7 @@ func (g *Generator) buildSchemaStructString(schemaName string, importList []stri
 			panic(fmt.Sprintf("P#1OKZHA - Table %v not found in schema %v when expected", tableName, schema.Name))
 		}
 
-		//fmt.Printf("Schema: %v | Table: %v \n", schema.Name, table.Name)
+		// fmt.Printf("Schema: %v | Table: %v \n", schema.Name, table.Name)
 
 		//tableComment := ""
 		//if table.Comment != "" {

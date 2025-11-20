@@ -1,4 +1,4 @@
-package dbCodegen
+package dbcodegen
 
 const tableInfoQuery = `
 SELECT pg_stat_user_tables.relname                         AS table_name,
@@ -38,6 +38,7 @@ JOIN   pg_attribute a ON a.attrelid = i.indrelid
 WHERE  i.indrelid = '%v'::regclass
 AND    i.indisprimary;
 `
+
 const tableIndexQuery = `
 SELECT n.nspname                                  AS schema_name,
 	   t.relname                                  AS table_name,
@@ -68,6 +69,7 @@ ORDER BY n.nspname,
 		 t.relname,
 		 ix.relname;	
 `
+
 const tableForeignKeyQuery = `
 SELECT kcu.table_name       AS from_table,
 	   kcu.table_schema     AS from_schema,

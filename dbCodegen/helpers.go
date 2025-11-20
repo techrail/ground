@@ -1,4 +1,4 @@
-package dbCodegen
+package dbcodegen
 
 import (
 	"fmt"

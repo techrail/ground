@@ -1,4 +1,4 @@
-package dbCodegen
+package dbcodegen
 
 import (
 	"database/sql"
@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"go/format"
 	"os"
+	"regexp"
 	"slices"
 	"strings"
 	"sync"
@@ -16,8 +17,6 @@ import (
 	pluralize "github.com/gertd/go-pluralize"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/jmoiron/sqlx"
-
-	"regexp"
 
 	"github.com/techrail/ground/typs/appError"
 )
@@ -32,7 +31,8 @@ func init() {
 		"case", "defer", "go", "map", "struct",
 		"chan", "else", "goto", "package", "switch",
 		"const", "fallthrough", "if", "range", "type",
-		"continue", "for", "import", "return", "var"}
+		"continue", "for", "import", "return", "var",
+	}
 }
 
 const DefaultMagicComment = "// MAGIC COMMENT (DO NOT EDIT): Please write any custom code only below this line.\n"
@@ -529,7 +529,7 @@ func (g *Generator) Generate() appError.Typ {
 	if err != nil {
 		panic(err)
 	}
-	var tables = map[string]DbTable{}
+	tables := map[string]DbTable{}
 	// We need to iterate over the list of columns and create DbTable instances,
 	for _, columnDetail := range columns {
 		// If the schema is not yet built, build it.
@@ -1198,7 +1198,7 @@ type db struct {
 	err = os.Mkdir(g.Config.DbModelPackagePath, 0777)
 	if err != nil {
 		// The flow usually gets here with "directory already exists" error. Remove comment to print the error.
-		//fmt.Printf("E#20QABN - Could not make the directory. Error: %v\n", err)
+		// fmt.Printf("E#20QABN - Could not make the directory. Error: %v\n", err)
 	}
 
 	outputFile, err = os.Create(fmt.Sprintf("%s/%s", g.Config.DbModelPackagePath, outputFileName))
@@ -1368,7 +1368,6 @@ func (g *Generator) validateConfig() appError.Typ {
 	}
 
 	return appError.BlankError
-
 }
 
 func isDbUrlValid(dbUrl string) bool {
