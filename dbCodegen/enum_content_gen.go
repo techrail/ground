@@ -16,7 +16,7 @@ func (g *Generator) buildEnumContentString(enum EnumDefinition, importList []str
 
 	enumContentStr += fmt.Sprintf("type %v int16\n", enumTypeName)
 	enumContentStr += "const(\n"
-	enumContentStr += fmt.Sprintf("Undefined %v = -1\n", enumTypeName)
+	enumContentStr += fmt.Sprintf("Undefined%v %v = -1\n", enumTypeName, enumTypeName)
 	for name, value := range enum.Mappings {
 		enumContentStr += fmt.Sprintf("%v %v = %v\n", name, enumTypeName, value)
 	}
@@ -28,8 +28,8 @@ func (g *Generator) buildEnumContentString(enum EnumDefinition, importList []str
 	for name := range enum.Mappings {
 		enumContentStr += fmt.Sprintf("case %v: \n return \"%v\"\n", name, name)
 	}
-	enumContentStr += fmt.Sprintf("case Undefined: \n fallthrough \n")
-	enumContentStr += fmt.Sprintf("default: \n return \"Undefined\"\n")
+	enumContentStr += fmt.Sprintf("case Undefined%v: \n fallthrough \n", enumTypeName)
+	enumContentStr += fmt.Sprintf("default: \n return \"Undefined%v\"\n", enumTypeName)
 	enumContentStr += fmt.Sprintf("}\n")
 	enumContentStr += fmt.Sprintf("}\n")
 
@@ -46,8 +46,8 @@ func (g *Generator) buildEnumContentString(enum EnumDefinition, importList []str
 	for name := range enum.Mappings {
 		enumContentStr += fmt.Sprintf("case \"%v\": \n return %v\n", name, name)
 	}
-	enumContentStr += fmt.Sprintf("case \"Undefined\": \n fallthrough \n")
-	enumContentStr += fmt.Sprintf("default: \n return Undefined\n")
+	enumContentStr += fmt.Sprintf("case \"Undefined%v\": \n fallthrough \n", enumTypeName)
+	enumContentStr += fmt.Sprintf("default: \n return Undefined%v\n", enumTypeName)
 	enumContentStr += fmt.Sprintf("}\n")
 	enumContentStr += "}\n"
 	enumContentStr += "\n"
@@ -61,7 +61,7 @@ func (g *Generator) buildEnumContentString(enum EnumDefinition, importList []str
 	enumContentStr += fmt.Sprintf("if %v {", groupBy3(inputComparisons, " || ", "\n\t"))
 	enumContentStr += fmt.Sprintf("return %v(input)\n", enumTypeName)
 	enumContentStr += fmt.Sprintf("}\n")
-	enumContentStr += fmt.Sprintf("return Undefined\n")
+	enumContentStr += fmt.Sprintf("return Undefined%v\n", enumTypeName)
 	enumContentStr += fmt.Sprintf("}\n")
 	enumContentStr += "\n"
 
@@ -71,7 +71,7 @@ func (g *Generator) buildEnumContentString(enum EnumDefinition, importList []str
 		importList = g.addToImports("database/sql/driver", importList)
 
 		enumContentStr += fmt.Sprintf("func (t %v) Value() (driver.Value, error) { \n", enumTypeName)
-		enumContentStr += fmt.Sprintf("if %vFromInt16(int16(t)) != Undefined {\n", enumTypeName)
+		enumContentStr += fmt.Sprintf("if %vFromInt16(int16(t)) != Undefined%v {\n", enumTypeName, enumTypeName)
 		enumContentStr += "return int16(t), nil \n"
 		enumContentStr += "}\n"
 		enumContentStr += "return -1, errors.New(\"E#" + newUniqueLmid() + " - Invalid value supplied for enumeration " + enumTypeName + "\")\n"

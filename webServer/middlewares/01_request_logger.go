@@ -1,3 +1,4 @@
+// Package middlewares contains a set of middlewares which might be reused by most people
 package middlewares
 
 import (

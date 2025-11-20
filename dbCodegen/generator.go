@@ -1,3 +1,5 @@
+// Package dbCodegen can return a code generator which you can use to generate code against
+// a PostgreSQL database.
 package dbcodegen
 
 import (
@@ -320,7 +322,7 @@ type rawIndexInfo struct {
 // For storing the result we get from the DB about column data
 var columns []rawCol
 
-func NewCodeGenerator(config CodegenConfig) (Generator, appError.Typ) {
+func NewCodeGenerator(config CodegenConfig) (*Generator, appError.Typ) {
 	g := Generator{
 		Config:       config,
 		pluralClient: pluralize.NewClient(),
@@ -331,14 +333,14 @@ func NewCodeGenerator(config CodegenConfig) (Generator, appError.Typ) {
 	err := g.validateConfig()
 
 	if err.IsNotBlank() {
-		return g, err
+		return &g, err
 	}
 
 	if strings.TrimSpace(config.MagicComment) == "" {
 		g.Config.MagicComment = DefaultMagicComment
 	}
 
-	return g, appError.BlankError
+	return &g, appError.BlankError
 }
 
 func (g *Generator) Generate() appError.Typ {
@@ -485,7 +487,7 @@ func (g *Generator) Generate() appError.Typ {
 			}
 		}
 
-		err = os.Mkdir(g.Config.DbModelPackagePath, 0777)
+		err = os.Mkdir(g.Config.DbModelPackagePath, 0o777)
 		if err != nil {
 			// fmt.Println("E#1OBP5N -", err)
 		}
@@ -918,7 +920,7 @@ func (g *Generator) Generate() appError.Typ {
 			}
 		}
 
-		err = os.Mkdir(g.Config.DbModelPackagePath, 0777)
+		err = os.Mkdir(g.Config.DbModelPackagePath, 0o777)
 		if err != nil {
 			// fmt.Println("E#1OBP5N -", err)
 		}
@@ -1024,7 +1026,7 @@ func (g *Generator) Generate() appError.Typ {
 				}
 			}
 
-			err = os.Mkdir(g.Config.DbModelPackagePath, 0777)
+			err = os.Mkdir(g.Config.DbModelPackagePath, 0o777)
 			if err != nil {
 				// fmt.Println("E#1OFXLN -", err)
 			}
@@ -1098,7 +1100,7 @@ func (g *Generator) Generate() appError.Typ {
 			fileContent = strings.ReplaceAll(fileContent, "//{{NETWORK_STRUCT}}", networkStructStr)
 			fileContent = strings.ReplaceAll(fileContent, "//{{MAGIC_COMMENT}}", g.Config.MagicComment)
 
-			err = os.Mkdir(g.Config.NetworkPackagePath, 0777)
+			err = os.Mkdir(g.Config.NetworkPackagePath, 0o777)
 			if err != nil {
 				fmt.Println("E#1RDF4N -", err)
 			}
@@ -1124,7 +1126,7 @@ func (g *Generator) Generate() appError.Typ {
 				}
 			}
 
-			err = os.Mkdir(g.Config.NetworkPackagePath, 0777)
+			err = os.Mkdir(g.Config.NetworkPackagePath, 0o777)
 			if err != nil {
 				// fmt.Println("E#1OFXLN -", err)
 			}
@@ -1166,6 +1168,7 @@ func (g *Generator) Generate() appError.Typ {
 	// Create the init file with the variable
 
 	initFileTemplate := `
+//{{PACKAGE_CONTENT}}
 //{{PACKAGE_NAME}}
 
 import (
@@ -1182,11 +1185,11 @@ type db struct {
 //{{INIT_CODE}}
 
 //{{MAGIC_COMMENT}}
-
 `
 
 	initCode, _ := g.buildInitCode([]string{})
 	fileContent = initFileTemplate
+	fileContent = strings.ReplaceAll(fileContent, "//{{PACKAGE_CONTENT}}", fmt.Sprintf("// Package %v contains the model code against the DB", g.Config.DbModelPackageName))
 	fileContent = strings.ReplaceAll(fileContent, "//{{PACKAGE_NAME}}", fmt.Sprintf("package %v", g.Config.DbModelPackageName))
 	fileContent = strings.ReplaceAll(fileContent, "//{{INIT_CODE}}", initCode)
 	fileContent = strings.ReplaceAll(fileContent, "//{{MAGIC_COMMENT}}", g.Config.MagicComment)
@@ -1195,7 +1198,7 @@ type db struct {
 	// IMPORTANT: I was here
 	outputFileName := "gen__init.go"
 
-	err = os.Mkdir(g.Config.DbModelPackagePath, 0777)
+	err = os.Mkdir(g.Config.DbModelPackagePath, 0o777)
 	if err != nil {
 		// The flow usually gets here with "directory already exists" error. Remove comment to print the error.
 		// fmt.Printf("E#20QABN - Could not make the directory. Error: %v\n", err)
