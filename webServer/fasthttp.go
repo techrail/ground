@@ -2,13 +2,15 @@ package webServer
 
 import (
 	"fmt"
+	"net"
+	"strconv"
+
 	"github.com/fasthttp/router"
+	"github.com/valyala/fasthttp"
+
 	"github.com/techrail/ground/typs/appError"
 	"github.com/techrail/ground/utils"
 	"github.com/techrail/ground/webServer/middlewares"
-	"github.com/valyala/fasthttp"
-	"net"
-	"strconv"
 )
 
 const (
@@ -135,6 +137,7 @@ func (s *FastHttpServer) Start() appError.Typ {
 	}
 
 	fn := func() appError.Typ {
+		fmt.Printf("I#21V8PC - About to start the `%v` server on port `%v`\n", s.Name, s.BindPort)
 		e := s.Server.Serve(listener)
 		if e == nil {
 			return appError.BlankError
@@ -142,7 +145,7 @@ func (s *FastHttpServer) Start() appError.Typ {
 			return appError.NewError(
 				appError.Error,
 				"1MHOPJ",
-				"Something went wrong when trying to start the server. Error: "+e.Error())
+				fmt.Sprintf("E#21V8RW - Can't start the %v server", s.Name))
 		}
 	}
 
