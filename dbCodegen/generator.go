@@ -255,8 +255,8 @@ type fkInfoFromDb struct {
 
 // EnumDefinition defines an enumeration in code which would ideally be saved in the DB
 type EnumDefinition struct {
-	Name              string           // Name of this enum
-	Exported          bool             // Enum to be used outside the DB package
+	Name string // Name of this enum
+	// Exported          bool             // Enum to be used outside the DB package
 	IsDbType          bool             // Is this enum supposed to be used in the DB?
 	Mappings          map[string]int16 // List of enumerations
 	DisableGeneration bool             // Disable the generation/update of this type (temporarily?)
@@ -412,10 +412,7 @@ func (g *Generator) Generate() appError.Typ {
 		enum.goName = getGoName(enum.Name)
 		enum.goNameSingular = g.pluralClient.Singular(enum.goName)
 		enum.goNamePlural = g.pluralClient.Plural(enum.goName)
-		enum.goTypeName = enum.goNameSingular
-		if !enum.Exported {
-			enum.goTypeName = lowerFirstChar(enum.goNameSingular)
-		}
+		enum.goTypeName = lowerFirstChar(enum.goNameSingular)
 
 		// Now set this to the generator
 		g.Enums[enum.Name] = enum

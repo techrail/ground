@@ -8,9 +8,9 @@ func (g *Generator) buildEnumContentString(enum EnumDefinition, importList []str
 	enumContentStr := ""
 
 	enumTypeName := lowerFirstChar(enum.goNameSingular)
-	if enum.Exported {
-		enumTypeName = enum.goNameSingular
-	}
+	// if enum.Exported {
+	// 	enumTypeName = enum.goNameSingular
+	// }
 
 	// Create the constants
 
@@ -36,11 +36,11 @@ func (g *Generator) buildEnumContentString(enum EnumDefinition, importList []str
 	enumContentStr += "\n"
 
 	// String to Type
-	if enum.Exported {
-		enumContentStr += fmt.Sprintf("func StringTo%v(input string) %v {\n", enumTypeName, enumTypeName)
-	} else {
-		enumContentStr += fmt.Sprintf("func stringTo%v(input string) %v {\n", enum.goNameSingular, enumTypeName)
-	}
+	// if enum.Exported {
+	enumContentStr += fmt.Sprintf("func StringTo%v(input string) %v {\n", enumTypeName, enumTypeName)
+	// } else {
+	// 	enumContentStr += fmt.Sprintf("func stringTo%v(input string) %v {\n", enum.goNameSingular, enumTypeName)
+	// }
 
 	enumContentStr += fmt.Sprintf("switch(input) {\n")
 	for name := range enum.Mappings {

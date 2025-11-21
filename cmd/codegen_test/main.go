@@ -29,8 +29,8 @@ func main() {
 		ColCommentSeparator:      "(^_^)",
 		Enumerations: map[string]dbcodegen.EnumDefinition{
 			"user_type": {
-				Name:     "user_type",
-				Exported: true,
+				Name: "user_type",
+				// Exported: true,
 				IsDbType: true,
 				Mappings: map[string]int16{
 					"guest":         0,

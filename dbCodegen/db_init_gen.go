@@ -4,6 +4,23 @@ import "fmt"
 
 func (g *Generator) buildInitCode(importList []string) (string, []string) {
 	initCode := ""
+
+	// Let us make the structure which will hold the enumaerations
+	initCode += "// Here are the enumerations for this DB\n"
+	initCode += "type enums struct {"
+	for _, enum := range g.Enums {
+		// enumTypeName = enum.goNameSingular
+
+		// IMPORTANT: In case you are ready to generate the abstractions only for the exported ones, enale the code below
+		// if !enum.Exported {
+		//     continue
+		// }
+
+		initCode += fmt.Sprintf("\n%v %v", enum.goNameSingular, lowerFirstChar(enum.goNameSingular))
+	}
+	initCode += "}\n"
+	initCode += "var Enums enums \n"
+
 	initCode += "\n"
 	initCode += fmt.Sprintf("var %v db\n", upperFirstChar(g.Config.DbModelPackageName))
 	initCode += fmt.Sprintf("var %vReader db\n", upperFirstChar(g.Config.DbModelPackageName))
@@ -27,12 +44,6 @@ func (g *Generator) buildInitCode(importList []string) (string, []string) {
 		initCode += fmt.Sprintf("%vReader = db{\n", upperFirstChar(g.Config.DbModelPackageName))
 		initCode += fmt.Sprintf("DB: %v.DB", upperFirstChar(g.Config.DbModelPackageName))
 		initCode += "}\n"
-	}
-
-	// Let us make the structure which will hold the enumaerations
-
-	initCode += "type enums struct { \n"
-	for k, v := range g.Enums {
 	}
 	initCode += "}\n"
 

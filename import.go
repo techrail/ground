@@ -10,7 +10,7 @@ import (
 	"github.com/techrail/ground/webServer"
 )
 
-func GiveMeACodeGenerator(config dbcodegen.CodegenConfig) (dbcodegen.Generator, appError.Typ) {
+func GiveMeACodeGenerator(config dbcodegen.CodegenConfig) (*dbcodegen.Generator, appError.Typ) {
 	return dbcodegen.NewCodeGenerator(config)
 }
 
