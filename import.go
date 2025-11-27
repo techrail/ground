@@ -1,7 +1,8 @@
+// Package ground is the top level package from where you can import some of the components
 package ground
 
 import (
-	"github.com/techrail/ground/bgRoutine"
+	"github.com/techrail/ground/bgroutine"
 	"github.com/techrail/ground/cache"
 	"github.com/techrail/ground/dbcodegen"
 	"github.com/techrail/ground/logger"
@@ -18,8 +19,8 @@ func GiveMeAWebServer() *webServer.FastHttpServer {
 	return webServer.NewLocalServer()
 }
 
-func GiveMeARoutineManager() bgRoutine.Manager {
-	return bgRoutine.NewManager()
+func GiveMeARoutineManager() bgroutine.Manager {
+	return bgroutine.NewManager()
 }
 
 func GiveMeABarkSLogger() logger.Logger {

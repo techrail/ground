@@ -1,4 +1,4 @@
-package bgRoutine
+package bgroutine
 
 type Manager struct {
 	routineMap map[string]*Typ

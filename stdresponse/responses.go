@@ -1,4 +1,5 @@
-package stdResponse
+// Package stdresponse contains some structures which can be used to send some standard responses
+package stdresponse
 
 // StatusMsgResponse is for reporting the status of a service
 type StatusMsgResponse struct {

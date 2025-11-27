@@ -454,10 +454,11 @@ func (g *Generator) Generate() appError.Typ {
 		fileContent = strings.ReplaceAll(fileContent, "//{{FILE_CONTENTS}}", enumFileContentsStr)
 		fileContent = strings.ReplaceAll(fileContent, "//{{MAGIC_COMMENT}}", g.Config.MagicComment)
 		fmt.Println("E#1PO4OB - Printing to make sure the variable gets used: ", enum)
-		outputFileName := "gen_enum_" + strings.ToLower(enum.Name) + ".go"
+		// outputFileName := "gen_enum_" + strings.ToLower(enum.Name) + ".go"
+		outputDirName := "enum" + enum.goNameSingular
 		// Check if the file already exists
 		existingFileContentBytes, fileErr := os.ReadFile(
-			fmt.Sprintf("%s/%s", g.Config.DbModelPackagePath, outputFileName))
+			fmt.Sprintf("%s/%s/typ.go", g.Config.DbModelPackagePath, outputDirName))
 		if fileErr != nil {
 			// File does not exist
 			fileAlreadyExists = false
@@ -489,7 +490,7 @@ func (g *Generator) Generate() appError.Typ {
 			// fmt.Println("E#1OBP5N -", err)
 		}
 
-		outputFile, err = os.Create(fmt.Sprintf("%s/%s", g.Config.DbModelPackagePath, outputFileName))
+		outputFile, err = os.Create(fmt.Sprintf("%s/%s/typ.go", g.Config.DbModelPackagePath, outputDirName))
 		if err != nil {
 			panic(fmt.Sprintf("P#1OECMC - %v", err))
 		}
@@ -528,6 +529,7 @@ func (g *Generator) Generate() appError.Typ {
 	if err != nil {
 		panic(err)
 	}
+
 	tables := map[string]DbTable{}
 	// We need to iterate over the list of columns and create DbTable instances,
 	for _, columnDetail := range columns {

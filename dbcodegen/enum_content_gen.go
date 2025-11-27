@@ -14,7 +14,8 @@ func (g *Generator) buildEnumContentString(enum EnumDefinition, importList []str
 
 	// Create the constants
 
-	enumContentStr += fmt.Sprintf("type %v int16\n", enumTypeName)
+	// enumContentStr += fmt.Sprintf("type %v int16\n", enumTypeName)
+	enumContentStr += "type Typ int16\n"
 	enumContentStr += "const(\n"
 	enumContentStr += fmt.Sprintf("Undefined%v %v = -1\n", enumTypeName, enumTypeName)
 	for name, value := range enum.Mappings {
@@ -24,14 +25,14 @@ func (g *Generator) buildEnumContentString(enum EnumDefinition, importList []str
 
 	// Type to string
 	enumContentStr += fmt.Sprintf("func (t %v) String() string {\n", enumTypeName)
-	enumContentStr += fmt.Sprintf("switch(t) {\n")
+	enumContentStr += "switch(t) {\n"
 	for name := range enum.Mappings {
 		enumContentStr += fmt.Sprintf("case %v: \n return \"%v\"\n", name, name)
 	}
 	enumContentStr += fmt.Sprintf("case Undefined%v: \n fallthrough \n", enumTypeName)
 	enumContentStr += fmt.Sprintf("default: \n return \"Undefined%v\"\n", enumTypeName)
-	enumContentStr += fmt.Sprintf("}\n")
-	enumContentStr += fmt.Sprintf("}\n")
+	enumContentStr += "}\n"
+	enumContentStr += "}\n"
 
 	enumContentStr += "\n"
 
@@ -42,13 +43,13 @@ func (g *Generator) buildEnumContentString(enum EnumDefinition, importList []str
 	// 	enumContentStr += fmt.Sprintf("func stringTo%v(input string) %v {\n", enum.goNameSingular, enumTypeName)
 	// }
 
-	enumContentStr += fmt.Sprintf("switch(input) {\n")
+	enumContentStr += "switch(input) {\n"
 	for name := range enum.Mappings {
 		enumContentStr += fmt.Sprintf("case \"%v\": \n return %v\n", name, name)
 	}
 	enumContentStr += fmt.Sprintf("case \"Undefined%v\": \n fallthrough \n", enumTypeName)
 	enumContentStr += fmt.Sprintf("default: \n return Undefined%v\n", enumTypeName)
-	enumContentStr += fmt.Sprintf("}\n")
+	enumContentStr += "}\n"
 	enumContentStr += "}\n"
 	enumContentStr += "\n"
 

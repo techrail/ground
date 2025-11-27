@@ -1,4 +1,5 @@
-package bgRoutine
+// Package bgroutine is for managing the background routines
+package bgroutine
 
 import (
 	"fmt"
@@ -113,7 +114,7 @@ func (r *Typ) Start(launchRightNow bool) appError.Typ {
 
 	// The actual function that launches the routine function (once)
 	runRoutineOnce := func() {
-		if r.instanceRunning == false {
+		if !r.instanceRunning {
 			r.instanceRunning = true
 			err := r.function()
 			if err != appError.BlankError {
