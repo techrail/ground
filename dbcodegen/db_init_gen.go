@@ -1,6 +1,9 @@
 package dbcodegen
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 func (g *Generator) buildInitCode(importList []string) (string, []string) {
 	initCode := ""
@@ -27,8 +30,14 @@ func (g *Generator) buildInitCode(importList []string) (string, []string) {
 	initCode += "\n"
 	initCode += "// This piece of code initializes the DB connectors\n"
 	initCode += "func init() {\n"
-	initCode += "var err error\n"
-	initCode += fmt.Sprintf("%v.DB, err = sqlx.Connect(\"pgx\", \"%v\")\n", upperFirstChar(g.Config.DbModelPackageName), g.Config.PgDbUrl)
+	initCode += "var err error\n\n"
+
+	initCode += fmt.Sprintf("dbUrl := os.Getenv(\"DATABASE_%v_URL\")\n", strings.ToUpper(g.DbName))
+	initCode += "if dbUrl == \"\" {\n"
+	initCode += fmt.Sprintf("dbUrl = \"%v\"\n", g.Config.PgDbUrl)
+	initCode += "}\n\n"
+
+	initCode += fmt.Sprintf("%v.DB, err = sqlx.Connect(\"pgx\", dbUrl)\n", upperFirstChar(g.Config.DbModelPackageName))
 	initCode += "if err != nil {\n"
 	initCode += "errMsg := fmt.Sprintf(\"E#" + newUniqueLmid() + " - Could not connect to the database! Error: %v\", err)\n"
 	initCode += "fmt.Println(errMsg)"
@@ -39,10 +48,10 @@ func (g *Generator) buildInitCode(importList []string) (string, []string) {
 		initCode += "if err != nil {\n"
 		initCode += "errMsg := fmt.Sprintf(\"E#" + newUniqueLmid() + " - Could not connect to the database! Error: %v\", err)\n"
 		initCode += "fmt.Println(errMsg)"
-		initCode += "}\n"
+		initCode += "}\n\n"
 	} else {
 		initCode += fmt.Sprintf("%vReader = db{\n", upperFirstChar(g.Config.DbModelPackageName))
-		initCode += fmt.Sprintf("DB: %v.DB", upperFirstChar(g.Config.DbModelPackageName))
+		initCode += fmt.Sprintf("DB: %v.DB,\n", upperFirstChar(g.Config.DbModelPackageName))
 		initCode += "}\n"
 	}
 	initCode += "}\n"

@@ -16,7 +16,7 @@ import (
 
 	"github.com/techrail/ground/typs/set"
 
-	pluralize "github.com/gertd/go-pluralize"
+	"github.com/gertd/go-pluralize"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/jmoiron/sqlx"
 
@@ -289,6 +289,7 @@ type CodegenConfig struct {
 // It is supposed to contain all the information needed for performing the code generation
 type Generator struct {
 	// More fields to be decided
+	DbName       string                    // Database reference name (e.g. main, fallback, analytics, etc.)
 	Config       CodegenConfig             // The configuration for this generator
 	Schemas      map[string]DbSchema       // The schemas in the database (will in turn contain tables)
 	Enums        map[string]EnumDefinition // The enumerations to be built
@@ -487,7 +488,12 @@ func (g *Generator) Generate() appError.Typ {
 
 		err = os.Mkdir(g.Config.DbModelPackagePath, 0o777)
 		if err != nil {
-			// fmt.Println("E#1OBP5N -", err)
+			fmt.Println("E#2QB05M -", err)
+		}
+
+		err = os.Mkdir(fmt.Sprintf("%s/%s", g.Config.DbModelPackagePath, outputDirName), 0o777)
+		if err != nil {
+			fmt.Println("E#2QB050 -", err)
 		}
 
 		outputFile, err = os.Create(fmt.Sprintf("%s/%s/typ.go", g.Config.DbModelPackagePath, outputDirName))
@@ -926,7 +932,7 @@ func (g *Generator) Generate() appError.Typ {
 
 		outputFile, err = os.Create(fmt.Sprintf("%s/%s", g.Config.DbModelPackagePath, outputFileName))
 		if err != nil {
-			panic(fmt.Sprintf("P#1OECMC - %v", err))
+			panic(fmt.Sprintf("P#2QAZNR - %v", err))
 		}
 
 		fileContentBytes, err := format.Source([]byte(fileContent))
@@ -1172,6 +1178,7 @@ func (g *Generator) Generate() appError.Typ {
 
 import (
   "fmt"
+	"os"
   "sync"
   "github.com/jmoiron/sqlx"
 )
