@@ -1178,28 +1178,36 @@ func (g *Generator) Generate() appError.Typ {
 //{{PACKAGE_CONTENT}}
 //{{PACKAGE_NAME}}
 
-import (
-  "fmt"
-	"os"
-  "sync"
-  "github.com/jmoiron/sqlx"
-)
-
+//{{IMPORT_LIST}}
 type db struct {
   *sqlx.DB
   sync.Mutex
 }
-
 //{{INIT_CODE}}
 
 //{{MAGIC_COMMENT}}
 `
 
-	initCode, _ := g.buildInitCode([]string{})
+	importList = []string{}
+	importsString = ""
+	initCode, importList := g.buildInitCode([]string{"fmt", "os", "sync", "github.com/jmoiron/sqlx"})
+	if len(importList) > 0 {
+		importsString += "\nimport (\n"
+		for _, impo := range importList {
+			importsString += "\t\"" + impo + "\"\n"
+		}
+		importsString += ")\n"
+	} else {
+		importsString = ""
+	}
+
+	// Build the import list
+	//
 	fileContent = initFileTemplate
 	fileContent = strings.ReplaceAll(fileContent, "//{{PACKAGE_CONTENT}}", fmt.Sprintf("// Package %v contains the model code against the DB", g.Config.DbModelPackageName))
 	fileContent = strings.ReplaceAll(fileContent, "//{{PACKAGE_NAME}}", fmt.Sprintf("package %v", g.Config.DbModelPackageName))
 	fileContent = strings.ReplaceAll(fileContent, "//{{INIT_CODE}}", initCode)
+	fileContent = strings.ReplaceAll(fileContent, "//{{IMPORT_LIST}}", importsString)
 	fileContent = strings.ReplaceAll(fileContent, "//{{MAGIC_COMMENT}}", g.Config.MagicComment)
 
 	// TODO: Complete the code below to write the file to disk

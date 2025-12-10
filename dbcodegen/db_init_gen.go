@@ -19,7 +19,8 @@ func (g *Generator) buildInitCode(importList []string) (string, []string) {
 		//     continue
 		// }
 
-		initCode += fmt.Sprintf("\n%v %v", enum.goNameSingular, lowerFirstChar(enum.goNameSingular))
+		initCode += fmt.Sprintf("\n%v %v", enum.goNameSingular, "enum"+enum.goNameSingular+".Typ")
+		importList = g.addToImports(g.Config.ModelsContainerPackage+"/"+g.Config.DbModelPackageName+"/enum"+enum.goNameSingular, importList)
 	}
 	initCode += "}\n"
 	initCode += "var Enums enums \n"
