@@ -8,6 +8,7 @@ func (g *Generator) buildEnumContentString(enum EnumDefinition, importList []str
 	enumContentStr := ""
 
 	enumTypeName := lowerFirstChar(enum.goNameSingular)
+	enumTypeName = "Typ"
 	// if enum.Exported {
 	// 	enumTypeName = enum.goNameSingular
 	// }

@@ -449,14 +449,16 @@ func (g *Generator) Generate() appError.Typ {
 			enumImportsStr = ""
 		}
 
+		outputDirName := "enum" + enum.goNameSingular
 		fileContent = enumTemplate
-		fileContent = strings.ReplaceAll(fileContent, "//{{PACKAGE_NAME}}", fmt.Sprintf("package %v", g.Config.DbModelPackageName))
+		// fileContent = strings.ReplaceAll(fileContent, "//{{PACKAGE_NAME}}", fmt.Sprintf("package %v", g.Config.DbModelPackageName))
+		fileContent = strings.ReplaceAll(fileContent, "//{{PACKAGE_NAME}}", fmt.Sprintf("package %v", outputDirName))
 		fileContent = strings.ReplaceAll(fileContent, "//{{IMPORT_LIST}}", enumImportsStr)
 		fileContent = strings.ReplaceAll(fileContent, "//{{FILE_CONTENTS}}", enumFileContentsStr)
 		fileContent = strings.ReplaceAll(fileContent, "//{{MAGIC_COMMENT}}", g.Config.MagicComment)
 		fmt.Println("E#1PO4OB - Printing to make sure the variable gets used: ", enum)
 		// outputFileName := "gen_enum_" + strings.ToLower(enum.Name) + ".go"
-		outputDirName := "enum" + enum.goNameSingular
+		// outputDirName := "enum" + enum.goNameSingular
 		// Check if the file already exists
 		existingFileContentBytes, fileErr := os.ReadFile(
 			fmt.Sprintf("%s/%s/typ.go", g.Config.DbModelPackagePath, outputDirName))
