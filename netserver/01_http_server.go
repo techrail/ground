@@ -21,3 +21,5 @@ func NewServer(port uint16) *NetHttpServer {
 func (h *NetHttpServer) PortString() string {
 	return fmt.Sprintf("%d", h.Port)
 }
+
+// File ends here

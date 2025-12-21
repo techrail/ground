@@ -50,18 +50,4 @@ func (m *middleware) RecoverPanic(next http.Handler) http.Handler {
 	})
 }
 
-// The following is an example of a middleware which we can check the request for an authentication header
-// AuthenticateUser Checks for SessionTokenCookieName cookie; redirects to / if not found
-// func (m *middleware) AuthenticateUser(next http.Handler) http.Handler {
-// 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-// 		appErr := ConfirmSessionCookie(w, r)
-// 		if appErr.IsNotBlank() {
-// 			// There was some error.
-// 			log.Printf("%v\n", appErr)
-// 			http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
-// 			return
-// 		}
-//
-// 		next.ServeHTTP(w, r)
-// 	})
-// }
+// File ends here
