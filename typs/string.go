@@ -3,7 +3,7 @@ package typs
 import (
 	// "math/rand"
 	"crypto/rand"
-	`math/big`
+	"math/big"
 	"net/mail"
 	"regexp"
 	"strconv"
@@ -12,10 +12,12 @@ import (
 
 // The following constants are to be used only by this package and are thus not exported
 
-const smallLetterBytes = "abcdefghijklmnopqrstuvwxyz"
-const capitalLetterBytes = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-const digitBytes = "1234567890"
-const specialCharBytes = "/}%,]'?!<_~@;{`&:^+|.*#$()-=[>\""
+const (
+	smallLetterBytes   = "abcdefghijklmnopqrstuvwxyz"
+	capitalLetterBytes = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	digitBytes         = "1234567890"
+	specialCharBytes   = "/}%,]'?!<_~@;{`&:^+|.*#$()-=[>\""
+)
 
 // GetRandomAlphaString will get a n character long random alphabetic string
 func GetRandomAlphaString(n int) string {
