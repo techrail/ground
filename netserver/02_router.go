@@ -16,6 +16,23 @@ func NewRouter() *Router {
 	return &Router{ServeMux: http.NewServeMux()}
 }
 
+func (r *Router) HasRoutes() bool {
+	if r.isSubRouter && len(r.routeChain) > 0 {
+		return true
+	} else if len(r.globalChain) > 0 {
+		return true
+	}
+
+	return false
+}
+
+func (r *Router) Type() string {
+	if r.isSubRouter {
+		return "sub-router"
+	}
+	return "global-router"
+}
+
 func (r *Router) Use(mw ...func(http.Handler) http.Handler) {
 	if r.isSubRouter {
 		r.routeChain = append(r.routeChain, mw...)

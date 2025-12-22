@@ -51,6 +51,7 @@ func (e Typ) IsBlank() bool {
 		e.DevMsg == constants.EmptyString {
 		return true
 	}
+
 	return false
 }
 
@@ -111,6 +112,14 @@ func NewError(errLevel Level, code string, msg string, wrappedError ...Typ) Typ 
 		Code:         code,
 		Message:      msg,
 		WrappedError: wErr,
+	}
+}
+
+func NewFromExisting(err error, code string) Typ {
+	return Typ{
+		Level:   Error,
+		Code:    code,
+		Message: err.Error(),
 	}
 }
 
