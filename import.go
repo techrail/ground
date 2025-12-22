@@ -6,6 +6,7 @@ import (
 	"github.com/techrail/ground/cache"
 	"github.com/techrail/ground/dbcodegen"
 	"github.com/techrail/ground/logger"
+	"github.com/techrail/ground/netserver"
 	"github.com/techrail/ground/typs/appError"
 	"github.com/techrail/ground/typs/jsonObject"
 	"github.com/techrail/ground/webServer"
@@ -15,8 +16,12 @@ func GiveMeACodeGenerator(config dbcodegen.CodegenConfig) (*dbcodegen.Generator,
 	return dbcodegen.NewCodeGenerator(config)
 }
 
-func GiveMeAWebServer() *webServer.FastHttpServer {
+func GiveMeAFasthttpServer() *webServer.FastHttpServer {
 	return webServer.NewLocalServer()
+}
+
+func GiveMeANetHttpServer(port uint16, blockOnStart bool) *netserver.NetHttpServer {
+	return netserver.NewServer(port, blockOnStart)
 }
 
 func GiveMeARoutineManager() bgroutine.Manager {
