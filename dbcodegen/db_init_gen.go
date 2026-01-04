@@ -8,7 +8,7 @@ import (
 func (g *Generator) buildInitCode(importList []string, tables map[string]DbTable) (string, []string) {
 	initCode := ""
 
-	// Let us make the structure which will hold the enumaerations
+	// Let us make the structure which will hold the enumerations
 	initCode += "// Here are the enumerations for this DB\n"
 	initCode += "type enums struct {"
 	for _, enum := range g.Enums {
