@@ -1190,7 +1190,7 @@ type db struct {
 
 	importList = []string{}
 	importsString = ""
-	initCode, importList := g.buildInitCode([]string{"fmt", "os", "sync", "github.com/jmoiron/sqlx"})
+	initCode, importList := g.buildInitCode([]string{"fmt", "os", "sync", "github.com/jmoiron/sqlx"}, tables)
 	if len(importList) > 0 {
 		importsString += "\nimport (\n"
 		for _, impo := range importList {
