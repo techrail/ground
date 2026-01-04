@@ -36,6 +36,7 @@ func (g *Generator) buildInitCode(importList []string, tables map[string]DbTable
 		initCode += fmt.Sprintf("var %v *%v\n", table.fullyQualifiedDaoName(), table.fullyQualifiedDaoName())
 	}
 
+	initCode += "\n"
 	initCode += "// This piece of code initializes the DB connectors\n"
 	initCode += "func init() {\n"
 	initCode += "var err error\n\n"
@@ -50,10 +51,6 @@ func (g *Generator) buildInitCode(importList []string, tables map[string]DbTable
 	initCode += "errMsg := fmt.Sprintf(\"E#" + newUniqueLmid() + " - Could not connect to the database! Error: %v\", err)\n"
 	initCode += "fmt.Println(errMsg)"
 
-	for _, table := range tables {
-		initCode += fmt.Sprintf("%v = New%v\n", table.fullyQualifiedDaoName(), table.fullyQualifiedDaoName())
-	}
-
 	initCode += "}\n"
 
 	if g.readerEnabled() {
@@ -65,8 +62,13 @@ func (g *Generator) buildInitCode(importList []string, tables map[string]DbTable
 	} else {
 		initCode += fmt.Sprintf("%vReader = db{\n", upperFirstChar(g.Config.DbModelPackageName))
 		initCode += fmt.Sprintf("DB: %v.DB,\n", upperFirstChar(g.Config.DbModelPackageName))
-		initCode += "}\n"
+		initCode += "}\n\n"
 	}
+
+	for _, table := range tables {
+		initCode += fmt.Sprintf("%v = New%v\n", table.fullyQualifiedDaoName(), table.fullyQualifiedDaoName())
+	}
+
 	initCode += "}\n"
 
 	return initCode, importList
