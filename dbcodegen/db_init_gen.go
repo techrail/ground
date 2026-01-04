@@ -30,12 +30,6 @@ func (g *Generator) buildInitCode(importList []string, tables map[string]DbTable
 	initCode += fmt.Sprintf("var %vReader db\n", upperFirstChar(g.Config.DbModelPackageName))
 	initCode += "\n"
 
-	initCode += "// The DAOs of the database"
-
-	for _, table := range tables {
-		initCode += fmt.Sprintf("var %v *%v\n", table.fullyQualifiedDaoName(), table.fullyQualifiedDaoName())
-	}
-
 	initCode += "\n"
 	initCode += "// This piece of code initializes the DB connectors\n"
 	initCode += "func init() {\n"
@@ -63,10 +57,6 @@ func (g *Generator) buildInitCode(importList []string, tables map[string]DbTable
 		initCode += fmt.Sprintf("%vReader = db{\n", upperFirstChar(g.Config.DbModelPackageName))
 		initCode += fmt.Sprintf("DB: %v.DB,\n", upperFirstChar(g.Config.DbModelPackageName))
 		initCode += "}\n\n"
-	}
-
-	for _, table := range tables {
-		initCode += fmt.Sprintf("%v = New%v\n", table.fullyQualifiedDaoName(), table.fullyQualifiedDaoName())
 	}
 
 	initCode += "}\n"
