@@ -63,7 +63,7 @@ func (g *Generator) buildNetworkStructString(table DbTable, importList []string)
 						table.variableName(), col.GoName,
 						"enum"+enum.goNameSingular,
 						table.GoNameSingular, col.GoName)
-					importList = g.addToImports(g.Config.DbModelPackageName+"/enum"+enum.goNameSingular, importList)
+					importList = g.addToImports(g.Config.ModelsContainerPackage+"/"+g.Config.DbModelPackageName+"/enum"+enum.goNameSingular, importList)
 				} else {
 					networkStruct += fmt.Sprintf("%vForResponse.%v = db%v.%v\n",
 						table.variableName(), col.GoName,
@@ -85,7 +85,7 @@ func (g *Generator) buildNetworkStructString(table DbTable, importList []string)
 							table.GoNameSingular, col.GoName)
 						networkStruct += fmt.Sprintf("%vForResponse.%v = &val\n",
 							table.variableName(), col.GoName)
-						importList = g.addToImports(g.Config.DbModelPackageName+"/enum"+enum.goNameSingular, importList)
+						importList = g.addToImports(g.Config.ModelsContainerPackage+"/"+g.Config.DbModelPackageName+"/enum"+enum.goNameSingular, importList)
 					} else {
 						networkStruct += fmt.Sprintf("%vForResponse.%v = &db%v.%v.String\n",
 							table.variableName(), col.GoName,
@@ -106,7 +106,7 @@ func (g *Generator) buildNetworkStructString(table DbTable, importList []string)
 							table.GoNameSingular, col.GoName)
 						networkStruct += fmt.Sprintf("%vForResponse.%v = &val\n",
 							table.variableName(), col.GoName)
-						importList = g.addToImports(g.Config.DbModelPackageName+"/enum"+enum.goNameSingular, importList)
+						importList = g.addToImports(g.Config.ModelsContainerPackage+"/"+g.Config.DbModelPackageName+"/enum"+enum.goNameSingular, importList)
 					} else {
 						networkStruct += fmt.Sprintf("%vForResponse.%v = &db%v.%v.Int16\n",
 							table.variableName(), col.GoName,
@@ -127,7 +127,7 @@ func (g *Generator) buildNetworkStructString(table DbTable, importList []string)
 							table.GoNameSingular, col.GoName)
 						networkStruct += fmt.Sprintf("%vForResponse.%v = &val\n",
 							table.variableName(), col.GoName)
-						importList = g.addToImports(g.Config.DbModelPackageName+"/enum"+enum.goNameSingular, importList)
+						importList = g.addToImports(g.Config.ModelsContainerPackage+"/"+g.Config.DbModelPackageName+"/enum"+enum.goNameSingular, importList)
 					} else {
 						networkStruct += fmt.Sprintf("%vForResponse.%v = &db%v.%v.Int32\n",
 							table.variableName(), col.GoName,
@@ -148,7 +148,7 @@ func (g *Generator) buildNetworkStructString(table DbTable, importList []string)
 							table.GoNameSingular, col.GoName)
 						networkStruct += fmt.Sprintf("%vForResponse.%v = &val\n",
 							table.variableName(), col.GoName)
-						importList = g.addToImports(g.Config.DbModelPackageName+"/enum"+enum.goNameSingular, importList)
+						importList = g.addToImports(g.Config.ModelsContainerPackage+"/"+g.Config.DbModelPackageName+"/enum"+enum.goNameSingular, importList)
 					} else {
 						networkStruct += fmt.Sprintf("%vForResponse.%v = &db%v.%v.Int64\n",
 							table.variableName(), col.GoName,
@@ -169,7 +169,7 @@ func (g *Generator) buildNetworkStructString(table DbTable, importList []string)
 							table.GoNameSingular, col.GoName)
 						networkStruct += fmt.Sprintf("%vForResponse.%v = &val\n",
 							table.variableName(), col.GoName)
-						importList = g.addToImports(g.Config.DbModelPackageName+"/enum"+enum.goNameSingular, importList)
+						importList = g.addToImports(g.Config.ModelsContainerPackage+"/"+g.Config.DbModelPackageName+"/enum"+enum.goNameSingular, importList)
 					} else {
 						networkStruct += fmt.Sprintf("%vForResponse.%v = &db%v.%v.Float64\n",
 							table.variableName(), col.GoName,
@@ -190,7 +190,7 @@ func (g *Generator) buildNetworkStructString(table DbTable, importList []string)
 							table.GoNameSingular, col.GoName)
 						networkStruct += fmt.Sprintf("%vForResponse.%v = &val\n",
 							table.variableName(), col.GoName)
-						importList = g.addToImports(g.Config.DbModelPackageName+"/enum"+enum.goNameSingular, importList)
+						importList = g.addToImports(g.Config.ModelsContainerPackage+"/"+g.Config.DbModelPackageName+"/enum"+enum.goNameSingular, importList)
 					} else {
 						networkStruct += fmt.Sprintf("%vForResponse.%v = &db%v.%v.Bool\n",
 							table.variableName(), col.GoName,
@@ -212,7 +212,7 @@ func (g *Generator) buildNetworkStructString(table DbTable, importList []string)
 							table.GoNameSingular, col.GoName)
 						networkStruct += fmt.Sprintf("%vForResponse.%v = &val\n",
 							table.variableName(), col.GoName)
-						importList = g.addToImports(g.Config.DbModelPackageName+"/enum"+enum.goNameSingular, importList)
+						importList = g.addToImports(g.Config.ModelsContainerPackage+"/"+g.Config.DbModelPackageName+"/enum"+enum.goNameSingular, importList)
 					} else {
 						networkStruct += fmt.Sprintf("%vForResponse.%v = &db%v.%v.Time\n",
 							table.variableName(), col.GoName,
