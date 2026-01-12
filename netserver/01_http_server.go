@@ -19,9 +19,11 @@ type NetHttpServer struct {
 
 func NewServer(port uint16, blockOnStart bool) *NetHttpServer {
 	router := NewRouter()
+	renderer := &Renderer{}
 	return &NetHttpServer{
 		port:         port,
 		Router:       router,
+		Render:       renderer,
 		BlockOnStart: blockOnStart,
 	}
 }

@@ -5,10 +5,10 @@ import (
 	"strings"
 )
 
-func (g *Generator) buildInitCode(importList []string) (string, []string) {
+func (g *Generator) buildInitCode(importList []string, tables map[string]DbTable) (string, []string) {
 	initCode := ""
 
-	// Let us make the structure which will hold the enumaerations
+	// Let us make the structure which will hold the enumerations
 	initCode += "// Here are the enumerations for this DB\n"
 	initCode += "type enums struct {"
 	for _, enum := range g.Enums {
@@ -29,6 +29,8 @@ func (g *Generator) buildInitCode(importList []string) (string, []string) {
 	initCode += fmt.Sprintf("var %v db\n", upperFirstChar(g.Config.DbModelPackageName))
 	initCode += fmt.Sprintf("var %vReader db\n", upperFirstChar(g.Config.DbModelPackageName))
 	initCode += "\n"
+
+	initCode += "\n"
 	initCode += "// This piece of code initializes the DB connectors\n"
 	initCode += "func init() {\n"
 	initCode += "var err error\n\n"
@@ -42,6 +44,7 @@ func (g *Generator) buildInitCode(importList []string) (string, []string) {
 	initCode += "if err != nil {\n"
 	initCode += "errMsg := fmt.Sprintf(\"E#" + newUniqueLmid() + " - Could not connect to the database! Error: %v\", err)\n"
 	initCode += "fmt.Println(errMsg)"
+
 	initCode += "}\n"
 
 	if g.readerEnabled() {
@@ -53,8 +56,9 @@ func (g *Generator) buildInitCode(importList []string) (string, []string) {
 	} else {
 		initCode += fmt.Sprintf("%vReader = db{\n", upperFirstChar(g.Config.DbModelPackageName))
 		initCode += fmt.Sprintf("DB: %v.DB,\n", upperFirstChar(g.Config.DbModelPackageName))
-		initCode += "}\n"
+		initCode += "}\n\n"
 	}
+
 	initCode += "}\n"
 
 	return initCode, importList
