@@ -59,11 +59,11 @@ func (g *Generator) buildNetworkStructString(table DbTable, importList []string)
 						panic(fmt.Sprintf("P#1RDB3A - Expected enum %v to be found but did not.", col.CommentProperties.StrConversionViaEnum))
 					}
 
-					networkStruct += fmt.Sprintf("%vForResponse.%v = %v.%vFromInt16(db%v.%v).String()\n",
+					networkStruct += fmt.Sprintf("%vForResponse.%v = %v.TypFromInt16(db%v.%v).String()\n",
 						table.variableName(), col.GoName,
-						col.CommentProperties.StrConversionViaEnum, enum.goTypeName,
+						"enum"+enum.goNameSingular,
 						table.GoNameSingular, col.GoName)
-					importList = g.addToImports(g.Config.DbModelPackageName+"/types/"+col.CommentProperties.StrConversionViaEnum, importList)
+					importList = g.addToImports(g.Config.DbModelPackageName+"enum"+enum.goNameSingular, importList)
 				} else {
 					networkStruct += fmt.Sprintf("%vForResponse.%v = db%v.%v\n",
 						table.variableName(), col.GoName,
@@ -80,12 +80,12 @@ func (g *Generator) buildNetworkStructString(table DbTable, importList []string)
 							panic(fmt.Sprintf("P#1RDC5X - Expected enum %v to be found but did not.", col.CommentProperties.StrConversionViaEnum))
 						}
 
-						networkStruct += fmt.Sprintf("val := %v.%vFromInt16(db%v.%v.String).String()\n",
-							col.CommentProperties.StrConversionViaEnum, enum.goTypeName,
+						networkStruct += fmt.Sprintf("val := %v.TypFromInt16(db%v.%v.String).String()\n",
+							"enum"+enum.goNameSingular,
 							table.GoNameSingular, col.GoName)
 						networkStruct += fmt.Sprintf("%vForResponse.%v = &val\n",
 							table.variableName(), col.GoName)
-						importList = g.addToImports(g.Config.DbModelPackageName+"/types/"+col.CommentProperties.StrConversionViaEnum, importList)
+						importList = g.addToImports(g.Config.DbModelPackageName+"enum"+enum.goNameSingular, importList)
 					} else {
 						networkStruct += fmt.Sprintf("%vForResponse.%v = &db%v.%v.String\n",
 							table.variableName(), col.GoName,
@@ -101,12 +101,12 @@ func (g *Generator) buildNetworkStructString(table DbTable, importList []string)
 							panic(fmt.Sprintf("P#1RDC64 - Expected enum %v to be found but did not.", col.CommentProperties.StrConversionViaEnum))
 						}
 
-						networkStruct += fmt.Sprintf("val := %v.%vFromInt16(db%v.%v.Int16).String()\n",
-							col.CommentProperties.StrConversionViaEnum, enum.goTypeName,
+						networkStruct += fmt.Sprintf("val := %v.TypFromInt16(db%v.%v.Int16).String()\n",
+							"enum"+enum.goNameSingular,
 							table.GoNameSingular, col.GoName)
 						networkStruct += fmt.Sprintf("%vForResponse.%v = &val\n",
 							table.variableName(), col.GoName)
-						importList = g.addToImports(g.Config.DbModelPackageName+"/types/"+col.CommentProperties.StrConversionViaEnum, importList)
+						importList = g.addToImports(g.Config.DbModelPackageName+"enum"+enum.goNameSingular, importList)
 					} else {
 						networkStruct += fmt.Sprintf("%vForResponse.%v = &db%v.%v.Int16\n",
 							table.variableName(), col.GoName,
@@ -122,12 +122,12 @@ func (g *Generator) buildNetworkStructString(table DbTable, importList []string)
 							panic(fmt.Sprintf("P#1RDC69 - Expected enum %v to be found but did not.", col.CommentProperties.StrConversionViaEnum))
 						}
 
-						networkStruct += fmt.Sprintf("val := %v.%vFromInt16(db%v.%v.Int32).String()\n",
-							col.CommentProperties.StrConversionViaEnum, enum.goTypeName,
+						networkStruct += fmt.Sprintf("val := %v.TypFromInt16(db%v.%v.Int32).String()\n",
+							"enum"+enum.goNameSingular,
 							table.GoNameSingular, col.GoName)
 						networkStruct += fmt.Sprintf("%vForResponse.%v = &val\n",
 							table.variableName(), col.GoName)
-						importList = g.addToImports(g.Config.DbModelPackageName+"/types/"+col.CommentProperties.StrConversionViaEnum, importList)
+						importList = g.addToImports(g.Config.DbModelPackageName+"enum"+enum.goNameSingular, importList)
 					} else {
 						networkStruct += fmt.Sprintf("%vForResponse.%v = &db%v.%v.Int32\n",
 							table.variableName(), col.GoName,
@@ -143,12 +143,12 @@ func (g *Generator) buildNetworkStructString(table DbTable, importList []string)
 							panic(fmt.Sprintf("P#1RDC6G - Expected enum %v to be found but did not.", col.CommentProperties.StrConversionViaEnum))
 						}
 
-						networkStruct += fmt.Sprintf("val := %v.%vFromInt16(db%v.%v.Int64).String()\n",
-							col.CommentProperties.StrConversionViaEnum, enum.goTypeName,
+						networkStruct += fmt.Sprintf("val := %v.TypFromInt16(db%v.%v.Int64).String()\n",
+							"enum"+enum.goNameSingular,
 							table.GoNameSingular, col.GoName)
 						networkStruct += fmt.Sprintf("%vForResponse.%v = &val\n",
 							table.variableName(), col.GoName)
-						importList = g.addToImports(g.Config.DbModelPackageName+"/types/"+col.CommentProperties.StrConversionViaEnum, importList)
+						importList = g.addToImports(g.Config.DbModelPackageName+"enum"+enum.goNameSingular, importList)
 					} else {
 						networkStruct += fmt.Sprintf("%vForResponse.%v = &db%v.%v.Int64\n",
 							table.variableName(), col.GoName,
@@ -164,12 +164,12 @@ func (g *Generator) buildNetworkStructString(table DbTable, importList []string)
 							panic(fmt.Sprintf("P#1RDC6R - Expected enum %v to be found but did not.", col.CommentProperties.StrConversionViaEnum))
 						}
 
-						networkStruct += fmt.Sprintf("val := %v.%vFromInt16(db%v.%v.Float64).String()\n",
-							col.CommentProperties.StrConversionViaEnum, enum.goTypeName,
+						networkStruct += fmt.Sprintf("val := %v.TypFromInt16(db%v.%v.Float64).String()\n",
+							"enum"+enum.goNameSingular,
 							table.GoNameSingular, col.GoName)
 						networkStruct += fmt.Sprintf("%vForResponse.%v = &val\n",
 							table.variableName(), col.GoName)
-						importList = g.addToImports(g.Config.DbModelPackageName+"/types/"+col.CommentProperties.StrConversionViaEnum, importList)
+						importList = g.addToImports(g.Config.DbModelPackageName+"enum"+enum.goNameSingular, importList)
 					} else {
 						networkStruct += fmt.Sprintf("%vForResponse.%v = &db%v.%v.Float64\n",
 							table.variableName(), col.GoName,
@@ -185,12 +185,12 @@ func (g *Generator) buildNetworkStructString(table DbTable, importList []string)
 							panic(fmt.Sprintf("P#1RDC6X - Expected enum %v to be found but did not.", col.CommentProperties.StrConversionViaEnum))
 						}
 
-						networkStruct += fmt.Sprintf("val := %v.%vFromInt16(db%v.%v.Bool).String()\n",
-							col.CommentProperties.StrConversionViaEnum, enum.goTypeName,
+						networkStruct += fmt.Sprintf("val := %v.TypFromInt16(db%v.%v.Bool).String()\n",
+							"enum"+enum.goNameSingular,
 							table.GoNameSingular, col.GoName)
 						networkStruct += fmt.Sprintf("%vForResponse.%v = &val\n",
 							table.variableName(), col.GoName)
-						importList = g.addToImports(g.Config.DbModelPackageName+"/types/"+col.CommentProperties.StrConversionViaEnum, importList)
+						importList = g.addToImports(g.Config.DbModelPackageName+"enum"+enum.goNameSingular, importList)
 					} else {
 						networkStruct += fmt.Sprintf("%vForResponse.%v = &db%v.%v.Bool\n",
 							table.variableName(), col.GoName,
@@ -207,12 +207,12 @@ func (g *Generator) buildNetworkStructString(table DbTable, importList []string)
 							panic(fmt.Sprintf("P#1RDC72 - Expected enum %v to be found but did not.", col.CommentProperties.StrConversionViaEnum))
 						}
 
-						networkStruct += fmt.Sprintf("val := %v.%vFromInt16(db%v.%v.Time).String()\n",
-							col.CommentProperties.StrConversionViaEnum, enum.goTypeName,
+						networkStruct += fmt.Sprintf("val := %v.TypFromInt16(db%v.%v.Time).String()\n",
+							"enum"+enum.goNameSingular,
 							table.GoNameSingular, col.GoName)
 						networkStruct += fmt.Sprintf("%vForResponse.%v = &val\n",
 							table.variableName(), col.GoName)
-						importList = g.addToImports(g.Config.DbModelPackageName+"/types/"+col.CommentProperties.StrConversionViaEnum, importList)
+						importList = g.addToImports(g.Config.DbModelPackageName+"enum"+enum.goNameSingular, importList)
 					} else {
 						networkStruct += fmt.Sprintf("%vForResponse.%v = &db%v.%v.Time\n",
 							table.variableName(), col.GoName,
