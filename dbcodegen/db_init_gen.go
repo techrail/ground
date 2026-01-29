@@ -45,13 +45,28 @@ func (g *Generator) buildInitCode(importList []string, tables map[string]DbTable
 	initCode += "errMsg := fmt.Sprintf(\"E#" + newUniqueLmid() + " - Could not connect to the database! Error: %v\", err)\n"
 	initCode += "fmt.Println(errMsg)"
 
+	initCode += "}else{\n"
+	initCode += fmt.Sprintf("%v.DB.SetMaxOpenConns(20) // Maximum number of open connections\n", upperFirstChar(g.Config.DbModelPackageName))
+	initCode += fmt.Sprintf("%v.DB.SetMaxIdleConns(10) // Maximum number of idle connections\n", upperFirstChar(g.Config.DbModelPackageName))
+	initCode += fmt.Sprintf("%v.DB.SetConnMaxIdleTime(5 * time.Minute) // How long an idle connection lives\n", upperFirstChar(g.Config.DbModelPackageName))
+	initCode += fmt.Sprintf("%v.DB.SetConnMaxLifetime(30 * time.Minute) // Max lifetime of a connection\n", upperFirstChar(g.Config.DbModelPackageName))
 	initCode += "}\n"
-
+	/*
+		 db.SetMaxOpenConns(20) // Maximum number of open connections
+			db.SetMaxIdleConns(10) // Maximum number of idle connections d
+			b.SetConnMaxIdleTime(5 * time.Minute) // How long an idle connection lives
+			db.SetConnMaxLifetime(30 * time.Minute) // Max lifetime of a connection
+	*/
 	if g.readerEnabled() {
 		initCode += fmt.Sprintf("%vReader.DB, err = sqlx.Connect(\"pgx\", \"%v\"\n", upperFirstChar(g.Config.DbModelPackageName), g.Config.PgReaderDbUrl)
 		initCode += "if err != nil {\n"
 		initCode += "errMsg := fmt.Sprintf(\"E#" + newUniqueLmid() + " - Could not connect to the database! Error: %v\", err)\n"
 		initCode += "fmt.Println(errMsg)"
+		initCode += "}else{\n"
+		initCode += fmt.Sprintf("%vReader.DB.SetMaxOpenConns(20) // Maximum number of open connections\n", upperFirstChar(g.Config.DbModelPackageName))
+		initCode += fmt.Sprintf("%vReader.DB.SetMaxIdleConns(10) // Maximum number of idle connections\n", upperFirstChar(g.Config.DbModelPackageName))
+		initCode += fmt.Sprintf("%vReader.DB.SetConnMaxIdleTime(5 * time.Minute) // How long an idle connection lives\n", upperFirstChar(g.Config.DbModelPackageName))
+		initCode += fmt.Sprintf("%vReader.DB.SetConnMaxLifetime(30 * time.Minute) // Max lifetime of a connection\n", upperFirstChar(g.Config.DbModelPackageName))
 		initCode += "}\n\n"
 	} else {
 		initCode += fmt.Sprintf("%vReader = db{\n", upperFirstChar(g.Config.DbModelPackageName))

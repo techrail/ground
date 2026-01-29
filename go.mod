@@ -1,6 +1,6 @@
 module github.com/techrail/ground
 
-go 1.24.0
+go 1.24.9
 
 require (
 	github.com/fasthttp/router v1.5.4
@@ -13,8 +13,9 @@ require (
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/spf13/viper v1.21.0
 	github.com/techrail/bark v1.3.1
+	github.com/valkey-io/valkey-go v1.0.70
 	github.com/valyala/fasthttp v1.68.0
-	golang.org/x/text v0.30.0
+	golang.org/x/text v0.32.0
 )
 
 require (
@@ -39,6 +40,6 @@ require (
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
 	golang.org/x/crypto v0.43.0 // indirect
-	golang.org/x/sync v0.17.0 // indirect
-	golang.org/x/sys v0.37.0 // indirect
+	golang.org/x/sync v0.19.0 // indirect
+	golang.org/x/sys v0.39.0 // indirect
 )
