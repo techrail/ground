@@ -51,12 +51,8 @@ func (g *Generator) buildInitCode(importList []string, tables map[string]DbTable
 	initCode += fmt.Sprintf("%v.DB.SetConnMaxIdleTime(5 * time.Minute) // How long an idle connection lives\n", upperFirstChar(g.Config.DbModelPackageName))
 	initCode += fmt.Sprintf("%v.DB.SetConnMaxLifetime(30 * time.Minute) // Max lifetime of a connection\n", upperFirstChar(g.Config.DbModelPackageName))
 	initCode += "}\n"
-	/*
-		 db.SetMaxOpenConns(20) // Maximum number of open connections
-			db.SetMaxIdleConns(10) // Maximum number of idle connections d
-			b.SetConnMaxIdleTime(5 * time.Minute) // How long an idle connection lives
-			db.SetConnMaxLifetime(30 * time.Minute) // Max lifetime of a connection
-	*/
+	importList = g.addToImports("time", importList)
+
 	if g.readerEnabled() {
 		initCode += fmt.Sprintf("%vReader.DB, err = sqlx.Connect(\"pgx\", \"%v\"\n", upperFirstChar(g.Config.DbModelPackageName), g.Config.PgReaderDbUrl)
 		initCode += "if err != nil {\n"
