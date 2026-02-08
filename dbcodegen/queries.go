@@ -11,6 +11,8 @@ SELECT pg_stat_user_tables.relname                         AS table_name,
        pg_description.description                          AS column_comment,
        information_schema.columns.table_schema             AS table_schema,
        information_schema.columns.data_type                AS column_data_type,
+	   information_schema.columns.is_generated             AS is_generated,
+	   information_schema.columns.generation_expression    AS generation_expression,
        information_schema.columns.character_maximum_length AS char_len,
        CASE information_schema.columns.is_nullable
            WHEN 'NO' THEN FALSE

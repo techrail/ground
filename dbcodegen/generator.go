@@ -127,27 +127,31 @@ func (table *DbTable) FindIndexByColumnNames(colNames []string) DbIndex {
 
 // DbColumn is the column representation of a table in the database for the generator
 type DbColumn struct {
-	Schema            string           // Schema name in which this column's table resides
-	Table             string           // Table name of the table in which this column is
-	Name              string           // Column name
-	GoName            string           // Name we want to use for Golang code that will be generated
-	GoNameSingular    string           // Singular form of the name
-	GoNamePlural      string           // Plural form of the name
-	DataType          string           // Data type we get from db
-	GoDataType        string           // Data type we want to use in go program
-	NetworkDataType   string           // Data type we want to use for the network model
-	Comment           string           // Column comment
-	CharacterLength   int              // Length in case it is varchar
-	Nullable          bool             // NOT NULL means it is false
-	HasDefaultValue   bool             // Does the column have a default value?
-	DefaultValue      string           // If column has default value then what is it
-	CommentProperties dbColumnProperty // Properties that will control mostly column value validations
+	Schema               string           // Schema name in which this column's table resides
+	Table                string           // Table name of the table in which this column is
+	Name                 string           // Column name
+	GoName               string           // Name we want to use for Golang code that will be generated
+	GoNameSingular       string           // Singular form of the name
+	GoNamePlural         string           // Plural form of the name
+	DataType             string           // Data type we get from db
+	GoDataType           string           // Data type we want to use in go program
+	NetworkDataType      string           // Data type we want to use for the network model
+	Comment              string           // Column comment
+	CharacterLength      int              // Length in case it is varchar
+	Nullable             bool             // NOT NULL means it is false
+	HasDefaultValue      bool             // Does the column have a default value?
+	DefaultValue         string           // If column has default value then what is it
+	CommentProperties    dbColumnProperty // Properties that will control mostly column value validations
+	IsGenerated          string           // Indicates if the column is generated (computed columns)
+	GenerationExpression string           // SQL expression used to generate the column value if it's a generated column
 }
 
 func (col *DbColumn) newlineEscapedComment() string {
 	return strings.ReplaceAll(col.Comment, "\n", " (nwln) ")
 }
-
+func (col *DbColumn) isGeneratedColumn() bool {
+	return col.IsGenerated == "ALWAYS"
+}
 func (col *DbColumn) fullyQualifiedColumnName() string {
 	return col.Schema + "." + col.Table + "." + col.Name
 }
@@ -299,16 +303,18 @@ type Generator struct {
 
 // The type to get the column info for all the tables in all the schemas
 type rawCol struct {
-	Schema         sql.NullString `db:"table_schema"`
-	TableName      sql.NullString `db:"table_name"`
-	TableComment   sql.NullString `db:"table_comment"`
-	ColumnName     sql.NullString `db:"column_name"`
-	ColumnDefault  sql.NullString `db:"column_default"`
-	ColumnComment  sql.NullString `db:"column_comment"`
-	ColumnDataType sql.NullString `db:"column_data_type"`
-	CharLength     sql.NullInt32  `db:"char_len"`
-	NumericLength  sql.NullString `db:"numeric_length"`
-	ColumnNullable sql.NullBool   `db:"nullable"`
+	Schema               sql.NullString `db:"table_schema"`
+	TableName            sql.NullString `db:"table_name"`
+	TableComment         sql.NullString `db:"table_comment"`
+	ColumnName           sql.NullString `db:"column_name"`
+	ColumnDefault        sql.NullString `db:"column_default"`
+	ColumnComment        sql.NullString `db:"column_comment"`
+	ColumnDataType       sql.NullString `db:"column_data_type"`
+	CharLength           sql.NullInt32  `db:"char_len"`
+	NumericLength        sql.NullString `db:"numeric_length"`
+	ColumnNullable       sql.NullBool   `db:"nullable"`
+	IsGenerated          sql.NullString `db:"is_generated"`
+	GenerationExpression sql.NullString `db:"generation_expression"`
 }
 
 type rawIndexInfo struct {
@@ -549,6 +555,7 @@ func (g *Generator) Generate() appError.Typ {
 		}
 
 		if table, tableOk := tables[columnDetail.Schema.String+"."+columnDetail.TableName.String]; tableOk {
+			// Table already exist in the list of tables
 			dbColProp, colComment, appErr := g.getCommentAndPropertyFromComment(columnDetail.ColumnComment.String)
 			if appErr.IsNotBlank() {
 				if appErr.Code == noSuchEnumErrCode {
@@ -557,22 +564,25 @@ func (g *Generator) Generate() appError.Typ {
 			}
 			goDataType, networkDataType := g.getGoType(columnDetail.ColumnDataType.String, columnDetail.ColumnNullable.Bool)
 			dbCol := DbColumn{
-				Schema:            columnDetail.Schema.String,
-				Table:             columnDetail.TableName.String,
-				Name:              columnDetail.ColumnName.String,
-				GoName:            getGoName(columnDetail.ColumnName.String),
-				GoNameSingular:    g.pluralClient.Singular(getGoName(columnDetail.ColumnName.String)),
-				GoNamePlural:      g.pluralClient.Plural(getGoName(columnDetail.ColumnName.String)),
-				DataType:          columnDetail.ColumnDataType.String,
-				GoDataType:        goDataType,
-				NetworkDataType:   networkDataType,
-				Comment:           colComment,
-				HasDefaultValue:   columnDetail.ColumnDefault.Valid,
-				DefaultValue:      columnDetail.ColumnDefault.String,
-				CharacterLength:   int(columnDetail.CharLength.Int32),
-				Nullable:          columnDetail.ColumnNullable.Bool,
-				CommentProperties: dbColProp,
+				Schema:               columnDetail.Schema.String,
+				Table:                columnDetail.TableName.String,
+				Name:                 columnDetail.ColumnName.String,
+				GoName:               getGoName(columnDetail.ColumnName.String),
+				GoNameSingular:       g.pluralClient.Singular(getGoName(columnDetail.ColumnName.String)),
+				GoNamePlural:         g.pluralClient.Plural(getGoName(columnDetail.ColumnName.String)),
+				DataType:             columnDetail.ColumnDataType.String,
+				GoDataType:           goDataType,
+				NetworkDataType:      networkDataType,
+				Comment:              colComment,
+				HasDefaultValue:      columnDetail.ColumnDefault.Valid,
+				DefaultValue:         columnDetail.ColumnDefault.String,
+				CharacterLength:      int(columnDetail.CharLength.Int32),
+				Nullable:             columnDetail.ColumnNullable.Bool,
+				CommentProperties:    dbColProp,
+				IsGenerated:          columnDetail.IsGenerated.String,
+				GenerationExpression: columnDetail.GenerationExpression.String,
 			}
+
 			table.ColumnMap[columnDetail.ColumnName.String] = dbCol
 			// collist := table.ColumnList
 			// collist = append(collist, dbCol.Name)
@@ -581,6 +591,8 @@ func (g *Generator) Generate() appError.Typ {
 			table.ColumnListA2z = append(table.ColumnListA2z, dbCol.Name)
 			tables[columnDetail.Schema.String+"."+columnDetail.TableName.String] = table
 		} else {
+			// Table does not already exist in the list of tables.
+			// We need to create the column and then create the table with this column
 			dbColProp, colComment, appErr := g.getCommentAndPropertyFromComment(columnDetail.ColumnComment.String)
 			if appErr.IsNotBlank() {
 				if appErr.Code == noSuchEnumErrCode {
@@ -590,21 +602,23 @@ func (g *Generator) Generate() appError.Typ {
 
 			goDataType, networkDataType := g.getGoType(columnDetail.ColumnDataType.String, columnDetail.ColumnNullable.Bool)
 			dbCol := DbColumn{
-				Schema:            columnDetail.Schema.String,
-				Table:             columnDetail.TableName.String,
-				Name:              columnDetail.ColumnName.String,
-				GoName:            getGoName(columnDetail.ColumnName.String),
-				GoNameSingular:    g.pluralClient.Singular(getGoName(columnDetail.ColumnName.String)),
-				GoNamePlural:      g.pluralClient.Plural(getGoName(columnDetail.ColumnName.String)),
-				DataType:          columnDetail.ColumnDataType.String,
-				GoDataType:        goDataType,
-				NetworkDataType:   networkDataType,
-				Comment:           colComment,
-				HasDefaultValue:   columnDetail.ColumnDefault.Valid,
-				DefaultValue:      columnDetail.ColumnDefault.String,
-				CharacterLength:   int(columnDetail.CharLength.Int32),
-				Nullable:          columnDetail.ColumnNullable.Bool,
-				CommentProperties: dbColProp,
+				Schema:               columnDetail.Schema.String,
+				Table:                columnDetail.TableName.String,
+				Name:                 columnDetail.ColumnName.String,
+				GoName:               getGoName(columnDetail.ColumnName.String),
+				GoNameSingular:       g.pluralClient.Singular(getGoName(columnDetail.ColumnName.String)),
+				GoNamePlural:         g.pluralClient.Plural(getGoName(columnDetail.ColumnName.String)),
+				DataType:             columnDetail.ColumnDataType.String,
+				GoDataType:           goDataType,
+				NetworkDataType:      networkDataType,
+				Comment:              colComment,
+				HasDefaultValue:      columnDetail.ColumnDefault.Valid,
+				DefaultValue:         columnDetail.ColumnDefault.String,
+				CharacterLength:      int(columnDetail.CharLength.Int32),
+				Nullable:             columnDetail.ColumnNullable.Bool,
+				CommentProperties:    dbColProp,
+				IsGenerated:          columnDetail.IsGenerated.String,
+				GenerationExpression: columnDetail.GenerationExpression.String,
 			}
 			table = DbTable{
 				Name:           columnDetail.TableName.String,
@@ -1257,17 +1271,17 @@ func (g *Generator) getColumnFromListByName(colName string, colList []DbColumn) 
 // Function to get the Go type for DB and network for a given PostgreSQL data type
 func (g *Generator) getGoType(datatype string, nullable bool) (string, string) {
 	switch datatype {
-	case "bigint":
+	case DatatypeBigint:
 		if nullable {
 			return "sql.NullInt64", "*int64"
 		}
 		return "int64", "int64"
-	case "integer":
+	case DatatypeInteger:
 		if nullable {
 			return "sql.NullInt32", "*int32"
 		}
 		return "int32", "int32"
-	case "smallint":
+	case DatatypeSmallint:
 		if nullable {
 			return "sql.NullInt16", "*int16"
 		}

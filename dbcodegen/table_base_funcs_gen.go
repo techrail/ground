@@ -266,6 +266,12 @@ func (g *Generator) buildTableInsertMethod(table DbTable, importList []string) (
 		if !columnFound {
 			panic(fmt.Sprintf("P#1OL34D - Column %v not found in table %v of schema %v", columnName, table.Name, table.Schema))
 		}
+
+		if column.isGeneratedColumn() {
+			// Generated columns are not supposed to be inserted manually
+			continue
+		}
+
 		if !(column.Name == "created_at" && g.Config.InsertCreatedAtInCode == false && // Created at timestamps might not need to be created in code
 			(column.GoDataType == "time.Time" || column.GoDataType == "sql.NullTime")) &&
 			!(column.Name == "updated_at" && g.Config.InsertUpdatedAtInCode == false && // Updated at timestamps might not need to be created in code
@@ -403,6 +409,12 @@ func (g *Generator) buildTableUpdateMethodBySingleIndex(table DbTable, index DbI
 		if !columnFound {
 			panic(fmt.Sprintf("P#1OL34D - Column %v not found in table %v of schema %v", columnName, table.Name, table.Schema))
 		}
+
+		if column.isGeneratedColumn() {
+			// Generated columns are not supposed to be updated manually
+			continue
+		}
+
 		if !columnInList(column.Name, table.PkColumnList) {
 			if !(column.Name == "created_at" && // Created at timestamps are never to be updated.
 				(column.GoDataType == "time.Time" || column.GoDataType == "sql.NullTime")) &&
@@ -496,6 +508,12 @@ func (g *Generator) buildTableUpdateMethod(table DbTable, importList []string) (
 		if !columnFound {
 			panic(fmt.Sprintf("P#1OL34Y - Column %v not found in table %v of schema %v", columnName, table.Name, table.Schema))
 		}
+
+		if column.isGeneratedColumn() {
+			// Generated columns are not supposed to be updated manually
+			continue
+		}
+
 		if !columnInList(column.Name, table.PkColumnList) {
 			if !(column.Name == "created_at" && // Created at timestamps are never to be updated.
 				(column.GoDataType == "time.Time" || column.GoDataType == "sql.NullTime")) &&
@@ -623,6 +641,12 @@ func (g *Generator) buildTableUpsertMethod(table DbTable, importList []string) (
 		if !columnFound {
 			panic(fmt.Sprintf("P#1PKABZ - Column %v not found in table %v of schema %v", columnName, table.Name, table.Schema))
 		}
+
+		if column.isGeneratedColumn() {
+			// Generated columns are not supposed to be inserted/updated manually
+			continue
+		}
+
 		if !(column.Name == "created_at" && g.Config.InsertCreatedAtInCode == false && // Created at timestamps might not need to be created in code
 			(column.GoDataType == "time.Time" || column.GoDataType == "sql.NullTime")) &&
 			!(column.Name == "updated_at" && g.Config.InsertUpdatedAtInCode == false && // Updated at timestamps might not need to be created in code

@@ -1503,6 +1503,8 @@ func (j *Typ) String() string {
 	return string(bytes)
 }
 
+// StringOrBlankObject will return "{}" if the Typ is not valid, otherwise it will return the JSON string representation
+// NOTE: This method is used by the generator and is not supposed to be removed
 func (j *Typ) StringOrBlankObject() string {
 	retVal := j.String()
 	if retVal == "" {
@@ -1511,6 +1513,8 @@ func (j *Typ) StringOrBlankObject() string {
 	return retVal
 }
 
+// StringOrNil will return nil if the Typ is not valid, otherwise it will return the JSON string representation
+// NOTE: This method is used by the generator and is not supposed to be removed
 func (j *Typ) StringOrNil() *string {
 	s := j.String()
 	if j.Valid {
