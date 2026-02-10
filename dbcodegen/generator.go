@@ -150,7 +150,7 @@ func (col *DbColumn) newlineEscapedComment() string {
 	return strings.ReplaceAll(col.Comment, "\n", " (nwln) ")
 }
 func (col *DbColumn) isGeneratedColumn() bool {
-	return col.IsGenerated == "ALWAYS"
+	return col.IsGenerated == "ALWAYS" || col.CommentProperties.TreatAsGeneratedCol
 }
 func (col *DbColumn) fullyQualifiedColumnName() string {
 	return col.Schema + "." + col.Table + "." + col.Name
@@ -193,6 +193,7 @@ type dbColumnProperty struct {
 	MaxTimestampVal      time.Time `json:"maxTimestampVal"`      // For timestamp without time zone columns
 	StrValidateAs        string    `json:"strValidateAs"`        // Validate String Data as what? (Email? URL? Name? Regex?)
 	HideFromNetwork      bool      `json:"hideFromNetwork"`      // Should this field be hidden in network response
+	TreatAsGeneratedCol  bool      `json:"treatAsGeneratedCol"`  // Should this column be treated as a generated column?
 	StrConversionViaEnum string    `json:"strConversionViaEnum"` // To be used for enumerated fields that need to be represented as string in network responses. The enums must be one being generated.
 	// StrConversionViaType string    `json:"strConversionViaType"` // To be used for enumerated fields that need to be represented as string in network responses. The type must be in the
 }
@@ -766,7 +767,6 @@ func (g *Generator) Generate() appError.Typ {
 	}
 
 	// Check for duplicates
-	// Important: I was here
 	dupLink := set.New[string]()
 	for _, schema := range g.Schemas {
 		for _, table := range schema.Tables {
