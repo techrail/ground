@@ -9,15 +9,14 @@ import (
 func (g *Generator) buildTableBaseValidationFuncs(table DbTable, importList []string) (string, []string) {
 	tableBaseValidationFuncStr := ""
 	tableBaseValidationFuncStr, importList = g.buildTableBaseValidation(table, importList)
-	tableCommonValidationFuncStr := ""
-	tableCommonValidationFuncStr, importList = g.buildTableCommonValidation(table, importList)
-	tableInsertionValidationFuncStr := ""
-	tableInsertionValidationFuncStr, importList = g.buildTableInsertValidation(table, importList)
-	tableUpdateValidationFuncStr := ""
-	tableUpdateValidationFuncStr, importList = g.buildTableUpdateValidation(table, importList)
+	// tableCommonValidationFuncStr := ""
+	// tableCommonValidationFuncStr, importList = g.buildTableCommonValidation(table, importList)
+	// tableInsertionValidationFuncStr := ""
+	// tableInsertionValidationFuncStr, importList = g.buildTableInsertValidation(table, importList)
+	// tableUpdateValidationFuncStr := ""
+	// tableUpdateValidationFuncStr, importList = g.buildTableUpdateValidation(table, importList)
 
-	tableValidationStr := tableBaseValidationFuncStr + tableCommonValidationFuncStr + tableInsertionValidationFuncStr +
-		tableUpdateValidationFuncStr
+	tableValidationStr := tableBaseValidationFuncStr
 	return tableValidationStr, importList
 }
 
@@ -201,51 +200,51 @@ func (g *Generator) buildTableBaseValidation(table DbTable, importList []string)
 	return tabCommonValidation, importList
 }
 
-func (g *Generator) buildTableCommonValidation(table DbTable, importList []string) (string, []string) {
-	tabCommonValidation := ""
-	tabCommonValidation += fmt.Sprintf("func (%v *%v) commonValidation() error {\n",
-		table.variableName(), table.fullyQualifiedStructName())
-	tabCommonValidation += fmt.Sprintf("err := %v.baseValidation()\n", lowerFirstChar(table.GoNameSingular))
-	tabCommonValidation += "if err != nil{\nreturn err\n}\n"
-	tabCommonValidation += "// More code to be written here for validation\n"
-	tabCommonValidation += "return nil\n"
-	tabCommonValidation += "}\n\n"
+// func (g *Generator) buildTableCommonValidation(table DbTable, importList []string) (string, []string) {
+// 	tabCommonValidation := ""
+// 	tabCommonValidation += fmt.Sprintf("func (%v *%v) commonValidation() error {\n",
+// 		table.variableName(), table.fullyQualifiedStructName())
+// 	tabCommonValidation += fmt.Sprintf("err := %v.baseValidation()\n", lowerFirstChar(table.GoNameSingular))
+// 	tabCommonValidation += "if err != nil{\nreturn err\n}\n"
+// 	tabCommonValidation += "// More code to be written here for validation\n"
+// 	tabCommonValidation += "return nil\n"
+// 	tabCommonValidation += "}\n\n"
+//
+// 	return tabCommonValidation, importList
+// }
 
-	return tabCommonValidation, importList
-}
+// func (g *Generator) buildTableInsertValidation(table DbTable, importList []string) (string, []string) {
+// 	tabInsertValidation := ""
+// 	tabInsertValidation += fmt.Sprintf("func (%v *%v) validateForInsert() error {\n",
+// 		table.variableName(), table.fullyQualifiedStructName())
+// 	tabInsertValidation += fmt.Sprintf("err := %v.commonValidation()\n", table.variableName())
+// 	tabInsertValidation += "if err != nil{\nreturn err\n}\n"
+// 	tabInsertValidation += "// More code to be written here for validation\n"
+// 	tabInsertValidation += "return nil\n"
+// 	tabInsertValidation += "}\n\n"
+//
+// 	return tabInsertValidation, importList
+// }
 
-func (g *Generator) buildTableInsertValidation(table DbTable, importList []string) (string, []string) {
-	tabInsertValidation := ""
-	tabInsertValidation += fmt.Sprintf("func (%v *%v) validateForInsert() error {\n",
-		table.variableName(), table.fullyQualifiedStructName())
-	tabInsertValidation += fmt.Sprintf("err := %v.commonValidation()\n", table.variableName())
-	tabInsertValidation += "if err != nil{\nreturn err\n}\n"
-	tabInsertValidation += "// More code to be written here for validation\n"
-	tabInsertValidation += "return nil\n"
-	tabInsertValidation += "}\n\n"
-
-	return tabInsertValidation, importList
-}
-
-func (g *Generator) buildTableUpdateValidation(table DbTable, importList []string) (string, []string) {
-	tabUpdateValidation := ""
-	tabUpdateValidation += fmt.Sprintf("func (%v *%v) validateForUpdate() error {\n",
-		table.variableName(), table.fullyQualifiedStructName())
-	tabUpdateValidation += fmt.Sprintf("err := %v.commonValidation()\n", lowerFirstChar(table.GoNameSingular))
-	tabUpdateValidation += "if err != nil{\nreturn err\n}\n"
-	tabUpdateValidation += "// More code to be written here for validation\n"
-	tabUpdateValidation += "return nil\n"
-	tabUpdateValidation += "}\n\n"
-
-	return tabUpdateValidation, importList
-}
+// func (g *Generator) buildTableUpdateValidation(table DbTable, importList []string) (string, []string) {
+// 	tabUpdateValidation := ""
+// 	tabUpdateValidation += fmt.Sprintf("func (%v *%v) validateForUpdate() error {\n",
+// 		table.variableName(), table.fullyQualifiedStructName())
+// 	tabUpdateValidation += fmt.Sprintf("err := %v.commonValidation()\n", lowerFirstChar(table.GoNameSingular))
+// 	tabUpdateValidation += "if err != nil{\nreturn err\n}\n"
+// 	tabUpdateValidation += "// More code to be written here for validation\n"
+// 	tabUpdateValidation += "return nil\n"
+// 	tabUpdateValidation += "}\n\n"
+//
+// 	return tabUpdateValidation, importList
+// }
 
 func (g *Generator) buildTableInsertMethod(table DbTable, importList []string) (string, []string) {
 	insertCode := ""
 	insertCode += fmt.Sprintf("func (%v *%v) Insert() error {\n",
 		table.variableName(), table.fullyQualifiedStructName())
 	insertCode += "var err error\n"
-	insertCode += fmt.Sprintf("err = %v.validateForInsert()\n", table.variableName())
+	insertCode += fmt.Sprintf("err = %v.baseValidation()\n", table.variableName())
 	insertCode += "if err != nil{\nreturn err\n}\n"
 
 	insertCode += fmt.Sprintf("insertQuery := `INSERT INTO %v (\n", table.fullyQualifiedTableName())
@@ -391,7 +390,7 @@ func (g *Generator) buildTableUpdateMethodBySingleIndex(table DbTable, index DbI
 	updateCode += fmt.Sprintf("func (%v *%v) UpdateBy%v() error {\n",
 		table.variableName(), table.fullyQualifiedStructName(), index.GetFuncNamePart())
 
-	updateCode += fmt.Sprintf("err := %v.validateForUpdate()\n", table.variableName())
+	updateCode += fmt.Sprintf("err := %v.baseValidation()\n", table.variableName())
 	updateCode += "if err != nil{\nreturn err\n}\n"
 
 	updateCode += fmt.Sprintf("updateQuery := `UPDATE %v SET\n\t\t\t", table.fullyQualifiedTableName())
@@ -490,7 +489,7 @@ func (g *Generator) buildTableUpdateMethod(table DbTable, importList []string) (
 		return updateCode, importList
 	}
 
-	updateCode += fmt.Sprintf("err := %v.validateForUpdate()\n", table.variableName())
+	updateCode += fmt.Sprintf("err := %v.baseValidation()\n", table.variableName())
 	updateCode += "if err != nil{\nreturn err\n}\n"
 
 	updateCode += fmt.Sprintf("updateQuery := `UPDATE %v SET\n\t\t\t", table.fullyQualifiedTableName())

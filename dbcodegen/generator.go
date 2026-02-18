@@ -980,9 +980,10 @@ func (g *Generator) Generate() appError.Typ {
 //{{TABLE_STRUCT}}
 
 //{{TABLE_BASE_FUNCS}}
-
-//{{MAGIC_COMMENT}}
-//{{FIRST_TIME_FILE_CONTENT}}
+	
+//{{TABLE_VALIDATION_FUNCS}}
+	
+// File ends here
 `
 	for _, schema := range g.Schemas {
 		for _, table := range schema.Tables {
@@ -1012,37 +1013,38 @@ func (g *Generator) Generate() appError.Typ {
 			fileContent = strings.ReplaceAll(fileContent, "//{{IMPORT_LIST}}", importsString)
 			fileContent = strings.ReplaceAll(fileContent, "//{{TABLE_STRUCT}}", tableStructStr)
 			fileContent = strings.ReplaceAll(fileContent, "//{{TABLE_BASE_FUNCS}}", tableBaseFuncsStr)
-			fileContent = strings.ReplaceAll(fileContent, "//{{MAGIC_COMMENT}}", g.Config.MagicComment)
+			fileContent = strings.ReplaceAll(fileContent, "//{{TABLE_VALIDATION_FUNCS}}", tableValidationStr)
+			// fileContent = strings.ReplaceAll(fileContent, "//{{MAGIC_COMMENT}}", g.Config.MagicComment)
 
 			outputFileName := "gen_schema_" + strings.ToLower(schema.Name) + "_" + strings.ToLower(table.Name) + ".go"
 			// Check if the file already exists
-			existingFileContentBytes, fileErr := os.ReadFile(
+			_, fileErr := os.ReadFile(
 				fmt.Sprintf("%s/%s", g.Config.DbModelPackagePath, outputFileName))
 			if fileErr != nil {
 				// File does not exist
 				fileAlreadyExists = false
 			}
 
-			if !fileAlreadyExists {
-				// File has to be created.
-				fileContent = strings.ReplaceAll(fileContent, "//{{FIRST_TIME_FILE_CONTENT}}",
-					"// Make sure code below is valid before running code generator else the generator will fail\n\n"+tableValidationStr)
-			} else {
-				// file already exists
-				fileContent = strings.ReplaceAll(fileContent, "//{{FIRST_TIME_FILE_CONTENT}}", "")
-			}
+			// if !fileAlreadyExists {
+			// 	// File has to be created.
+			// 	fileContent = strings.ReplaceAll(fileContent, "//{{FIRST_TIME_FILE_CONTENT}}",
+			// 		"// Make sure code below is valid before running code generator else the generator will fail\n\n"+tableValidationStr)
+			// } else {
+			// 	// file already exists
+			// 	fileContent = strings.ReplaceAll(fileContent, "//{{FIRST_TIME_FILE_CONTENT}}", "")
+			// }
 
-			existingFileContent := string(existingFileContentBytes)
-
-			// Look for the magic comment
-			if strings.Contains(existingFileContent, g.Config.MagicComment) {
-				allcode := strings.Split(existingFileContent, g.Config.MagicComment)
-				for i := 0; i < len(allcode); i++ {
-					if i > 0 {
-						customCodeInFile = append(customCodeInFile, allcode[i])
-					}
-				}
-			}
+			// existingFileContent := string(existingFileContentBytes)
+			//
+			// // Look for the magic comment
+			// if strings.Contains(existingFileContent, g.Config.MagicComment) {
+			// 	allcode := strings.Split(existingFileContent, g.Config.MagicComment)
+			// 	for i := 0; i < len(allcode); i++ {
+			// 		if i > 0 {
+			// 			customCodeInFile = append(customCodeInFile, allcode[i])
+			// 		}
+			// 	}
+			// }
 
 			err = os.Mkdir(g.Config.DbModelPackagePath, 0o777)
 			if err != nil {
