@@ -21,15 +21,20 @@ func (g *Generator) buildSchemaStructString(schemaName string, importList []stri
 			panic(fmt.Sprintf("P#1OKZHA - Table %v not found in schema %v when expected", tableName, schema.Name))
 		}
 
+		// Skip for tables that are isolated by config and have no FK references
+		if g.isTableIsolatedByConfig(schema.Name+"."+table.Name) && !table.hasFkReferences() {
+			continue
+		}
+
 		// fmt.Printf("Schema: %v | Table: %v \n", schema.Name, table.Name)
 
-		//tableComment := ""
-		//if table.Comment != "" {
+		// tableComment := ""
+		// if table.Comment != "" {
 		//	tableComment = "// " + strings.ReplaceAll(table.Comment, "\n", "")
-		//} else {
+		// } else {
 		//	tableComment = "// _No comment on table_"
-		//}
-		//schemaStruct += fmt.Sprintf("\t%s %s %v\n",
+		// }
+		// schemaStruct += fmt.Sprintf("\t%s %s %v\n",
 		//	table.GoNameSingular, table.fullyQualifiedStructName(), tableComment)
 		schemaStruct += fmt.Sprintf("\t%vDao *%v // Dao for %v\n",
 			table.GoNameSingular, table.fullyQualifiedDaoName(), table.Name)
@@ -38,7 +43,13 @@ func (g *Generator) buildSchemaStructString(schemaName string, importList []stri
 	schemaStruct += fmt.Sprintf("var %v %vSchema\n\n", schema.GoName, schema.GoName)
 	schemaStruct += "func init() {\n"
 	schemaStruct += fmt.Sprintf("%v = %vSchema{\n", schema.GoName, schema.GoName)
-	for _, table := range schema.Tables {
+	for _, tableName := range schema.TablesA2z {
+		table := schema.Tables[tableName]
+		// Skip for tables that are isolated by config and have no FK references
+		if g.isTableIsolatedByConfig(schema.Name+"."+table.Name) && !table.hasFkReferences() {
+			continue
+		}
+
 		schemaStruct += fmt.Sprintf("\t%vDao: New%v(), // Dao for %v\n",
 			table.GoNameSingular, table.fullyQualifiedDaoName(), table.Name)
 	}

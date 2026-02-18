@@ -73,6 +73,10 @@ func (table *DbTable) fullyQualifiedStructName() string {
 	return getGoName(table.Schema) + table.GoNameSingular
 }
 
+func (table *DbTable) fullyQualifiedBaseStructName() string {
+	return getGoName(table.Schema) + "Base" + table.GoNameSingular
+}
+
 func (table *DbTable) fullyQualifiedDaoName() string {
 	return table.fullyQualifiedStructName() + "Dao"
 }
@@ -96,6 +100,12 @@ func (table *DbTable) isColumnPrimaryKey(input string) bool {
 		}
 	}
 	return false
+}
+
+// Function to check if a table has forward or reverse foreign key references
+func (table *DbTable) hasFkReferences() bool {
+	// Table refers to another table or is referred to by another table
+	return len(table.FKeyMap) > 0 || len(table.RevFKeyMap) > 0
 }
 
 func (table *DbTable) FindIndexByColumnNames(colNames []string) DbIndex {
@@ -127,23 +137,23 @@ func (table *DbTable) FindIndexByColumnNames(colNames []string) DbIndex {
 
 // DbColumn is the column representation of a table in the database for the generator
 type DbColumn struct {
-	Schema               string           // Schema name in which this column's table resides
-	Table                string           // Table name of the table in which this column is
-	Name                 string           // Column name
-	GoName               string           // Name we want to use for Golang code that will be generated
-	GoNameSingular       string           // Singular form of the name
-	GoNamePlural         string           // Plural form of the name
-	DataType             string           // Data type we get from db
-	GoDataType           string           // Data type we want to use in go program
-	NetworkDataType      string           // Data type we want to use for the network model
-	Comment              string           // Column comment
-	CharacterLength      int              // Length in case it is varchar
-	Nullable             bool             // NOT NULL means it is false
-	HasDefaultValue      bool             // Does the column have a default value?
-	DefaultValue         string           // If column has default value then what is it
-	CommentProperties    dbColumnProperty // Properties that will control mostly column value validations
-	IsGenerated          string           // Indicates if the column is generated (computed columns)
-	GenerationExpression string           // SQL expression used to generate the column value if it's a generated column
+	Schema               string             // Schema name in which this column's table resides
+	Table                string             // Table name of the table in which this column is
+	Name                 string             // Column name
+	GoName               string             // Name we want to use for Golang code that will be generated
+	GoNameSingular       string             // Singular form of the name
+	GoNamePlural         string             // Plural form of the name
+	DataType             string             // Data type we get from db
+	GoDataType           string             // Data type we want to use in go program
+	NetworkDataType      string             // Data type we want to use for the network model
+	Comment              string             // Column comment
+	CharacterLength      int                // Length in case it is varchar
+	Nullable             bool               // NOT NULL means it is false
+	HasDefaultValue      bool               // Does the column have a default value?
+	DefaultValue         string             // If column has default value then what is it
+	CommentProperties    colCommentProperty // Properties that will control generator behavior - mostly column value validations
+	IsGenerated          string             // Indicates if the column is generated (computed columns)
+	GenerationExpression string             // SQL expression used to generate the column value if it's a generated column
 }
 
 func (col *DbColumn) newlineEscapedComment() string {
@@ -183,7 +193,7 @@ func isGoKeyword(word string) bool {
 //	Email address of the user (^_^) {"minStrLen":8}
 //
 // It should generate the validator which would ensure that the email field at least has 8 characters in it!
-type dbColumnProperty struct {
+type colCommentProperty struct {
 	Disabled             bool      `json:"disabled"`             // Makes generator behave as if no column property set
 	MinStrLen            int       `json:"minStrLen"`            // for string columns - minimum length
 	MaxStrLen            int       `json:"maxStrLen"`            // for string columns - maximum length
@@ -288,6 +298,7 @@ type CodegenConfig struct {
 	BuildUpdateByUniqueIndex bool   // Should we generate the update functions for unique indexes?
 	ColumnOrderAlphabetic    bool   // Column order in generated code will be alphabetic if this is set to true, ordinal otherwise
 	Enumerations             map[string]EnumDefinition
+	SkipTablesIfIsolated     []string // Skip code generation of these tables (schema.table format) if they are isolated
 }
 
 // Generator is the structure we return to a client which needs a generator.
@@ -463,11 +474,13 @@ func (g *Generator) Generate() appError.Typ {
 		fileContent = strings.ReplaceAll(fileContent, "//{{IMPORT_LIST}}", enumImportsStr)
 		fileContent = strings.ReplaceAll(fileContent, "//{{FILE_CONTENTS}}", enumFileContentsStr)
 		fileContent = strings.ReplaceAll(fileContent, "//{{MAGIC_COMMENT}}", g.Config.MagicComment)
+
 		fmt.Println("E#1PO4OB - Printing to make sure the variable gets used: ", enum)
 		// outputFileName := "gen_enum_" + strings.ToLower(enum.Name) + ".go"
 		// outputDirName := "enum" + enum.goNameSingular
 		// Check if the file already exists
-		existingFileContentBytes, fileErr := os.ReadFile(
+		// NOTE: Change ReadFile to Stat call later
+		_, fileErr := os.ReadFile(
 			fmt.Sprintf("%s/%s/typ.go", g.Config.DbModelPackagePath, outputDirName))
 		if fileErr != nil {
 			// File does not exist
@@ -481,18 +494,6 @@ func (g *Generator) Generate() appError.Typ {
 		} else {
 			// file already exists
 			fileContent = strings.ReplaceAll(fileContent, "//{{FIRST_TIME_FILE_CONTENT}}", "")
-		}
-
-		existingFileContent := string(existingFileContentBytes)
-
-		// Look for the magic comment
-		if strings.Contains(existingFileContent, g.Config.MagicComment) {
-			allcode := strings.Split(existingFileContent, g.Config.MagicComment)
-			for i := 0; i < len(allcode); i++ {
-				if i > 0 {
-					customCodeInFile = append(customCodeInFile, allcode[i])
-				}
-			}
 		}
 
 		err = os.Mkdir(g.Config.DbModelPackagePath, 0o777)
@@ -516,13 +517,6 @@ func (g *Generator) Generate() appError.Typ {
 		}
 
 		fileContent = string(fileContentBytes)
-
-		if fileAlreadyExists {
-			for _, val := range customCodeInFile {
-				fileContent += val + "\n"
-			}
-		}
-
 		fileContent = g.removeTrailingNewlines(fileContent) + "\n"
 
 		_, err = outputFile.WriteString(fileContent)
@@ -633,9 +627,6 @@ func (g *Generator) Generate() appError.Typ {
 				ColumnList:     []string{},
 				ColumnListA2z:  []string{},
 			}
-			// collist := table.ColumnList
-			// collist = append(collist, dbCol.Name)
-			// table.ColumnList = collist
 			table.ColumnList = append(table.ColumnList, dbCol.Name)
 			table.ColumnListA2z = append(table.ColumnListA2z, dbCol.Name)
 			tables[columnDetail.Schema.String+"."+columnDetail.TableName.String] = table
@@ -853,6 +844,7 @@ func (g *Generator) Generate() appError.Typ {
 			}
 		}
 	}
+
 	// Let's sort things alphabetically and ordinarily where possible
 	// Sort the tables in schemas
 	for _, schema := range g.Schemas {
@@ -979,8 +971,8 @@ func (g *Generator) Generate() appError.Typ {
 		customCodeInFile = []string{}
 	}
 
-	// Table struct file template
-	tableStructFileTemplate := `
+	// Table base struct file template
+	tableBaseStructFileTemplate := `
 //{{PACKAGE_NAME}}
 
 //{{IMPORT_LIST}}
@@ -994,11 +986,16 @@ func (g *Generator) Generate() appError.Typ {
 `
 	for _, schema := range g.Schemas {
 		for _, table := range schema.Tables {
+			// Skip the tables which are marked for isolation and are actually isolated
+			if g.isTableIsolatedByConfig(schema.Name+"."+table.Name) && !table.hasFkReferences() {
+				continue
+			}
+
 			fileAlreadyExists = true
 			importList = []string{}
 			importsString = ""
-			tableStructStr, importList = g.buildTableStructString(table, importList)
-			tableValidationStr, importList = g.buildTableValidationFuncs(table, importList)
+			tableStructStr, importList = g.buildTableBaseStructString(table, importList)
+			tableValidationStr, importList = g.buildTableBaseValidationFuncs(table, importList)
 			tableBaseFuncsStr, importList = g.buildTableBaseFuncs(table, importList)
 			if len(importList) > 0 {
 				importsString += "\nimport (\n"
@@ -1010,7 +1007,7 @@ func (g *Generator) Generate() appError.Typ {
 				importsString = ""
 			}
 
-			fileContent = tableStructFileTemplate
+			fileContent = tableBaseStructFileTemplate
 			fileContent = strings.ReplaceAll(fileContent, "//{{PACKAGE_NAME}}", fmt.Sprintf("package %v", g.Config.DbModelPackageName))
 			fileContent = strings.ReplaceAll(fileContent, "//{{IMPORT_LIST}}", importsString)
 			fileContent = strings.ReplaceAll(fileContent, "//{{TABLE_STRUCT}}", tableStructStr)
@@ -1086,6 +1083,85 @@ func (g *Generator) Generate() appError.Typ {
 		}
 	}
 
+	// Table struct file template
+	tableStructFileTemplate := `
+//{{PACKAGE_NAME}}
+
+//{{IMPORT_LIST}}
+
+//{{TABLE_STRUCT}}
+`
+	for _, schema := range g.Schemas {
+		for _, table := range schema.Tables {
+			if g.isTableIsolatedByConfig(schema.Name+"."+table.Name) && !table.hasFkReferences() {
+				continue
+			}
+
+			fileAlreadyExists = true
+			importList = []string{}
+			importsString = ""
+			tableStructStr, importList = g.buildTableStructString(table, importList)
+			if len(importList) > 0 {
+				importsString += "\nimport (\n"
+				for _, impo := range importList {
+					importsString += "\t\"" + impo + "\"\n"
+				}
+				importsString += ")\n"
+			} else {
+				importsString = ""
+			}
+
+			fileContent = tableStructFileTemplate
+			fileContent = strings.ReplaceAll(fileContent, "//{{PACKAGE_NAME}}", fmt.Sprintf("package %v", g.Config.DbModelPackageName))
+			fileContent = strings.ReplaceAll(fileContent, "//{{IMPORT_LIST}}", importsString)
+			fileContent = strings.ReplaceAll(fileContent, "//{{TABLE_STRUCT}}", tableStructStr)
+
+			outputFileName := "schema_" + strings.ToLower(schema.Name) + "_" + strings.ToLower(table.Name) + ".go"
+			// Check if the file already exists
+			_, fileErr := os.ReadFile(
+				fmt.Sprintf("%s/%s", g.Config.DbModelPackagePath, outputFileName))
+			if fileErr != nil {
+				// File does not exist
+				fileAlreadyExists = false
+			}
+
+			if fileAlreadyExists {
+				// file already exists. DO NOT REPLACE ANY CONTENT INSIDE IT
+				continue
+			}
+
+			err = os.Mkdir(g.Config.DbModelPackagePath, 0o777)
+			if err != nil {
+				// fmt.Println("E#2U1VR8 -", err)
+			}
+
+			outputFile, err = os.Create(fmt.Sprintf("%s/%s", g.Config.DbModelPackagePath, outputFileName))
+			if err != nil {
+				panic(fmt.Sprintf("P#2U1V02 - %v", err))
+			}
+
+			fileContentBytes, err := format.Source([]byte(fileContent))
+			if err != nil {
+				panic(fmt.Sprintf("P#2U1V05 - %v", err))
+			}
+
+			fileContent = string(fileContentBytes)
+
+			fileContent = g.removeTrailingNewlines(fileContent) + "\n"
+
+			_, err = outputFile.WriteString(fileContent)
+			if err != nil {
+				return appError.NewError(appError.Error, "2U1V08", err.Error())
+			}
+
+			err = outputFile.Close()
+			if err != nil {
+				return appError.NewError(appError.Error, "2U1V0A", err.Error())
+			}
+		}
+	}
+
+	// Network struct file template
 	networkFileTemplate := `
 //{{PACKAGE_NAME}}
 
@@ -1268,25 +1344,38 @@ func (g *Generator) getColumnFromListByName(colName string, colList []DbColumn) 
 	return DbColumn{}, fmt.Errorf("E#1O4CIS - No such column")
 }
 
+// Function to check if a table is isolated based on configuration
+// NOTE: It does not check the presence of foreward or reverse references
+//
+//	for that, check the hasReferences function against DbTable
+func (g *Generator) isTableIsolatedByConfig(tableFullName string) bool {
+	for _, isolatedTable := range g.Config.SkipTablesIfIsolated {
+		if tableFullName == isolatedTable {
+			return true
+		}
+	}
+	return false
+}
+
 // Function to get the Go type for DB and network for a given PostgreSQL data type
 func (g *Generator) getGoType(datatype string, nullable bool) (string, string) {
 	switch datatype {
-	case DatatypeBigint:
+	case DbTypeBigint:
 		if nullable {
 			return "sql.NullInt64", "*int64"
 		}
 		return "int64", "int64"
-	case DatatypeInteger:
+	case DbTypeInteger:
 		if nullable {
 			return "sql.NullInt32", "*int32"
 		}
 		return "int32", "int32"
-	case DatatypeSmallint:
+	case DbTypeSmallint:
 		if nullable {
 			return "sql.NullInt16", "*int16"
 		}
 		return "int16", "int16"
-	case "numeric", "double precision":
+	case DbTypeNumeric, DbTypeDoublePrecision:
 		if nullable {
 			return "sql.NullFloat64", "*float64"
 		}
@@ -1337,8 +1426,8 @@ func (g *Generator) getEnumByName(name string) (EnumDefinition, error) {
 
 // This function tries to read the comment and separate the comment and the column properties json and return the
 // properties object and the comment separately.
-func (g *Generator) getCommentAndPropertyFromComment(comment string) (dbColumnProperty, string, appError.Typ) {
-	dbColProp := dbColumnProperty{}
+func (g *Generator) getCommentAndPropertyFromComment(comment string) (colCommentProperty, string, appError.Typ) {
+	dbColProp := colCommentProperty{}
 	// Split by delimiter
 	commentParts := strings.Split(comment, g.Config.ColCommentSeparator)
 	if len(commentParts) != 2 {
@@ -1355,7 +1444,7 @@ func (g *Generator) getCommentAndPropertyFromComment(comment string) (dbColumnPr
 	colComment := commentParts[0]
 	err := json.Unmarshal([]byte(commentParts[1]), &dbColProp)
 	if err != nil {
-		return dbColumnProperty{}, colComment, appError.NewError(appError.Error, "1RD88J",
+		return colCommentProperty{}, colComment, appError.NewError(appError.Error, "1RD88J",
 			fmt.Sprintf("JSON Marshalling failed. Error: %v", err))
 	}
 

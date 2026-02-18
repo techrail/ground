@@ -3,9 +3,10 @@ package dbcodegen
 // Constants for the generator
 
 const (
-	COL_IS_GENERATED_NEVER = "NEVER"
-
-	DatatypeBigint   = "bigint"
-	DatatypeInteger  = "integer"
-	DatatypeSmallint = "smallint"
+	// Datatypes in the DB
+	DbTypeBigint          = "bigint"
+	DbTypeInteger         = "integer"
+	DbTypeSmallint        = "smallint"
+	DbTypeNumeric         = "numeric"
+	DbTypeDoublePrecision = "double precision"
 )

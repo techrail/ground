@@ -9,7 +9,6 @@ import (
 	"github.com/robfig/cron/v3"
 	"github.com/techrail/bark/appRuntime"
 
-	"github.com/techrail/ground/channels"
 	"github.com/techrail/ground/constants"
 	"github.com/techrail/ground/typs/appError"
 )
@@ -37,7 +36,8 @@ type Typ struct {
 	function        func() appError.Typ    // The function to run on each tick
 	state           string                 // What is the state of this routine
 	instanceRunning bool                   // Is the function already running (used to prevent parallel runs only)
-	monitorHook     func(typ appError.Typ) // The function which is called for each run
+	shouldMonitor   bool                   // Monitor this routine? If yes, monitorHook will be called on each run
+	monitorHook     func(typ appError.Typ) // The function which is called for each run if monitoring enabled
 }
 
 func (m *Manager) AddRoutine(name string, cronExpression string, runnerFunc func() appError.Typ) appError.Typ {
@@ -83,6 +83,12 @@ func (r *Typ) AddMonitorFunc(f func(typ appError.Typ)) {
 	r.monitorHook = f
 }
 
+func (r *Typ) monitor(e appError.Typ) {
+	if r.shouldMonitor && r.monitorHook != nil {
+		r.monitorHook(e)
+	}
+}
+
 func (r *Typ) Start(launchRightNow bool) appError.Typ {
 	if r.Name == constants.EmptyString {
 		return appError.NewError(appError.Error, "1NCFFT", "Cannot launch nameless routine")
@@ -117,27 +123,18 @@ func (r *Typ) Start(launchRightNow bool) appError.Typ {
 		if !r.instanceRunning {
 			r.instanceRunning = true
 			err := r.function()
-			if err != appError.BlankError {
+			if err.IsNotBlank() {
 				e := appError.NewError(appError.Error, "1NCHIL", fmt.Sprintf("function for routine %v could not run: %v", r.Name, err))
-				if r.monitorHook != nil {
-					r.monitorHook(e)
-				}
-				channels.ErrorTypChan <- e
+				r.monitor(e)
 				r.instanceRunning = false
 			} else {
 				e := appError.NewError(appError.Info, "1NCHKC", fmt.Sprintf("function for routine %v finished running", r.Name))
-				if r.monitorHook != nil {
-					r.monitorHook(e)
-				}
-				channels.ErrorTypChan <- e
+				r.monitor(e)
 			}
 			r.instanceRunning = false
 		} else {
 			e := appError.NewError(appError.Notice, "1NCHML", fmt.Sprintf("function for routine %v seems to be running already", r.Name))
-			if r.monitorHook != nil {
-				r.monitorHook(e)
-			}
-			channels.ErrorTypChan <- e
+			r.monitor(e)
 		}
 	}
 
@@ -148,43 +145,28 @@ func (r *Typ) Start(launchRightNow bool) appError.Typ {
 			select {
 			case <-r.done:
 				e := appError.NewError(appError.Info, "1NCFGS", fmt.Sprintf("Routine %v shutting down.", r.Name))
-				if r.monitorHook != nil {
-					r.monitorHook(e)
-				}
-				channels.ErrorTypChan <- e
+				r.monitor(e)
 				r.ticker.Stop()
 				return
 			case t := <-r.ticker.C:
 				if r.operationMode == TickerMode {
 					if r.state != StateRunning {
 						e := appError.NewError(appError.Info, "1NI933", fmt.Sprintf("Tick for Routine %s was received at %v but the routine is %v.", r.Name, t, r.state))
-						if r.monitorHook != nil {
-							r.monitorHook(e)
-						}
-						channels.ErrorTypChan <- e
+						r.monitor(e)
 					} else {
 						e := appError.NewError(appError.Info, "1NI9P9", fmt.Sprintf("Tick for routine %v at %v", r.Name, t))
-						if r.monitorHook != nil {
-							r.monitorHook(e)
-						}
-						channels.ErrorTypChan <- e
+						r.monitor(e)
 						runRoutineOnce()
 					}
 				} else {
 					e := appError.NewError(appError.Info, "1NPBCQ", fmt.Sprintf("Tick for routine %v recieved when it should not have happened at %v", r.Name, t))
-					if r.monitorHook != nil {
-						r.monitorHook(e)
-					}
-					channels.ErrorTypChan <- e
+					r.monitor(e)
 				}
 			case t := <-time.After(time.Second):
 				if appRuntime.ShutdownRequested.Load() {
 					r.done <- true
 					e := appError.NewError(appError.Info, "1NPB3F", fmt.Sprintf("Shutdown was requested. Stopping routine %v at %v", r.Name, t))
-					if r.monitorHook != nil {
-						r.monitorHook(e)
-					}
-					channels.ErrorTypChan <- e
+					r.monitor(e)
 					return
 				}
 

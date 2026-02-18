@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-func (g *Generator) buildTableValidationFuncs(table DbTable, importList []string) (string, []string) {
+func (g *Generator) buildTableBaseValidationFuncs(table DbTable, importList []string) (string, []string) {
 	tableBaseValidationFuncStr := ""
 	tableBaseValidationFuncStr, importList = g.buildTableBaseValidation(table, importList)
 	tableCommonValidationFuncStr := ""
