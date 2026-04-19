@@ -81,11 +81,16 @@ func init() {
 }
 
 func NewJsonObject(key string, value interface{}) Typ {
+	valid := true
+	if strings.TrimSpace(key) == "" {
+		valid = false
+	}
+
 	j := Typ{
 		StringAnyMap: map[string]interface{}{
 			key: value,
 		},
-		Valid: false,
+		Valid: valid,
 	}
 	return j
 }
